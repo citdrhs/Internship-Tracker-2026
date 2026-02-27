@@ -17,3 +17,15 @@
 // }
 
 // customElements.define('prelog-header', PreLogHeader)
+
+
+function toggleAdminCode() {
+    const role = document.getElementById("role").value;
+    const adminGroup = document.getElementById("admin-code-group");
+
+    if (role === "admin") {
+        adminGroup.style.display = "block";
+    } else {
+        adminGroup.style.display = "none";
+    }
+}
