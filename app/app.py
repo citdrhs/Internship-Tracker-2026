@@ -73,7 +73,7 @@ def create_app():
         mail.send(msg)
 
     @app.route("/intr/", methods=['GET', 'POST'])
-    def index():
+    def login():
         form = LoginForm()
 
         if request.method == 'POST' and form.validate_on_submit():
@@ -81,11 +81,11 @@ def create_app():
 
             if not user:
                 flash("Email does not exist.", "danger")
-                return redirect(url_for('index'))
+                return redirect(url_for('login'))
 
             if not bcrypt.check_password_hash(user.password, form.password.data):
                 flash("Incorrect password.", "danger")
-                return redirect(url_for('index'))
+                return redirect(url_for('login'))
 
             is_admin = user.is_admin
             is_teacher = user.is_teacher
@@ -115,14 +115,14 @@ def create_app():
             session['is_teacher'] = is_teacher
             session['is_mentor'] = is_mentor
 
-            return redirect(url_for('index'))
+            return redirect(url_for('login'))
 
         return render_template("login.html", form=form)
 
     @app.route("/logout")
     def logout():
         session.clear()
-        return redirect(url_for('index'))
+        return redirect(url_for('login'))
 
     @app.route("/intr/register", methods=['GET', 'POST'])
     def register():
@@ -136,27 +136,28 @@ def create_app():
             if profanity.contains_profanity(form.first_name.data) or profanity.contains_profanity(form.last_name.data):
                 flash("No profanity allowed.", "danger")
                 return redirect(url_for('register'))
-
-            if form.password.data != form.confirmPassword.data:
-                flash("Passwords do not match.", "danger")
-                return redirect(url_for('register'))
-
+            
             if len(form.password.data) < 8:
                 flash("Password must be at least 8 characters.", "danger")
                 return redirect(url_for('register'))
 
+
+            if form.password.data != form.confirmPassword.data:
+                flash("Passwords do not match.", "danger")
+                return redirect(url_for('register'))
+            
             session['pending_user'] = {
                 "email": form.email.data,
                 "first_name": form.first_name.data,
                 "last_name": form.last_name.data,
                 "password": bcrypt.generate_password_hash(form.password.data).decode('utf-8'),
                 "grade": form.grade.data,
-                "is_admin": form.is_admin.data
+                "organization": form.organization.data
             }
 
             send_confirmation_email(form.email.data)
             flash("A confirmation email has been sent.", "info")
-            return redirect(url_for('index'))
+            return redirect(url_for('login'))
 
         return render_template("register.html", form=form)
 
@@ -178,7 +179,7 @@ def create_app():
         session.pop('pending_user', None)
 
         flash("Registration confirmed!", "success")
-        return redirect(url_for('index'))
+        return redirect(url_for('login'))
 
     return app
 

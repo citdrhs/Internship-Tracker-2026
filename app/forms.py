@@ -29,7 +29,7 @@ class RegisterForm(FlaskForm):
     email = StringField('Email', validators = [DataRequired(), Email()])
     first_name = StringField('FirstName', validators = [DataRequired()])
     last_name = StringField('LastName', validators = [DataRequired()])
-    grade = SelectField('Grade', choices=[('8', '8'),('9', '9'), ('10', '10'), ('11', '11'), ('12', '12')], coerce=int)
+    grade = SelectField('Grade', choices=[('8', '8'),('9', '9'), ('10', '10'), ('11', '11'), ('12', '12'), ('n/a', 'n/a')], coerce=int)
     organization = StringField('Organization')
     password = PasswordField('Password', validators = [DataRequired()])
     confirmPassword = PasswordField('Confirm Password', validators=[DataRequired()])
