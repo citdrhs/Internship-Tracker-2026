@@ -1,0 +1,40 @@
+{% extends 'base.html' %}
+{% block title %} Submit Feedback {% endblock %}
+{% block content %}
+<h1>Submit Student Feedback</h1>
+<div class="container">
+    <div class="card">
+        <form method="post">
+
+            <div class="form-group">
+                <label for="student">Student Name</label>
+                <select name="student" id="student">
+                    <option value="" disabled selected>Select a student...</option>
+                    {% for s in students %}
+                    <option value="{{ s[0] }}">{{ s[1] }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label for="description">Feedback</label>
+                <textarea name="description" id="description"
+                          placeholder="Write your feedback here..."></textarea>
+            </div>
+
+            <div class="form-group">
+                <label for="rating">Rating — <span id="ratingDisplay" class="rating-live">5</span> / 10</label>
+                <input type="range" name="rating" id="rating" min="1" max="10" value="5"
+                       oninput="document.getElementById('ratingDisplay').textContent = this.value">
+                <div class="range-labels"><span>1</span><span>10</span></div>
+            </div>
+
+            <div class="form-group">
+                <button type="submit" class="btn-submit">Submit Feedback</button>
+            </div>
+
+        </form>
+    </div>
+</div>
+{% endblock %}
+

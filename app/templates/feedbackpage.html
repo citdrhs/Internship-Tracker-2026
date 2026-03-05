@@ -1,0 +1,40 @@
+{% extends 'base.html' %}
+{% block title %} Feedback List {% endblock %}
+{% block content %}
+<h1>Student Feedback</h1>
+<div class="tableBox">
+    {% if feedback %}
+    <table>
+        <tr>
+            <th>Student</th>
+            <th>Feedback</th>
+            <th>Rating</th>
+            <th>Actions</th>
+        </tr>
+        {% for f in feedback %}
+        <tr>
+            <td>{{ f[1] }}</td>
+            <td>{{ f[2] }}</td>
+            <td>
+                <div class="rating-badge">{{ f[3] }}<span>/10</span></div>
+            </td>
+            <td>
+                <div class="action-btns">
+                    <a href="{{ url_for('editFeedback', id=f[0]) }}" class="btn-edit">Edit</a>
+                    <form method="post" action="{{ url_for('deleteFeedback', id=f[0]) }}">
+                        <button type="submit" class="btn-delete" onclick="return confirm('Delete this feedback?')">Delete</button>
+                    </form>
+                </div>
+            </td>
+        </tr>
+        {% endfor %}
+    </table>
+    {% else %}
+    <div class="empty-state">
+        <p>No feedback submitted yet.</p>
+        <a href="{{ url_for('submitFeedback') }}" class="btn-edit">Submit the first one →</a>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}
+

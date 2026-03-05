@@ -181,6 +181,109 @@ def create_app():
         flash("Registration confirmed!", "success")
         return redirect(url_for('login'))
 
+    def get_db_connection():
+        conn = psycopg2.connect(
+            host='drhscit.org',
+            database=os.environ['DB'],
+            user=os.environ['DB_UN'],
+            password=os.environ['DB_PW']
+        )
+        return conn
+
+    def getStudents():
+        conn = get_db_connection()
+        cur = conn.cursor()
+        cur.execute('SELECT * FROM students ORDER BY name')
+        students = cur.fetchall()
+        cur.close()
+        conn.close()
+        return students
+
+    def getFeedback():
+        conn = get_db_connection()
+        cur = conn.cursor()
+        cur.execute('''
+    SELECT f.id, s.name, f.description, f.rating
+    FROM feedback f
+    JOIN students s ON f.student_id = s.id
+    ORDER BY f.id DESC
+    ''')
+        feedback = cur.fetchall()
+        cur.close()
+        conn.close()
+        return feedback
+
+    @app.route('/intr/feedback')
+    def feedbackPage():
+        data = getFeedback()
+        return render_template('feedbackpage.html', feedback=data)
+
+    @app.route('/submitFeedback/', methods=('GET', 'POST'))
+    def submitFeedback():
+        if request.method == 'POST':
+            student_id  = request.form['student']
+            description = request.form['description']
+            rating      = request.form['rating']
+
+            conn = get_db_connection()
+            cur  = conn.cursor()
+            cur.execute(
+                'INSERT INTO feedback (student_id, description, rating) VALUES (%s, %s, %s)',
+                (student_id, description, rating)
+            )
+            conn.commit()
+            cur.close()
+            conn.close()
+
+            flash('Feedback submitted successfully!')
+            return redirect(url_for('feedbackPage'))
+
+        students = getStudents()
+        return render_template('feedbackform.html', students=students)
+    
+    @app.route('/editFeedback/<int:id>', methods=('GET', 'POST'))
+    def editFeedback(id):
+        if request.method == 'POST':
+            student_id  = request.form['student']
+            description = request.form['description']
+            rating      = request.form['rating']
+
+            conn = get_db_connection()
+            cur  = conn.cursor()
+            cur.execute(
+                'UPDATE feedback SET student_id = %s, description = %s, rating = %s WHERE id = %s',
+                (student_id, description, rating, id)
+            )
+            conn.commit()
+            cur.close()
+            conn.close()
+
+            flash('Feedback updated successfully!')
+            return redirect(url_for('feedbackPage'))
+
+        conn = get_db_connection()
+        cur  = conn.cursor()
+        cur.execute('SELECT * FROM feedback WHERE id = %s', (id,))
+        feedback = cur.fetchone()
+        cur.close()
+        conn.close()
+
+        students = getStudents()
+        return render_template('editForm.html', feedback=feedback, students=students)
+
+
+    @app.route('/deleteFeedback/<int:id>', methods=('POST',))
+    def deleteFeedback(id):
+        conn = get_db_connection()
+        cur  = conn.cursor()
+        cur.execute('DELETE FROM feedback WHERE id = %s', (id,))
+        conn.commit()
+        cur.close()
+        conn.close()
+
+        flash('Feedback deleted.')
+        return redirect(url_for('feedbackPage'))
+    
     return app
 
 

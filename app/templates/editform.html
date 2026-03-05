@@ -1,0 +1,39 @@
+{% extends 'base.html' %}
+{% block title %} Edit Feedback {% endblock %}
+{% block content %}
+<h1>Edit Feedback</h1>
+<div class="container">
+    <div class="card">
+        <form method="post">
+
+            <div class="form-group">
+                <label for="student">Student Name</label>
+                <select name="student" id="student">
+                    {% for s in students %}
+                    <option value="{{ s[0] }}" {% if s[0] == feedback[1] %}selected{% endif %}>{{ s[1] }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label for="description">Feedback</label>
+                <textarea name="description" id="description">{{ feedback[2] }}</textarea>
+            </div>
+
+            <div class="form-group">
+                <label for="rating">Rating — <span id="ratingDisplay" class="rating-live">{{ feedback[3] }}</span> / 10</label>
+                <input type="range" name="rating" id="rating" min="1" max="10" value="{{ feedback[3] }}"
+                       oninput="document.getElementById('ratingDisplay').textContent = this.value">
+                <div class="range-labels"><span>1</span><span>10</span></div>
+            </div>
+
+            <div class="form-group btn-row">
+                <button type="submit" class="btn-submit">Save Changes</button>
+                <a href="{{ url_for('index') }}" class="cancel-link">Cancel</a>
+            </div>
+
+        </form>
+    </div>
+</div>
+{% endblock %}
+
