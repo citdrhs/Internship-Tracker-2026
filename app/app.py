@@ -124,26 +124,26 @@ def create_app():
         session.clear()
         return redirect(url_for('index'))
 
-    @app.route("/intr/signup", methods=['GET', 'POST'])
-    def signup():
+    @app.route("/intr/register", methods=['GET', 'POST'])
+    def register():
         form = RegisterForm()
 
         if request.method == 'POST' and form.validate_on_submit():
             if User.query.filter_by(email=form.email.data).first():
                 flash("Email already in use.", "danger")
-                return redirect(url_for('signup'))
+                return redirect(url_for('register'))
 
             if profanity.contains_profanity(form.first_name.data) or profanity.contains_profanity(form.last_name.data):
                 flash("No profanity allowed.", "danger")
-                return redirect(url_for('signup'))
+                return redirect(url_for('register'))
 
             if form.password.data != form.confirmPassword.data:
                 flash("Passwords do not match.", "danger")
-                return redirect(url_for('signup'))
+                return redirect(url_for('register'))
 
             if len(form.password.data) < 8:
                 flash("Password must be at least 8 characters.", "danger")
-                return redirect(url_for('signup'))
+                return redirect(url_for('register'))
 
             session['pending_user'] = {
                 "email": form.email.data,
@@ -158,19 +158,19 @@ def create_app():
             flash("A confirmation email has been sent.", "info")
             return redirect(url_for('index'))
 
-        return render_template("login.html", form=form)
+        return render_template("register.html", form=form)
 
     @app.route('/intr/confirm/<token>/')
     def confirm_email(token):
         email = confirm_token(token)
         if not email:
             flash("Invalid or expired confirmation link.", "danger")
-            return redirect(url_for('signup'))
+            return redirect(url_for('register'))
 
         pending = session.get('pending_user')
         if not pending or pending['email'] != email:
             flash("No matching pending registration.", "danger")
-            return redirect(url_for('signup'))
+            return redirect(url_for('register'))
 
         new_user = User(**pending)
         db.session.add(new_user)

@@ -1,0 +1,41 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container">
+    <div class="register_card">
+        <h2>Register</h2>
+
+        <form class="register_form" method="POST" action="#" onsubmit="return false;">
+            
+            <div class="form-group">
+                <label for="role">Register As</label>
+                <select id="role" name="role" onchange="toggleAccessCode()">
+                    <option value="student">Student</option>
+                    <option value="teacher">Teacher</option>
+                    <option value="mentor">Mentor</option>
+                    <option value="admin">Admin</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label for="username">Email</label>
+                <input type="text" id="email" name="email" required>
+            </div>
+
+            <div class="form-group">
+                <label for="password">Password</label>
+                <input type="password" id="password" name="password" required>
+            </div>
+
+            <div class="form-group" id="access-code-group" style="display: none;">
+                <label for="access_code">Access Code</label>
+                <input type="text" id="access_code" name="acess_code">
+            </div>
+
+            <button type="submit" class="btn">Register</button>
+        </form>
+    </div>
+    
+</div>
+
+{% endblock %}
