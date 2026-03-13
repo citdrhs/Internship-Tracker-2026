@@ -363,3 +363,70 @@ h1 {
     align-items: center;
     gap: 15px;
 }
+
+/* Home page*/
+
+.landing-main {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+#purpose {
+    width: 70%;
+    font-style: italic;
+    text-align: center;
+}
+
+.getstarted {
+    width: 60%;
+    background-color: #ececec;
+    padding: 20px;
+    padding-top: 10px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    border-radius: 15px;
+
+}
+
+.getstarted a {
+    background-color: rgb(22, 4, 77);
+    color: white;
+    display: inline-block;
+    width: 80%;
+    margin: 10px;
+    padding: 10px;
+    border-radius: 15px;
+    text-decoration: none;
+    text-align: center;
+}
+
+.getstarted a:hover {
+    background-color: rgb(29, 5, 101);
+}
+
+.manual {
+    background-color: #ececec;
+    padding: 5px;
+    border-radius: 5px;
+    text-decoration: none;
+    font-weight: 600;
+    color: rgb(22, 4, 77);
+    margin: -5px;
+}
+
+footer {
+    width: 100%;
+    position: fixed;
+    bottom: 0;
+    border-top: 2px solid #ececec;
+    padding: 15px;
+}
+
+footer a {
+    text-decoration: none;
+    color: rgb(22, 4, 77);
+    margin: 0 25px;
+}
