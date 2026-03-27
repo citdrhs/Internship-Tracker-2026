@@ -5,17 +5,25 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{% block title %}{% endblock %}</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
-    <link rel="icon" type="image/x-icon" href="{{ url_for('static', filename='small-logo.svg') }}">
-    <script src="{{ url_for('static', filename='script.js') }}"></script>
 </head>
 <body>
 
     <div class="wrapper" id="navbar">
-        <img src="{{ url_for('static', filename='large-logo.svg') }}" alt="">
-
         <nav class="primary-navigation">
             <ul>
-                <li><a href="about.html">About</a></li>
+                <li><a href="{{ url_for('home') }}">Home</a></li>
+                <li><a href="{{ url_for('feedbackPage') }}">Feedback</a></li>
+                <li><a href="{{ url_for('submitFeedback') }}">Submit Feedback</a></li>
+                {% if session.get('email') and not session.get('is_admin') and not session.get('is_teacher') and not session.get('is_mentor') %}
+                <li><a href="{{ url_for('progressCheck') }}">Progress Check</a></li>
+                {% endif %}
+                <li><a href="{{ url_for('about') }}">About</a></li>
+                {% if session.get('email') %}
+                <li><a href="{{ url_for('logout') }}">Logout</a></li>
+                {% else %}
+                <li><a href="{{ url_for('login') }}">Login</a></li>
+                <li><a href="{{ url_for('register') }}">Register</a></li>
+                {% endif %}
             </ul>
         </nav>
     </div>

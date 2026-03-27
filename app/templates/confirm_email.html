@@ -1,0 +1,17 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class = "container">
+    <div class ="card mt-5">
+        <div class = "card-body">
+            <h2 class = "card-title">Confirm Your Email</h2>
+            <p class = "card-text">A confirmation email has been sent to your email address. Please check your inbox and click the link to confirm your email.</p>
+            <a href = "{{ confirm_url }}" class = "btn btn-primary">Confirmation Email</a>
+            <p>If the button doesn't work, copy and paste this link into your browser:</p>
+            <a href = "{{ confirm_url }}">{{ confirm_url }}</a>
+            <p> This link will expire in 1 hour. If you didn't register, you can safely ignore this email.</p>
+            <p><a href="{{ url_for('login') }}">Return to login</a> | <a href="{{ url_for('register') }}">Back to register</a></p>
+        </div>
+    </div>
+</div>
+{% endblock %}

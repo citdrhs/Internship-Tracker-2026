@@ -1,296 +1,718 @@
-from flask import Flask, render_template, request, redirect, session, url_for, flash
-from flask_sqlalchemy import SQLAlchemy
-from forms import RegisterForm, LoginForm
-from models import db, User
-from flask_bcrypt import Bcrypt
-from better_profanity import profanity
-from itsdangerous import URLSafeTimedSerializer
-from flask_mail import Mail, Message
-from dotenv import load_dotenv
 import os
-import psycopg2
+from pathlib import Path
+from urllib.parse import quote_plus
 
-load_dotenv()
+import psycopg2
+from better_profanity import profanity
+from dotenv import load_dotenv
+from flask import Flask, flash, redirect, render_template, request, session, url_for
+from flask_bcrypt import Bcrypt
+from flask_mail import Mail, Message
+from forms import LoginForm, RegisterForm
+from itsdangerous import URLSafeTimedSerializer
+from models import PendingUser, User, db
+
+BASE_DIR = Path(__file__).resolve().parent
+TEMPLATES_DIR = BASE_DIR / "templates"
+STATIC_DIR = BASE_DIR / "static"
+
+load_dotenv(BASE_DIR / "env")
 profanity.load_censor_words()
-#==================================================================================================================================================================#
-#                                                                                                                                                                  #
-#Project: CIT Signups                                                                                                                                              #
-#Contact: Lynne Norris (lmnorris@henrico.k12.va.us)                                                                                                                #
-#                                                                                                                                                                  #
-#Deep Run High School Restricted                                                                                                                                   #
-#                                                                                                                                                                  #
-#DO NOT MODIFY                                                                                                                                                     #
-#------------------------------------------------------------------------------------------------------------------------------------------------------------------#
-#@brief Has User table(flask) for Login and Register forms                                                                                                         #
-#                                                                                                                                                                  #
-#@author Omkar Deshmukh | (hcps-deshmukop@henricostudents.org)                                                                                                     #                                                 
-#                                                                                                                                                                  #
-#@version 1.0                                                                                                                                                      #
-#                                                                                                                                                                  #
-#@date Date_Of_Creation 2/17/25                                                                                                                                    #
-#                                                                                                                                                                  #
-#@date Last_Modification 2/17/25                                                                                                                                   #
-#                                                                                                                                                                  #
-#==================================================================================================================================================================#
+
+
+def get_database_settings():
+    db_name = os.environ.get("DB")
+    db_user = os.environ.get("DB_UN")
+    db_password = os.environ.get("DB_PW")
+    db_host = os.environ.get("DB_HOST", "drhscit.org")
+    db_port = int(os.environ.get("DB_PORT", "5434"))
+
+    if db_name and db_user and db_password:
+        return {
+            "dbname": db_name,
+            "user": db_user,
+            "password": db_password,
+            "host": db_host,
+            "port": db_port,
+        }
+
+    database_uri = os.environ.get("DATABASE_URI")
+    if database_uri:
+        return {"database_uri": database_uri}
+
+    raise ValueError("Database configuration is missing. Set DB, DB_UN, and DB_PW in env.")
+
+
+def build_sqlalchemy_uri():
+    settings = get_database_settings()
+    if "database_uri" in settings:
+        return settings["database_uri"]
+
+    return (
+        "postgresql://"
+        f"{quote_plus(settings['user'])}:{quote_plus(settings['password'])}"
+        f"@{settings['host']}:{settings['port']}/{settings['dbname']}"
+    )
+
+
+def get_db_connection():
+    settings = get_database_settings()
+    if "database_uri" in settings:
+        return psycopg2.connect(settings["database_uri"])
+
+    return psycopg2.connect(
+        dbname=settings["dbname"],
+        user=settings["user"],
+        password=settings["password"],
+        host=settings["host"],
+        port=settings["port"],
+    )
+
 
 def create_app():
-    app = Flask(__name__)
-    app.config['SECRET_KEY'] = os.environ.get("SECRET_KEY", "Internship 2026-OD")
-    app.config['SQLALCHEMY_DATABASE_URI'] = os.environ.get("DATABASE_URI")
+    app = Flask(
+        __name__,
+        template_folder=str(TEMPLATES_DIR),
+        static_folder=str(STATIC_DIR),
+        static_url_path="/static",
+    )
+    app.config["SECRET_KEY"] = os.environ.get("SECRET_KEY", "Internship 2026-OD")
+    app.config["SQLALCHEMY_DATABASE_URI"] = build_sqlalchemy_uri()
+    app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
+    app.config["MAIL_SERVER"] = "smtp.gmail.com"
+    app.config["MAIL_PORT"] = 587
+    app.config["MAIL_USE_TLS"] = True
+    app.config["MAIL_USERNAME"] = os.environ.get("EMAIL_USERNAME")
+    app.config["MAIL_PASSWORD"] = os.environ.get("EMAIL_PASSWORD")
 
-    app.config['MAIL_SERVER'] = 'smtp.gmail.com'
-    app.config['MAIL_PORT'] = 587
-    app.config['MAIL_USE_TLS'] = True
-    app.config['MAIL_USERNAME'] = os.environ.get('EMAIL_USERNAME')
-    app.config['MAIL_PASSWORD'] = os.environ.get('EMAIL_PASSWORD')
-
-    mail = Mail(app)
-    bcrypt = Bcrypt(app)
     db.init_app(app)
+    bcrypt = Bcrypt(app)
+    mail = Mail(app)
 
-    with app.app_context():
-        db.create_all()
+    def require_login():
+        if "email" not in session:
+            return redirect(url_for("login"))
+        return None
+
+    def is_student_session():
+        return not any(
+            [
+                session.get("is_admin"),
+                session.get("is_teacher"),
+                session.get("is_mentor"),
+            ]
+        )
+
+    def require_student():
+        login_redirect = require_login()
+        if login_redirect:
+            return login_redirect
+        if not is_student_session():
+            flash("That page is only available to students.", "warning")
+            return redirect(url_for("home"))
+        return None
+
+    def fetch_students():
+        conn = get_db_connection()
+        try:
+            with conn.cursor() as cur:
+                cur.execute(
+                    """
+                    SELECT id, CONCAT(first_name, ' ', last_name) AS full_name
+                    FROM users
+                    WHERE COALESCE(is_admin, FALSE) = FALSE
+                      AND COALESCE(is_teacher, FALSE) = FALSE
+                      AND COALESCE(is_mentor, FALSE) = FALSE
+                    ORDER BY first_name, last_name
+                    """
+                )
+                return cur.fetchall()
+        finally:
+            conn.close()
+
+    def fetch_feedback():
+        conn = get_db_connection()
+        try:
+            with conn.cursor() as cur:
+                cur.execute(
+                    """
+                    SELECT
+                        f.id,
+                        CONCAT(u.first_name, ' ', u.last_name) AS student_name,
+                        f.week,
+                        f.description,
+                        f.rating,
+                        f.quality,
+                        f.professionalism,
+                        f.timeliness,
+                        f.initiative,
+                        f.softskills
+                    FROM feedback f
+                    JOIN users u ON f.student_id = u.id
+                    ORDER BY f.week DESC, f.id DESC
+                    """
+                )
+                return cur.fetchall()
+        finally:
+            conn.close()
+
+    def fetch_feedback_entry(feedback_id):
+        conn = get_db_connection()
+        try:
+            with conn.cursor() as cur:
+                cur.execute(
+                    """
+                    SELECT
+                        id,
+                        student_id,
+                        week,
+                        description,
+                        quality,
+                        professionalism,
+                        timeliness,
+                        initiative,
+                        softskills,
+                        rating
+                    FROM feedback
+                    WHERE id = %s
+                    """,
+                    (feedback_id,),
+                )
+                return cur.fetchone()
+        finally:
+            conn.close()
+
+    def fetch_progress_checks(student_id):
+        conn = get_db_connection()
+        try:
+            with conn.cursor() as cur:
+                cur.execute(
+                    """
+                    SELECT
+                        id,
+                        day_worked,
+                        hours_worked,
+                        what_they_did,
+                        mentor_questions,
+                        reflection,
+                        next_steps,
+                        self_questions,
+                        created_at
+                    FROM progress_checks
+                    WHERE student_id = %s
+                    ORDER BY day_worked DESC, created_at DESC
+                    """,
+                    (student_id,),
+                )
+                return cur.fetchall()
+        finally:
+            conn.close()
+
+    def get_current_user_id():
+        email = session.get("email")
+        if not email:
+            return None
+        user = User.query.filter_by(email=email).first()
+        return user.id if user else None
+
+    def validate_progress_check_form():
+        day_worked = request.form.get("day_worked", "").strip()
+        hours_worked = request.form.get("hours_worked", "").strip()
+        what_they_did = request.form.get("what_they_did", "").strip()
+        mentor_questions = request.form.get("mentor_questions", "").strip()
+        reflection = request.form.get("reflection", "").strip()
+        next_steps = request.form.get("next_steps", "").strip()
+        self_questions = request.form.get("self_questions", "").strip()
+
+        if not day_worked:
+            raise ValueError("Day worked is required.")
+        if not hours_worked:
+            raise ValueError("Hours worked is required.")
+        if not what_they_did:
+            raise ValueError("Please describe what you did.")
+
+        try:
+            hours_value = float(hours_worked)
+        except ValueError as exc:
+            raise ValueError("Hours worked must be a number.") from exc
+
+        if hours_value < 0 or hours_value > 24:
+            raise ValueError("Hours worked must be between 0 and 24.")
+
+        return {
+            "day_worked": day_worked,
+            "hours_worked": round(hours_value, 2),
+            "what_they_did": what_they_did,
+            "mentor_questions": mentor_questions,
+            "reflection": reflection,
+            "next_steps": next_steps,
+            "self_questions": self_questions,
+        }
+
+    def parse_score(field_name):
+        raw_value = request.form.get(field_name, "").strip()
+        try:
+            value = int(raw_value)
+        except ValueError as exc:
+            label = field_name.replace("_", " ")
+            raise ValueError(f"{label} must be a whole number.") from exc
+
+        if value < 1 or value > 5:
+            label = field_name.replace("_", " ")
+            raise ValueError(f"{label} must be between 1 and 5.")
+        return value
+
+    def validate_feedback_form():
+        student_id = request.form.get("student", "").strip()
+        week = request.form.get("week", "").strip()
+        description = request.form.get("description", "").strip()
+
+        if not student_id:
+            raise ValueError("Student is required.")
+        if not week:
+            raise ValueError("Week is required.")
+        if not description:
+            raise ValueError("Feedback description is required.")
+
+        try:
+            student_id_value = int(student_id)
+            week_value = int(week)
+        except ValueError as exc:
+            raise ValueError("Student and week must be valid numbers.") from exc
+
+        if week_value < 1 or week_value > 52:
+            raise ValueError("Week must be between 1 and 52.")
+
+        quality = parse_score("Quality_of_Work")
+        professionalism = parse_score("Professionalism")
+        timeliness = parse_score("Timeliness_of_Work")
+        initiative = parse_score("Initiative")
+        softskills = parse_score("Soft_Skills")
+        average_rating = round(
+            (quality + professionalism + timeliness + initiative + softskills) / 5,
+            2,
+        )
+
+        return {
+            "student_id": student_id_value,
+            "week": week_value,
+            "description": description,
+            "quality": quality,
+            "professionalism": professionalism,
+            "timeliness": timeliness,
+            "initiative": initiative,
+            "softskills": softskills,
+            "rating": average_rating,
+        }
 
     def generate_confirmation_token(email):
-        serializer = URLSafeTimedSerializer(app.config['SECRET_KEY'])
-        return serializer.dumps(email, salt='email-confirm-salt')
+        serializer = URLSafeTimedSerializer(app.config["SECRET_KEY"])
+        return serializer.dumps(email, salt="email-confirm-salt")
 
     def confirm_token(token, expiration=3600):
-        serializer = URLSafeTimedSerializer(app.config['SECRET_KEY'])
+        serializer = URLSafeTimedSerializer(app.config["SECRET_KEY"])
         try:
-            return serializer.loads(token, salt='email-confirm-salt', max_age=expiration)
-        except:
+            return serializer.loads(token, salt="email-confirm-salt", max_age=expiration)
+        except Exception:
             return False
 
     def send_confirmation_email(user_email):
         token = generate_confirmation_token(user_email)
-        confirm_url = url_for('confirm_email', token=token, _external=True)
-        html = render_template('confirm_email.html', confirm_url=confirm_url)
-        msg = Message("Confirm Your Registration",
-                      sender=app.config['MAIL_USERNAME'],
-                      recipients=[user_email])
+        confirm_url = url_for("confirm_email", token=token, _external=True)
+        html = render_template("confirm_email.html", confirm_url=confirm_url)
+        msg = Message(
+            "Confirm Your Registration",
+            sender=app.config["MAIL_USERNAME"],
+            recipients=[user_email],
+        )
         msg.html = html
         mail.send(msg)
 
-    @app.route("/intr/", methods=['GET', 'POST'])
+    @app.route("/intr/", methods=["GET", "POST"])
     def login():
         form = LoginForm()
 
-        if request.method == 'POST' and form.validate_on_submit():
+        if request.method == "POST" and form.validate_on_submit():
             user = User.query.filter_by(email=form.email.data).first()
 
             if not user:
                 flash("Email does not exist.", "danger")
-                return redirect(url_for('login'))
+                return redirect(url_for("login"))
 
             if not bcrypt.check_password_hash(user.password, form.password.data):
                 flash("Incorrect password.", "danger")
-                return redirect(url_for('login'))
+                return redirect(url_for("login"))
 
-            is_admin = user.is_admin
-            is_teacher = user.is_teacher
-            is_mentor = user.is_mentor
+            code = form.security_code.data
+            updated = False
+            if code:
+                try:
+                    code_int = int(code)
+                    if code_int == int(os.environ.get("ADMIN_CODE", 0)):
+                        user.is_admin = True
+                        updated = True
+                    elif code_int == int(os.environ.get("TEACHER_CODE", 0)):
+                        user.is_teacher = True
+                        updated = True
+                    elif code_int == int(os.environ.get("MENTOR_CODE", 0)):
+                        user.is_mentor = True
+                        updated = True
+                    if updated:
+                        db.session.commit()
+                        flash("Role updated based on security code.", "success")
+                    else:
+                        flash("Invalid security code.", "warning")
+                except ValueError:
+                    flash("Security code must be a number.", "danger")
 
-            try:
-                security_code = int(form.securityCode.data)
+            session["email"] = user.email
+            session["organization"] = user.organization
+            session["is_admin"] = user.is_admin
+            session["is_teacher"] = user.is_teacher
+            session["is_mentor"] = user.is_mentor
 
-                if security_code == int(os.environ.get('ADMIN_CODE')):
-                    user.is_admin = True
-                    is_admin = True
-                elif security_code == int(os.environ.get('MENTOR_CODE')):
-                    user.is_mentor = True
-                    is_mentor = True
-                elif security_code == int(os.environ.get('TEACHER_CODE')):
-                    user.is_teacher = True
-                    is_teacher = True
-
-                db.session.commit()
-
-            except:
-                pass
-
-            session['email'] = user.email
-            session['organization'] = user.organization
-            session['is_admin'] = is_admin
-            session['is_teacher'] = is_teacher
-            session['is_mentor'] = is_mentor
-
-            return redirect(url_for('login'))
+            return redirect(url_for("home"))
 
         return render_template("login.html", form=form)
 
     @app.route("/logout")
     def logout():
         session.clear()
-        return redirect(url_for('login'))
+        return redirect(url_for("login"))
 
-    @app.route("/intr/register", methods=['GET', 'POST'])
+    @app.route("/intr/home")
+    def home():
+        login_redirect = require_login()
+        if login_redirect:
+            return login_redirect
+        return render_template("home.html")
+
+    @app.route("/intr/about")
+    def about():
+        return render_template("about.html")
+
+    @app.route("/intr/registration-pending")
+    def registration_pending():
+        return render_template("confirm_email.html", confirm_url="#")
+
+    @app.route("/intr/register", methods=["GET", "POST"])
     def register():
         form = RegisterForm()
-
-        if request.method == 'POST' and form.validate_on_submit():
+        if request.method == "POST" and form.validate_on_submit():
             if User.query.filter_by(email=form.email.data).first():
                 flash("Email already in use.", "danger")
-                return redirect(url_for('register'))
+                return redirect(url_for("register"))
+
+            existing_pending = PendingUser.query.filter_by(email=form.email.data).first()
+            if existing_pending:
+                db.session.delete(existing_pending)
+                db.session.commit()
 
             if profanity.contains_profanity(form.first_name.data) or profanity.contains_profanity(form.last_name.data):
                 flash("No profanity allowed.", "danger")
-                return redirect(url_for('register'))
-            
+                return redirect(url_for("register"))
+
             if len(form.password.data) < 8:
                 flash("Password must be at least 8 characters.", "danger")
-                return redirect(url_for('register'))
-
+                return redirect(url_for("register"))
 
             if form.password.data != form.confirmPassword.data:
                 flash("Passwords do not match.", "danger")
-                return redirect(url_for('register'))
-            
-            session['pending_user'] = {
-                "email": form.email.data,
-                "first_name": form.first_name.data,
-                "last_name": form.last_name.data,
-                "password": bcrypt.generate_password_hash(form.password.data).decode('utf-8'),
-                "grade": form.grade.data,
-                "organization": form.organization.data
-            }
+                return redirect(url_for("register"))
+
+            pending_user = PendingUser(
+                email=form.email.data,
+                first_name=form.first_name.data,
+                last_name=form.last_name.data,
+                password=bcrypt.generate_password_hash(form.password.data).decode("utf-8"),
+                grade=form.grade.data,
+                organization=form.organization.data,
+                is_admin=False,
+                is_mentor=False,
+                is_teacher=False,
+            )
+            db.session.add(pending_user)
+            db.session.commit()
 
             send_confirmation_email(form.email.data)
             flash("A confirmation email has been sent.", "info")
-            return redirect(url_for('login'))
+            return redirect(url_for("registration_pending"))
 
         return render_template("register.html", form=form)
 
-    @app.route('/intr/confirm/<token>/')
+    @app.route("/intr/feedback")
+    def feedbackPage():
+        login_redirect = require_login()
+        if login_redirect:
+            return login_redirect
+
+        try:
+            feedback = fetch_feedback()
+        except psycopg2.Error:
+            flash("Feedback data could not be loaded. Run initdb.py to create the tables.", "danger")
+            feedback = []
+        return render_template("feedbackpage.html", feedback=feedback)
+
+    @app.route("/intr/feedback/submit", methods=["GET", "POST"])
+    def submitFeedback():
+        login_redirect = require_login()
+        if login_redirect:
+            return login_redirect
+
+        try:
+            students = fetch_students()
+        except psycopg2.Error:
+            flash("Student list could not be loaded. Run initdb.py to create the tables.", "danger")
+            return redirect(url_for("feedbackPage"))
+
+        if request.method == "POST":
+            try:
+                payload = validate_feedback_form()
+            except ValueError as exc:
+                flash(str(exc), "danger")
+                return render_template("feedbackform.html", students=students)
+
+            mentor_id = get_current_user_id()
+            if mentor_id is None:
+                flash("You must be logged in as a valid user to submit feedback.", "danger")
+                return redirect(url_for("login"))
+
+            conn = get_db_connection()
+            try:
+                with conn:
+                    with conn.cursor() as cur:
+                        cur.execute(
+                            """
+                            INSERT INTO feedback
+                            (
+                                student_id,
+                                mentor_id,
+                                week,
+                                description,
+                                quality,
+                                professionalism,
+                                timeliness,
+                                initiative,
+                                softskills,
+                                rating
+                            )
+                            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+                            """,
+                            (
+                                payload["student_id"],
+                                mentor_id,
+                                payload["week"],
+                                payload["description"],
+                                payload["quality"],
+                                payload["professionalism"],
+                                payload["timeliness"],
+                                payload["initiative"],
+                                payload["softskills"],
+                                payload["rating"],
+                            ),
+                        )
+            finally:
+                conn.close()
+
+            flash("Feedback submitted.", "success")
+            return redirect(url_for("feedbackPage"))
+
+        return render_template("feedbackform.html", students=students)
+
+    @app.route("/intr/progress-check", methods=["GET", "POST"])
+    def progressCheck():
+        student_redirect = require_student()
+        if student_redirect:
+            return student_redirect
+
+        student_id = get_current_user_id()
+        if student_id is None:
+            flash("You must be logged in as a student to use the worklog.", "danger")
+            return redirect(url_for("login"))
+
+        if request.method == "POST":
+            try:
+                payload = validate_progress_check_form()
+            except ValueError as exc:
+                flash(str(exc), "danger")
+                entries = fetch_progress_checks(student_id)
+                return render_template("progresscheck.html", entries=entries)
+
+            conn = get_db_connection()
+            try:
+                with conn:
+                    with conn.cursor() as cur:
+                        cur.execute(
+                            """
+                            INSERT INTO progress_checks
+                            (
+                                student_id,
+                                day_worked,
+                                hours_worked,
+                                what_they_did,
+                                mentor_questions,
+                                reflection,
+                                next_steps,
+                                self_questions
+                            )
+                            VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
+                            ON CONFLICT (student_id, day_worked)
+                            DO UPDATE SET
+                                hours_worked = EXCLUDED.hours_worked,
+                                what_they_did = EXCLUDED.what_they_did,
+                                mentor_questions = EXCLUDED.mentor_questions,
+                                reflection = EXCLUDED.reflection,
+                                next_steps = EXCLUDED.next_steps,
+                                self_questions = EXCLUDED.self_questions,
+                                created_at = NOW()
+                            """,
+                            (
+                                student_id,
+                                payload["day_worked"],
+                                payload["hours_worked"],
+                                payload["what_they_did"],
+                                payload["mentor_questions"] or None,
+                                payload["reflection"] or None,
+                                payload["next_steps"] or None,
+                                payload["self_questions"] or None,
+                            ),
+                        )
+            finally:
+                conn.close()
+
+            flash("Progress check saved.", "success")
+            return redirect(url_for("progressCheck"))
+
+        entries = fetch_progress_checks(student_id)
+        return render_template("progresscheck.html", entries=entries)
+
+    @app.route("/intr/feedback/<int:id>/edit", methods=["GET", "POST"])
+    def editFeedback(id):
+        login_redirect = require_login()
+        if login_redirect:
+            return login_redirect
+
+        try:
+            students = fetch_students()
+            feedback = fetch_feedback_entry(id)
+        except psycopg2.Error:
+            flash("Feedback entry could not be loaded.", "danger")
+            return redirect(url_for("feedbackPage"))
+
+        if feedback is None:
+            flash("Feedback entry not found.", "warning")
+            return redirect(url_for("feedbackPage"))
+
+        if request.method == "POST":
+            try:
+                payload = validate_feedback_form()
+            except ValueError as exc:
+                flash(str(exc), "danger")
+                return render_template("editform.html", students=students, feedback=feedback)
+
+            conn = get_db_connection()
+            try:
+                with conn:
+                    with conn.cursor() as cur:
+                        cur.execute(
+                            """
+                            UPDATE feedback
+                            SET
+                                student_id = %s,
+                                week = %s,
+                                description = %s,
+                                quality = %s,
+                                professionalism = %s,
+                                timeliness = %s,
+                                initiative = %s,
+                                softskills = %s,
+                                rating = %s
+                            WHERE id = %s
+                            """,
+                            (
+                                payload["student_id"],
+                                payload["week"],
+                                payload["description"],
+                                payload["quality"],
+                                payload["professionalism"],
+                                payload["timeliness"],
+                                payload["initiative"],
+                                payload["softskills"],
+                                payload["rating"],
+                                id,
+                            ),
+                        )
+            finally:
+                conn.close()
+
+            flash("Feedback updated.", "success")
+            return redirect(url_for("feedbackPage"))
+
+        return render_template("editform.html", students=students, feedback=feedback)
+
+    @app.route("/intr/feedback/<int:id>/delete", methods=["POST"])
+    def deleteFeedback(id):
+        login_redirect = require_login()
+        if login_redirect:
+            return login_redirect
+
+        conn = get_db_connection()
+        try:
+            with conn:
+                with conn.cursor() as cur:
+                    cur.execute("DELETE FROM feedback WHERE id = %s", (id,))
+                    deleted = cur.rowcount
+        finally:
+            conn.close()
+
+        if deleted:
+            flash("Feedback deleted.", "success")
+        else:
+            flash("Feedback entry not found.", "warning")
+        return redirect(url_for("feedbackPage"))
+
+    @app.route("/intr/confirm/<token>/")
     def confirm_email(token):
         email = confirm_token(token)
         if not email:
             flash("Invalid or expired confirmation link.", "danger")
-            return redirect(url_for('register'))
+            return redirect(url_for("register"))
 
-        pending = session.get('pending_user')
-        if not pending or pending['email'] != email:
+        pending = PendingUser.query.filter_by(email=email).first()
+        if not pending:
             flash("No matching pending registration.", "danger")
-            return redirect(url_for('register'))
+            return redirect(url_for("register"))
 
-        new_user = User(**pending)
+        if User.query.filter_by(email=email).first():
+            db.session.delete(pending)
+            db.session.commit()
+            flash("Account already confirmed. Please log in.", "info")
+            return redirect(url_for("login"))
+
+        new_user = User(
+            email=pending.email,
+            first_name=pending.first_name,
+            last_name=pending.last_name,
+            password=pending.password,
+            grade=pending.grade,
+            organization=pending.organization,
+            is_admin=pending.is_admin,
+            is_mentor=pending.is_mentor,
+            is_teacher=pending.is_teacher,
+        )
         db.session.add(new_user)
+        db.session.delete(pending)
         db.session.commit()
-        session.pop('pending_user', None)
 
         flash("Registration confirmed!", "success")
-        return redirect(url_for('login'))
+        return redirect(url_for("login"))
 
-    def get_db_connection():
-        conn = psycopg2.connect(
-            host='drhscit.org',
-            database=os.environ['DB'],
-            user=os.environ['DB_UN'],
-            password=os.environ['DB_PW']
-        )
-        return conn
-
-    def getStudents():
-        conn = get_db_connection()
-        cur = conn.cursor()
-        cur.execute('SELECT * FROM students ORDER BY name')
-        students = cur.fetchall()
-        cur.close()
-        conn.close()
-        return students
-
-    def getFeedback():
-        conn = get_db_connection()
-        cur = conn.cursor()
-        cur.execute('''
-    SELECT f.id, s.name, f.description, f.rating
-    FROM feedback f
-    JOIN students s ON f.student_id = s.id
-    ORDER BY f.id DESC
-    ''')
-        feedback = cur.fetchall()
-        cur.close()
-        conn.close()
-        return feedback
-
-    @app.route('/intr/feedback')
-    def feedbackPage():
-        data = getFeedback()
-        return render_template('feedbackpage.html', feedback=data)
-
-    @app.route('/submitFeedback/', methods=('GET', 'POST'))
-    def submitFeedback():
-        if request.method == 'POST':
-            student_id  = request.form['student']
-            description = request.form['description']
-            rating      = request.form['rating']
-
-            conn = get_db_connection()
-            cur  = conn.cursor()
-            cur.execute(
-                'INSERT INTO feedback (student_id, description, rating) VALUES (%s, %s, %s)',
-                (student_id, description, rating)
-            )
-            conn.commit()
-            cur.close()
-            conn.close()
-
-            flash('Feedback submitted successfully!')
-            return redirect(url_for('feedbackPage'))
-
-        students = getStudents()
-        return render_template('feedbackform.html', students=students)
-    
-    @app.route('/editFeedback/<int:id>', methods=('GET', 'POST'))
-    def editFeedback(id):
-        if request.method == 'POST':
-            student_id  = request.form['student']
-            description = request.form['description']
-            rating      = request.form['rating']
-
-            conn = get_db_connection()
-            cur  = conn.cursor()
-            cur.execute(
-                'UPDATE feedback SET student_id = %s, description = %s, rating = %s WHERE id = %s',
-                (student_id, description, rating, id)
-            )
-            conn.commit()
-            cur.close()
-            conn.close()
-
-            flash('Feedback updated successfully!')
-            return redirect(url_for('feedbackPage'))
-
-        conn = get_db_connection()
-        cur  = conn.cursor()
-        cur.execute('SELECT * FROM feedback WHERE id = %s', (id,))
-        feedback = cur.fetchone()
-        cur.close()
-        conn.close()
-
-        students = getStudents()
-        return render_template('editForm.html', feedback=feedback, students=students)
-
-
-    @app.route('/deleteFeedback/<int:id>', methods=('POST',))
-    def deleteFeedback(id):
-        conn = get_db_connection()
-        cur  = conn.cursor()
-        cur.execute('DELETE FROM feedback WHERE id = %s', (id,))
-        conn.commit()
-        cur.close()
-        conn.close()
-
-        flash('Feedback deleted.')
-        return redirect(url_for('feedbackPage'))
-    
     return app
 
 
-def main():
-    app = create_app()
-    app.run(debug=True, port=5044)
-
-
 if __name__ == "__main__":
-    main()
+    app = create_app()
+    with app.app_context():
+        db.create_all()
+
+    app.run(debug=True, port=5044)

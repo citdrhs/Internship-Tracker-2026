@@ -1,14 +1,22 @@
 {% extends 'base.html' %}
-{% block title %} Submit Feedback {% endblock %}
+{% block title %}Submit Feedback{% endblock %}
 {% block content %}
 <h1>Submit Student Feedback</h1>
+<p><a href="{{ url_for('feedbackPage') }}">Back to feedback list</a> or <a href="{{ url_for('home') }}">return home</a>.</p>
 <div class="container">
     <div class="card">
-        <form method="post">
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                {% for category, message in messages %}
+                    <div class="alert alert-{{ category }}">{{ message }}</div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
 
+        <form method="post">
             <div class="form-group">
                 <label for="student">Student Name</label>
-                <select name="student" id="student">
+                <select name="student" id="student" required>
                     <option value="" disabled selected>Select a student...</option>
                     {% for s in students %}
                     <option value="{{ s[0] }}">{{ s[1] }}</option>
@@ -17,24 +25,55 @@
             </div>
 
             <div class="form-group">
-                <label for="description">Feedback</label>
-                <textarea name="description" id="description"
-                          placeholder="Write your feedback here..."></textarea>
+                <label for="week">Week Number</label>
+                <input type="number" name="week" id="week" min="1" max="52" required>
             </div>
 
             <div class="form-group">
-                <label for="rating">Rating — <span id="ratingDisplay" class="rating-live">5</span> / 10</label>
-                <input type="range" name="rating" id="rating" min="1" max="10" value="5"
-                       oninput="document.getElementById('ratingDisplay').textContent = this.value">
-                <div class="range-labels"><span>1</span><span>10</span></div>
+                <label for="description">Feedback</label>
+                <textarea name="description" id="description" placeholder="Write your feedback here..." required></textarea>
+            </div>
+
+            <div class="form-group">
+                <label for="Quality_of_Work">Quality of Work</label>
+                <input type="range" name="Quality_of_Work" id="Quality_of_Work" min="1" max="5" value="3"
+                       oninput="document.getElementById('qualityDisplay').textContent = this.value">
+                <div class="range-labels"><span>1</span><span id="qualityDisplay">3</span><span>5</span></div>
+            </div>
+
+            <div class="form-group">
+                <label for="Professionalism">Professionalism</label>
+                <input type="range" name="Professionalism" id="Professionalism" min="1" max="5" value="3"
+                       oninput="document.getElementById('professionalismDisplay').textContent = this.value">
+                <div class="range-labels"><span>1</span><span id="professionalismDisplay">3</span><span>5</span></div>
+            </div>
+
+            <div class="form-group">
+                <label for="Timeliness_of_Work">Timeliness of Work</label>
+                <input type="range" name="Timeliness_of_Work" id="Timeliness_of_Work" min="1" max="5" value="3"
+                       oninput="document.getElementById('timelinessDisplay').textContent = this.value">
+                <div class="range-labels"><span>1</span><span id="timelinessDisplay">3</span><span>5</span></div>
+            </div>
+
+            <div class="form-group">
+                <label for="Initiative">Initiative</label>
+                <input type="range" name="Initiative" id="Initiative" min="1" max="5" value="3"
+                       oninput="document.getElementById('initiativeDisplay').textContent = this.value">
+                <div class="range-labels"><span>1</span><span id="initiativeDisplay">3</span><span>5</span></div>
+            </div>
+
+            <div class="form-group">
+                <label for="Soft_Skills">Soft Skills</label>
+                <input type="range" name="Soft_Skills" id="Soft_Skills" min="1" max="5" value="3"
+                       oninput="document.getElementById('softSkillsDisplay').textContent = this.value">
+                <div class="range-labels"><span>1</span><span id="softSkillsDisplay">3</span><span>5</span></div>
             </div>
 
             <div class="form-group">
                 <button type="submit" class="btn-submit">Submit Feedback</button>
+                <a href="{{ url_for('feedbackPage') }}" class="cancel-link">Cancel</a>
             </div>
-
         </form>
     </div>
 </div>
 {% endblock %}
-

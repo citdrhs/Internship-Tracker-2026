@@ -1,0 +1,94 @@
+{% extends 'base.html' %}
+{% block title %}Progress Check{% endblock %}
+{% block content %}
+<h1>Student Worklog</h1>
+<p>Use this daily progress check to track what you worked on, reflect on progress, and leave questions for mentors or yourself.</p>
+
+{% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+        {% for category, message in messages %}
+            <div class="alert alert-{{ category }}">{{ message }}</div>
+        {% endfor %}
+    {% endif %}
+{% endwith %}
+
+<div class="container">
+    <div class="card">
+        <form method="post">
+            <div class="form-group">
+                <label for="day_worked">Day Worked</label>
+                <input type="date" id="day_worked" name="day_worked" required>
+            </div>
+
+            <div class="form-group">
+                <label for="hours_worked">Hours Worked</label>
+                <input type="number" id="hours_worked" name="hours_worked" min="0" max="24" step="0.25" required>
+            </div>
+
+            <div class="form-group">
+                <label for="what_they_did">What You Did</label>
+                <textarea id="what_they_did" name="what_they_did" placeholder="What did you work on today?" required></textarea>
+            </div>
+
+            <div class="form-group">
+                <label for="mentor_questions">Questions for Mentors</label>
+                <textarea id="mentor_questions" name="mentor_questions" placeholder="Anything you want a mentor to answer?"></textarea>
+            </div>
+
+            <div class="form-group">
+                <label for="reflection">Reflection</label>
+                <textarea id="reflection" name="reflection" placeholder="What went well? What was difficult?"></textarea>
+            </div>
+
+            <div class="form-group">
+                <label for="next_steps">Next Steps</label>
+                <textarea id="next_steps" name="next_steps" placeholder="What will you do next?"></textarea>
+            </div>
+
+            <div class="form-group">
+                <label for="self_questions">Questions for Yourself</label>
+                <textarea id="self_questions" name="self_questions" placeholder="Anything you want to remember or revisit later?"></textarea>
+            </div>
+
+            <div class="form-group">
+                <button type="submit" class="btn-submit">Save Daily Progress Check</button>
+                <a href="{{ url_for('home') }}" class="cancel-link">Back Home</a>
+            </div>
+        </form>
+    </div>
+</div>
+
+<div class="tableBox">
+    <h2>Your Previous Entries</h2>
+    {% if entries %}
+    <table>
+        <tr>
+            <th>Day Worked</th>
+            <th>Hours</th>
+            <th>What You Did</th>
+            <th>Questions for Mentors</th>
+            <th>Reflection</th>
+            <th>Next Steps</th>
+            <th>Questions for Yourself</th>
+            <th>Saved</th>
+        </tr>
+        {% for entry in entries %}
+        <tr>
+            <td>{{ entry[1] }}</td>
+            <td>{{ entry[2] }}</td>
+            <td>{{ entry[3] }}</td>
+            <td>{{ entry[4] or '' }}</td>
+            <td>{{ entry[5] or '' }}</td>
+            <td>{{ entry[6] or '' }}</td>
+            <td>{{ entry[7] or '' }}</td>
+            <td>{{ entry[8] }}</td>
+        </tr>
+        {% endfor %}
+    </table>
+    {% else %}
+    <div class="empty-state">
+        <p>No progress check entries yet. Start with today's check-in.</p>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

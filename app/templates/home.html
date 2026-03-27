@@ -1,26 +1,28 @@
 {% extends 'base.html' %}
 
-{% block title %} Welcome {% endblock %}
+{% block title %}Welcome{% endblock %}
 
 {% block content %}
     <main class="landing-main">
         <h1>Welcome to the CIT's Internship Tracker.</h1>
 
-        <p id="purpose">A platform for students to log hours, for mentors to provide feedback, and for teachers to gain performance insight.</h3>
+        <p id="purpose">A platform for students to log hours, for mentors to provide feedback, and for teachers to gain performance insight.</p>
 
         <div class="getstarted">
-            <h2>Get Started</h2>
+            <h2>Quick Links</h2>
 
-            <a href="">Log In</a>
-            <a href="">Sign Up</a>
+            {% if not session.get('is_admin') and not session.get('is_teacher') and not session.get('is_mentor') %}
+            <a href="{{ url_for('progressCheck') }}">Daily Progress Check</a>
+            {% endif %}
+            <a href="{{ url_for('feedbackPage') }}">View Feedback</a>
+            <a href="{{ url_for('submitFeedback') }}">Submit Feedback</a>
+            <a href="{{ url_for('logout') }}">Log Out</a>
         </div>
 
-        <p>Stuck? View the User Manualㅤ<a href="" class="manual">Here</a></p>
+        <p>Stuck? View the User Manual <a href="{{ url_for('about') }}" class="manual">here</a>.</p>
     </main>
 
     <footer>
-        <a href="">About</a>
-        <a href="">Contact</a>
-        <a href="">View the CIT website</a>
+        <a href="{{ url_for('about') }}">About</a>
     </footer>
 {% endblock %}

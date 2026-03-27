@@ -1,22 +1,33 @@
 {% extends 'base.html' %}
-{% block title %} Feedback List {% endblock %}
+{% block title %}Feedback List{% endblock %}
 {% block content %}
 <h1>Student Feedback</h1>
+<p><a href="{{ url_for('submitFeedback') }}">Submit new feedback</a> or <a href="{{ url_for('home') }}">return home</a>.</p>
 <div class="tableBox">
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+            {% for category, message in messages %}
+                <div class="alert alert-{{ category }}">{{ message }}</div>
+            {% endfor %}
+        {% endif %}
+    {% endwith %}
+
     {% if feedback %}
     <table>
         <tr>
             <th>Student</th>
+            <th>Week</th>
             <th>Feedback</th>
-            <th>Rating</th>
+            <th>Average</th>
             <th>Actions</th>
         </tr>
         {% for f in feedback %}
         <tr>
             <td>{{ f[1] }}</td>
             <td>{{ f[2] }}</td>
+            <td>{{ f[3] }}</td>
             <td>
-                <div class="rating-badge">{{ f[3] }}<span>/10</span></div>
+                <div class="rating-badge">{{ f[4] }}<span>/5</span></div>
             </td>
             <td>
                 <div class="action-btns">
@@ -32,9 +43,8 @@
     {% else %}
     <div class="empty-state">
         <p>No feedback submitted yet.</p>
-        <a href="{{ url_for('submitFeedback') }}" class="btn-edit">Submit the first one →</a>
+        <a href="{{ url_for('submitFeedback') }}" class="btn-edit">Submit the first one -></a>
     </div>
     {% endif %}
 </div>
 {% endblock %}
-

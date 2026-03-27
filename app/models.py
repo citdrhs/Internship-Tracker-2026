@@ -25,14 +25,31 @@ from flask_sqlalchemy import SQLAlchemy
 
 db = SQLAlchemy()
 
+
 class User(db.Model):
-    email = db.Column(db.String(200), unique=True, nullable=False, primary_key = True)
+    __tablename__ = 'users'
+    id = db.Column(db.Integer, primary_key=True)
+    email = db.Column(db.String(200), unique=True, nullable=False)
     first_name = db.Column(db.String(200), nullable=False)
     last_name = db.Column(db.String(200), nullable=False)
     password = db.Column(db.String(500), nullable=False)
     organization = db.Column(db.String(200), nullable=True)
-    is_admin = db.Column(db.Boolean, nullable = False)
-    is_mentor = db.Column(db.Boolean, nullable = False)
-    is_teacher = db.Column(db.Boolean, nullable = False)
+    is_admin = db.Column(db.Boolean, nullable = False, default = False)
+    is_mentor = db.Column(db.Boolean, nullable = False, default = False)
+    is_teacher = db.Column(db.Boolean, nullable = False, default = False)
+    grade = db.Column(db.String(2), nullable=True)
+
+
+class PendingUser(db.Model):
+    __tablename__ = 'pending_users'
+    id = db.Column(db.Integer, primary_key=True)
+    email = db.Column(db.String(200), unique=True, nullable=False)
+    first_name = db.Column(db.String(200), nullable=False)
+    last_name = db.Column(db.String(200), nullable=False)
+    password = db.Column(db.String(500), nullable=False)
+    organization = db.Column(db.String(200), nullable=True)
+    is_admin = db.Column(db.Boolean, nullable=False, default=False)
+    is_mentor = db.Column(db.Boolean, nullable=False, default=False)
+    is_teacher = db.Column(db.Boolean, nullable=False, default=False)
     grade = db.Column(db.String(2), nullable=True)
 

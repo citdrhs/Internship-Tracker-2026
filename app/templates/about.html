@@ -1,2 +1,9 @@
-<h1>Internship Trcker app for DRHS CIT</h1>
 {% extends 'base.html' %}
+
+{% block title %}About{% endblock %}
+
+{% block content %}
+<h1>Internship Tracker app for DRHS CIT</h1>
+<p>This portal helps students, mentors, and teachers manage internship progress.</p>
+<p><a href="{{ url_for('home') }}">Home</a> | <a href="{{ url_for('login') }}">Login</a> | <a href="{{ url_for('register') }}">Register</a> | <a href="{{ url_for('feedbackPage') }}">Feedback</a></p>
+{% endblock %}
