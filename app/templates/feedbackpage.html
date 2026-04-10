@@ -18,6 +18,8 @@
             <th>Student</th>
             <th>Week</th>
             <th>Feedback</th>
+            <th>Action Items</th>
+            <th>Focus Areas</th>
             <th>Average</th>
             <th>Actions</th>
         </tr>
@@ -26,8 +28,10 @@
             <td>{{ f[1] }}</td>
             <td>{{ f[2] }}</td>
             <td>{{ f[3] }}</td>
+            <td>{{ f[4] or '' }}</td>
+            <td>{{ f[5] or '' }}</td>
             <td>
-                <div class="rating-badge">{{ f[4] }}<span>/5</span></div>
+                <div class="rating-badge">{{ f[6] }}<span>/5</span></div>
             </td>
             <td>
                 <div class="action-btns">

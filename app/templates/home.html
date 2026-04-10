@@ -4,22 +4,72 @@
 
 {% block content %}
     <main class="landing-main">
-        <h1>Welcome to the CIT's Internship Tracker.</h1>
+        <h1>Welcome to the CIT Internship Tracker.</h1>
 
-        <p id="purpose">A platform for students to log hours, for mentors to provide feedback, and for teachers to gain performance insight.</p>
+        <p id="purpose">
+            A platform for students to log daily work, for mentors to provide actionable feedback, and for teachers to view progress over time.
+        </p>
 
-        <div class="getstarted">
-            <h2>Quick Links</h2>
+        <section class="home-about">
+            <h2>What this website is for</h2>
+            <div class="home-about-grid">
+                <div class="home-about-card">
+                    <h3>Students</h3>
+                    <p>Submit a daily worklog with what you worked on, questions, reflections, and next steps.</p>
+                </div>
+                <div class="home-about-card">
+                    <h3>Mentors</h3>
+                    <p>Submit feedback with ratings plus specific action items and focus areas to guide improvement.</p>
+                </div>
+                <div class="home-about-card">
+                    <h3>Teachers</h3>
+                    <p>Review student progress and mentor feedback to support performance and accountability.</p>
+                </div>
+            </div>
+        </section>
 
-            {% if not session.get('is_admin') and not session.get('is_teacher') and not session.get('is_mentor') %}
-            <a href="{{ url_for('progressCheck') }}">Daily Progress Check</a>
-            {% endif %}
-            <a href="{{ url_for('feedbackPage') }}">View Feedback</a>
-            <a href="{{ url_for('submitFeedback') }}">Submit Feedback</a>
-            <a href="{{ url_for('logout') }}">Log Out</a>
-        </div>
+        <section class="home-extra">
+            <h2>How it works</h2>
+            <div class="home-extra-grid">
+                <div class="home-extra-card">
+                    <h3>Log -> Review -> Improve</h3>
+                    <p>Worklogs capture daily progress; mentor feedback turns that progress into clear next steps.</p>
+                </div>
+                <div class="home-extra-card">
+                    <h3>Action Items</h3>
+                    <p>Feedback includes specific action items so students always know what to do next.</p>
+                </div>
+                <div class="home-extra-card">
+                    <h3>Focus Areas</h3>
+                    <p>Mentors can call out themes to focus on (e.g., stronger code comments, cleaner commits, testing).</p>
+                </div>
+            </div>
+        </section>
 
-        <p>Stuck? View the User Manual <a href="{{ url_for('about') }}" class="manual">here</a>.</p>
+        <section class="home-faq">
+            <h2>Commonly Asked Questions(FAQ)</h2>
+            <div class="faq-list">
+                <details>
+                    <summary>When should I submit a worklog?</summary>
+                    <p>Submit it after each day you work so your progress and questions are updated and frequent.(REQUIRED)</p>
+                </details>
+                <details>
+                    <summary>What makes good mentor feedback?</summary>
+                    <p>Concrete examples + specific action items (“do X by Friday”) + focus areas (“improve code commenting”).</p>
+                </details>
+                <details>
+                    <summary>Where is the full user guide?</summary>
+                    <p>Use the link below to open the user manual in a Google Doc.</p>
+                </details>
+            </div>
+        </section>
+
+        <p class="home-manual">
+            User manual:
+            <a class="manual" href="https://docs.google.com/document/d/1Lkw7CkcCcRlsDT4iFM0-N4RtGognc6ifJNOuCzNV2sA/edit?tab=t.0" target="_blank" rel="noopener noreferrer">
+                Google Doc
+            </a>
+        </p>
     </main>
 
     <footer>

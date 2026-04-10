@@ -70,6 +70,8 @@ CREATE TABLE feedback (
     mentor_id BIGINT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
     week INTEGER NOT NULL CHECK (week BETWEEN 1 AND 52),
     description TEXT NOT NULL,
+    action_items TEXT,
+    focus_areas TEXT,
     quality SMALLINT NOT NULL CHECK (quality BETWEEN 1 AND 5),
     professionalism SMALLINT NOT NULL CHECK (professionalism BETWEEN 1 AND 5),
     timeliness SMALLINT NOT NULL CHECK (timeliness BETWEEN 1 AND 5),

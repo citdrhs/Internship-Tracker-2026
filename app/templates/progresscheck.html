@@ -1,8 +1,8 @@
 {% extends 'base.html' %}
-{% block title %}Progress Check{% endblock %}
+{% block title %}Daily Worklog{% endblock %}
 {% block content %}
 <h1>Student Worklog</h1>
-<p>Use this daily progress check to track what you worked on, reflect on progress, and leave questions for mentors or yourself.</p>
+<p>Use this daily worklog to track what you worked on, reflect on progress, and leave questions for mentors or yourself.</p>
 
 {% with messages = get_flashed_messages(with_categories=true) %}
     {% if messages %}
@@ -51,7 +51,7 @@
             </div>
 
             <div class="form-group">
-                <button type="submit" class="btn-submit">Save Daily Progress Check</button>
+                <button type="submit" class="btn-submit">Save Daily Worklog</button>
                 <a href="{{ url_for('home') }}" class="cancel-link">Back Home</a>
             </div>
         </form>
@@ -87,7 +87,7 @@
     </table>
     {% else %}
     <div class="empty-state">
-        <p>No progress check entries yet. Start with today's check-in.</p>
+        <p>No worklog entries yet. Start with today’s worklog.</p>
     </div>
     {% endif %}
 </div>

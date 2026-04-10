@@ -28,10 +28,39 @@ section {
     justify-content: space-between;
     padding: 1em;
     border-bottom: 2px #ececec solid;
+    gap: 16px;
 }
 
 #navbar img {
     width: 100px;
+}
+
+.brand {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    min-width: 280px;
+}
+
+.brand-logo {
+    width: 44px;
+    height: 44px;
+    object-fit: contain;
+    border-radius: 12px;
+    background: #fff;
+    border: 2px solid #ececec;
+}
+
+.brand-title {
+    font-weight: 900;
+    font-size: 1.05rem;
+    line-height: 1.2;
+}
+
+.brand-subtitle {
+    font-weight: 600;
+    font-size: 0.85rem;
+    color: #6c6c6c;
 }
 
 .primary-navigation {
@@ -46,6 +75,8 @@ section {
     display: flex;
     gap: 20px;
     padding-right: 20px;
+    flex-wrap: wrap;
+    justify-content: flex-end;
 }
 
 .primary-navigation a {
@@ -78,6 +109,7 @@ section {
     width: 100%;
     display: flex;
     justify-content: center;
+    padding: 20px;
 }
 
 .feedback_card {
@@ -95,6 +127,21 @@ section {
 
 .card h1 {
     margin-top: 0;
+}
+
+.card {
+    margin-top: 24px;
+    width: min(960px, 100%);
+    background-color: #ececec;
+    display: flex;
+    flex-direction: column;
+    border-radius: 18px;
+    padding: 28px;
+    margin-bottom: 40px;
+}
+
+.card--wide {
+    width: min(1100px, 100%);
 }
 
 .login_card {
@@ -168,13 +215,16 @@ textarea {
     min-height: 100px;
 }
 
+textarea.textarea-lg {
+    min-height: 180px;
+}
+
 select {
     font-size: 1.15em;
 }
 
 button,
 .btn {
-    margin-left: 45%;
     border-radius: 15px;
     background-color: rgb(22, 4, 77);
     color: white;
@@ -370,6 +420,7 @@ h1 {
     display: flex;
     flex-direction: column;
     align-items: center;
+    padding: 10px 20px 90px;
 }
 
 #purpose {
@@ -378,33 +429,191 @@ h1 {
     text-align: center;
 }
 
-.getstarted {
-    width: 60%;
+.home-about {
+    width: min(1000px, 100%);
+    margin-top: 10px;
+}
+
+.home-about h2 {
+    text-align: center;
+    margin: 18px 0 12px;
+}
+
+.home-about-grid {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 14px;
+}
+
+.home-about-card {
     background-color: #ececec;
-    padding: 20px;
-    padding-top: 10px;
+    border-radius: 15px;
+    padding: 16px 18px;
+}
+
+.home-about-card h3 {
+    margin: 0 0 8px;
+}
+
+.home-about-card p {
+    margin: 0;
+    color: #333;
+    line-height: 1.4;
+}
+
+.home-extra,
+.home-faq {
+    width: min(1000px, 100%);
+    margin-top: 18px;
+}
+
+.home-extra h2,
+.home-faq h2 {
+    text-align: center;
+    margin: 18px 0 12px;
+}
+
+.home-extra-grid {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 14px;
+}
+
+.home-extra-card {
+    background-color: #ececec;
+    border-radius: 15px;
+    padding: 16px 18px;
+}
+
+.home-extra-card h3 {
+    margin: 0 0 8px;
+}
+
+.home-extra-card p {
+    margin: 0;
+    color: #333;
+    line-height: 1.4;
+}
+
+.faq-list {
+    background-color: #ececec;
+    border-radius: 15px;
+    padding: 10px 14px;
+}
+
+.faq-list details {
+    padding: 10px 8px;
+    border-bottom: 1px solid #ffffff;
+}
+
+.faq-list details:last-child {
+    border-bottom: none;
+}
+
+.faq-list summary {
+    cursor: pointer;
+    font-weight: 800;
+}
+
+.faq-list p {
+    margin: 8px 0 0;
+    color: #333;
+    line-height: 1.4;
+}
+
+/* About page */
+.page {
+    width: min(1050px, 100%);
+    margin: 0 auto;
+    padding: 20px 20px 90px;
+}
+
+.page-header {
+    text-align: center;
+    margin-top: 8px;
+}
+
+.page-subtitle {
+    margin: 10px auto 0;
+    max-width: 70ch;
+    color: #444;
+    font-weight: 600;
+}
+
+.page-section {
+    margin-top: 20px;
+}
+
+.page-section h2 {
+    margin: 18px 0 12px;
+}
+
+.info-grid {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 14px;
+}
+
+.info-card {
+    background-color: #ececec;
+    border-radius: 15px;
+    padding: 16px 18px;
+}
+
+.info-card h3 {
+    margin: 0 0 8px;
+}
+
+.info-card p {
+    margin: 0;
+    color: #333;
+    line-height: 1.4;
+}
+
+.clean-list {
+    margin: 0;
+    padding-left: 18px;
+    color: #333;
+    line-height: 1.5;
+}
+
+.steps {
+    background-color: #ececec;
+    border-radius: 15px;
+    padding: 14px;
     display: flex;
     flex-direction: column;
-    justify-content: center;
-    align-items: center;
-    border-radius: 15px;
-
+    gap: 12px;
 }
 
-.getstarted a {
-    background-color: rgb(22, 4, 77);
-    color: white;
-    display: inline-block;
-    width: 80%;
-    margin: 10px;
-    padding: 10px;
-    border-radius: 15px;
-    text-decoration: none;
-    text-align: center;
+.step {
+    display: flex;
+    gap: 12px;
+    align-items: flex-start;
+    background: #fff;
+    border-radius: 12px;
+    padding: 12px;
 }
 
-.getstarted a:hover {
-    background-color: rgb(29, 5, 101);
+.step-number {
+    width: 34px;
+    height: 34px;
+    border-radius: 10px;
+    background: rgb(22, 4, 77);
+    color: #fff;
+    display: grid;
+    place-items: center;
+    font-weight: 900;
+}
+
+.step-body h3 {
+    margin: 0 0 6px;
+}
+
+.step-body p {
+    margin: 0;
+    color: #333;
+    line-height: 1.4;
 }
 
 .manual {
@@ -415,6 +624,51 @@ h1 {
     font-weight: 600;
     color: rgb(22, 4, 77);
     margin: -5px;
+}
+
+.manual--placeholder {
+    opacity: 0.7;
+    cursor: not-allowed;
+}
+
+/* Feedback forms */
+.form-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 12px 18px;
+    width: 100%;
+}
+
+.form-grid .form-group {
+    margin: 0;
+}
+
+.form-span-2 {
+    grid-column: span 2;
+}
+
+@media (max-width: 900px) {
+    .home-about-grid {
+        grid-template-columns: 1fr;
+    }
+    .home-extra-grid {
+        grid-template-columns: 1fr;
+    }
+    .info-grid {
+        grid-template-columns: 1fr;
+    }
+    #purpose {
+        width: 100%;
+    }
+    .form-grid {
+        grid-template-columns: 1fr;
+    }
+    .form-span-2 {
+        grid-column: auto;
+    }
+    .brand {
+        min-width: 0;
+    }
 }
 
 footer {

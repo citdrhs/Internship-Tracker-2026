@@ -3,7 +3,97 @@
 {% block title %}About{% endblock %}
 
 {% block content %}
-<h1>Internship Tracker app for DRHS CIT</h1>
-<p>This portal helps students, mentors, and teachers manage internship progress.</p>
-<p><a href="{{ url_for('home') }}">Home</a> | <a href="{{ url_for('login') }}">Login</a> | <a href="{{ url_for('register') }}">Register</a> | <a href="{{ url_for('feedbackPage') }}">Feedback</a></p>
+<main class="page">
+    <header class="page-header">
+        <h1>About the Internship Tracker</h1>
+        <p class="page-subtitle">
+            A shared workspace for daily worklogs, mentor feedback, and progress visibility across the CIT internship program.
+        </p>
+    </header>
+
+    <section class="page-section">
+        <h2>What it does</h2>
+        <div class="info-grid">
+            <div class="info-card">
+                <h3>Daily Worklogs</h3>
+                <p>Students record what they worked on each day, what they learned, questions, and next steps.</p>
+            </div>
+            <div class="info-card">
+                <h3>Mentor Feedback</h3>
+                <p>Mentors provide ratings plus specific action items and focus areas that guide improvement.</p>
+            </div>
+            <div class="info-card">
+                <h3>Progress Over Time</h3>
+                <p>Teachers and mentors can review entries to identify patterns, growth, and areas needing support.</p>
+            </div>
+        </div>
+    </section>
+
+    <section class="page-section">
+        <h2>Who uses it</h2>
+        <div class="info-grid">
+            <div class="info-card">
+                <h3>Students</h3>
+                <ul class="clean-list">
+                    <li>Submit a daily worklog after working.</li>
+                    <li>Capture questions for mentors and your own reflections.</li>
+                    <li>Use action items to plan your next session.</li>
+                </ul>
+            </div>
+            <div class="info-card">
+                <h3>Mentors</h3>
+                <ul class="clean-list">
+                    <li>Write qualitative feedback (what went well, what to improve).</li>
+                    <li>Add concrete action items and focus areas.</li>
+                    <li>Keep feedback specific and repeatable.</li>
+                </ul>
+            </div>
+            <div class="info-card">
+                <h3>Teachers</h3>
+                <ul class="clean-list">
+                    <li>Monitor progress and consistency across weeks.</li>
+                    <li>Use feedback trends to support student growth.</li>
+                    <li>Identify blockers early and help unblock students.</li>
+                </ul>
+            </div>
+        </div>
+    </section>
+
+    <section class="page-section">
+        <h2>How to use (quick guide)</h2>
+        <div class="steps">
+            <div class="step">
+                <div class="step-number">1</div>
+                <div class="step-body">
+                    <h3>Log in</h3>
+                    <p>Use your CIT account to access the portal. Your role controls what pages you can access.</p>
+                </div>
+            </div>
+            <div class="step">
+                <div class="step-number">2</div>
+                <div class="step-body">
+                    <h3>Students: submit a daily worklog</h3>
+                    <p>Record what you did, hours worked, questions, reflections, and next steps.</p>
+                </div>
+            </div>
+            <div class="step">
+                <div class="step-number">3</div>
+                <div class="step-body">
+                    <h3>Mentors: submit feedback</h3>
+                    <p>Add ratings plus written feedback, then include action items and focus areas.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section class="page-section">
+        <h2>User manual</h2>
+        <p>
+            
+            <a href="https://docs.google.com/document/d/1Lkw7CkcCcRlsDT4iFM0-N4RtGognc6ifJNOuCzNV2sA/edit?tab=t.0" target="_blank" rel="noopener noreferrer">
+                Internship Tracker User Manual (Google Doc)
+            </a>
+        </p>
+    </section>
+</main>
 {% endblock %}

@@ -141,6 +141,8 @@ def create_app():
                         CONCAT(u.first_name, ' ', u.last_name) AS student_name,
                         f.week,
                         f.description,
+                        f.action_items,
+                        f.focus_areas,
                         f.rating,
                         f.quality,
                         f.professionalism,
@@ -167,6 +169,8 @@ def create_app():
                         student_id,
                         week,
                         description,
+                        action_items,
+                        focus_areas,
                         quality,
                         professionalism,
                         timeliness,
@@ -266,6 +270,8 @@ def create_app():
         student_id = request.form.get("student", "").strip()
         week = request.form.get("week", "").strip()
         description = request.form.get("description", "").strip()
+        action_items = request.form.get("action_items", "").strip()
+        focus_areas = request.form.get("focus_areas", "").strip()
 
         if not student_id:
             raise ValueError("Student is required.")
@@ -297,6 +303,8 @@ def create_app():
             "student_id": student_id_value,
             "week": week_value,
             "description": description,
+            "action_items": action_items or None,
+            "focus_areas": focus_areas or None,
             "quality": quality,
             "professionalism": professionalism,
             "timeliness": timeliness,
@@ -489,6 +497,8 @@ def create_app():
                                 mentor_id,
                                 week,
                                 description,
+                                action_items,
+                                focus_areas,
                                 quality,
                                 professionalism,
                                 timeliness,
@@ -496,13 +506,15 @@ def create_app():
                                 softskills,
                                 rating
                             )
-                            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+                            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
                             """,
                             (
                                 payload["student_id"],
                                 mentor_id,
                                 payload["week"],
                                 payload["description"],
+                                payload["action_items"],
+                                payload["focus_areas"],
                                 payload["quality"],
                                 payload["professionalism"],
                                 payload["timeliness"],
@@ -580,7 +592,7 @@ def create_app():
             finally:
                 conn.close()
 
-            flash("Progress check saved.", "success")
+            flash("Daily worklog saved.", "success")
             return redirect(url_for("progressCheck"))
 
         entries = fetch_progress_checks(student_id)
@@ -621,6 +633,8 @@ def create_app():
                                 student_id = %s,
                                 week = %s,
                                 description = %s,
+                                action_items = %s,
+                                focus_areas = %s,
                                 quality = %s,
                                 professionalism = %s,
                                 timeliness = %s,
@@ -633,6 +647,8 @@ def create_app():
                                 payload["student_id"],
                                 payload["week"],
                                 payload["description"],
+                                payload["action_items"],
+                                payload["focus_areas"],
                                 payload["quality"],
                                 payload["professionalism"],
                                 payload["timeliness"],
