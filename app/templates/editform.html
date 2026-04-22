@@ -29,59 +29,58 @@
                 </div>
 
                 <div class="form-group form-span-2">
-                    <label for="description">Qualitative Feedback</label>
+                    <label for="description">Qualitative feedback</label>
                     <textarea class="textarea-lg" name="description" id="description" required>{{ feedback[3] }}</textarea>
                 </div>
 
                 <div class="form-group form-span-2">
-                    <label for="action_items">Action Items (specific next steps)</label>
+                    <label for="action_items">Action Items (specific, concrete next steps)</label>
                     <textarea name="action_items" id="action_items">{{ feedback[4] or '' }}</textarea>
                 </div>
 
                 <div class="form-group form-span-2">
-                    <label for="focus_areas">Focus Areas (what to improve)</label>
+                    <label for="focus_areas">Mentor focus areas (what to improve)</label>
                     <textarea name="focus_areas" id="focus_areas">{{ feedback[5] or '' }}</textarea>
                 </div>
 
-                <div class="form-group form-span-2">
-                    <label for="extra_comments">Extra Comments (especially for final week 9)</label>
-                    <textarea name="extra_comments" id="extra_comments">{{ feedback[6] or '' }}</textarea>
-                </div>
-
-                <!-- All 5 rating sliders with correct indices from fetch_feedback_entry -->
                 <div class="form-group">
                     <label for="Quality_of_Work">Quality of Work</label>
-                    <input type="range" name="Quality_of_Work" id="Quality_of_Work" min="1" max="5" value="{{ feedback[7] }}"
+                    <input type="range" name="Quality_of_Work" id="Quality_of_Work" min="1" max="5" value="{{ feedback[6] }}"
                            oninput="document.getElementById('qualityDisplay').textContent = this.value">
-                    <div class="range-labels"><span>1</span><span id="qualityDisplay">{{ feedback[7] }}</span><span>5</span></div>
+                    <div class="range-labels"><span>1</span><span id="qualityDisplay">{{ feedback[6] }}</span><span>5</span></div>
                 </div>
 
                 <div class="form-group">
                     <label for="Professionalism">Professionalism</label>
-                    <input type="range" name="Professionalism" id="Professionalism" min="1" max="5" value="{{ feedback[8] }}"
+                    <input type="range" name="Professionalism" id="Professionalism" min="1" max="5" value="{{ feedback[7] }}"
                            oninput="document.getElementById('professionalismDisplay').textContent = this.value">
-                    <div class="range-labels"><span>1</span><span id="professionalismDisplay">{{ feedback[8] }}</span><span>5</span></div>
+                    <div class="range-labels"><span>1</span><span id="professionalismDisplay">{{ feedback[7] }}</span><span>5</span></div>
                 </div>
 
                 <div class="form-group">
                     <label for="Timeliness_of_Work">Timeliness of Work</label>
-                    <input type="range" name="Timeliness_of_Work" id="Timeliness_of_Work" min="1" max="5" value="{{ feedback[9] }}"
+                    <input type="range" name="Timeliness_of_Work" id="Timeliness_of_Work" min="1" max="5" value="{{ feedback[8] }}"
                            oninput="document.getElementById('timelinessDisplay').textContent = this.value">
-                    <div class="range-labels"><span>1</span><span id="timelinessDisplay">{{ feedback[9] }}</span><span>5</span></div>
+                    <div class="range-labels"><span>1</span><span id="timelinessDisplay">{{ feedback[8] }}</span><span>5</span></div>
                 </div>
 
                 <div class="form-group">
                     <label for="Initiative">Initiative</label>
-                    <input type="range" name="Initiative" id="Initiative" min="1" max="5" value="{{ feedback[10] }}"
+                    <input type="range" name="Initiative" id="Initiative" min="1" max="5" value="{{ feedback[9] }}"
                            oninput="document.getElementById('initiativeDisplay').textContent = this.value">
-                    <div class="range-labels"><span>1</span><span id="initiativeDisplay">{{ feedback[10] }}</span><span>5</span></div>
+                    <div class="range-labels"><span>1</span><span id="initiativeDisplay">{{ feedback[9] }}</span><span>5</span></div>
                 </div>
 
                 <div class="form-group form-span-2">
                     <label for="Soft_Skills">Soft Skills</label>
-                    <input type="range" name="Soft_Skills" id="Soft_Skills" min="1" max="5" value="{{ feedback[11] }}"
+                    <input type="range" name="Soft_Skills" id="Soft_Skills" min="1" max="5" value="{{ feedback[10] }}"
                            oninput="document.getElementById('softSkillsDisplay').textContent = this.value">
-                    <div class="range-labels"><span>1</span><span id="softSkillsDisplay">{{ feedback[11] }}</span><span>5</span></div>
+                    <div class="range-labels"><span>1</span><span id="softSkillsDisplay">{{ feedback[10] }}</span><span>5</span></div>
+                </div>
+
+                <div class="form-group form-span-2">
+                    <label>Current Average</label>
+                    <div class="rating-badge">{{ feedback[11] }}<span>/5</span></div>
                 </div>
 
                 <div class="form-group form-span-2 btn-row">
