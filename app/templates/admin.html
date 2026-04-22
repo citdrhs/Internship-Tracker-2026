@@ -1,0 +1,28 @@
+{% extends 'base.html' %}
+{% block title %}Admin Dashboard{% endblock %}
+{% block content %}
+<div class="container" id="#admin-container">
+    <h1>Admin Dashboard</h1>
+    <p>Total hours worked by each student (aggregated from daily worklogs).</p>
+
+    <h2>Student Hours Summary</h2>
+    <table>
+        <tr>
+            <th>Student Name</th>
+            <th>Total Hours</th>
+            <th>Days Logged</th>
+        </tr>
+        {% for row in hours_data %}
+        <tr>
+            <td>{{ row[0] }}</td>
+            <td>{{ row[1] | round(1) }}</td>
+            <td>{{ row[2] }}</td>
+        </tr>
+        {% endfor %}
+    </table>
+
+    {% if not hours_data %}
+    <p>No worklog data found yet.</p>
+    {% endif %}
+</div>
+{% endblock %}

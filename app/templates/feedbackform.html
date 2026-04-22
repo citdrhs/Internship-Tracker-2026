@@ -3,6 +3,7 @@
 {% block content %}
 <h1>Submit Student Feedback</h1>
 <p><a href="{{ url_for('feedbackPage') }}">Back to feedback list</a> or <a href="{{ url_for('home') }}">return home</a>.</p>
+
 <div class="container">
     <div class="card card--wide">
         {% with messages = get_flashed_messages(with_categories=true) %}
@@ -31,53 +32,59 @@
                 </div>
 
                 <div class="form-group form-span-2">
-                    <label for="description">Qualitative feedback</label>
-                    <textarea class="textarea-lg" name="description" id="description" placeholder="Write your feedback here..." required></textarea>
+                    <label for="description">Qualitative Feedback</label>
+                    <textarea class="textarea-lg" name="description" id="description" placeholder="Write your detailed feedback here..." required></textarea>
                 </div>
 
                 <div class="form-group form-span-2">
-                    <label for="action_items">Action Items (specific, concrete next steps)</label>
-                    <textarea name="action_items" id="action_items" placeholder="Example: Add docstrings to all public functions; write 3 unit tests for the parsing module; refactor the login route into smaller helpers."></textarea>
+                    <label for="action_items">Action Items</label>
+                    <textarea name="action_items" id="action_items"></textarea>
                 </div>
 
                 <div class="form-group form-span-2">
-                    <label for="focus_areas">Mentor focus areas (what to improve)</label>
-                    <textarea name="focus_areas" id="focus_areas" placeholder="Example: Commenting on code must be done more thoroughly; commit messages should explain the why; break down large PRs into smaller chunks."></textarea>
+                    <label for="focus_areas">Focus Areas</label>
+                    <textarea name="focus_areas" id="focus_areas"></textarea>
                 </div>
 
+                <div class="form-group form-span-2">
+                    <label for="extra_comments">Extra Comments (especially for week 9)</label>
+                    <textarea name="extra_comments" id="extra_comments"></textarea>
+                </div>
+
+                <!-- Ratings - all same size -->
                 <div class="form-group">
                     <label for="Quality_of_Work">Quality of Work</label>
-                    <input type="range" name="Quality_of_Work" id="Quality_of_Work" min="1" max="5" value="3"
-                           oninput="document.getElementById('qualityDisplay').textContent = this.value">
+                    <input type="range" name="Quality_of_Work" id="Quality_of_Work" min="1" max="5" value="3" oninput="updateAverage()">
                     <div class="range-labels"><span>1</span><span id="qualityDisplay">3</span><span>5</span></div>
                 </div>
 
                 <div class="form-group">
                     <label for="Professionalism">Professionalism</label>
-                    <input type="range" name="Professionalism" id="Professionalism" min="1" max="5" value="3"
-                           oninput="document.getElementById('professionalismDisplay').textContent = this.value">
+                    <input type="range" name="Professionalism" id="Professionalism" min="1" max="5" value="3" oninput="updateAverage()">
                     <div class="range-labels"><span>1</span><span id="professionalismDisplay">3</span><span>5</span></div>
                 </div>
 
                 <div class="form-group">
                     <label for="Timeliness_of_Work">Timeliness of Work</label>
-                    <input type="range" name="Timeliness_of_Work" id="Timeliness_of_Work" min="1" max="5" value="3"
-                           oninput="document.getElementById('timelinessDisplay').textContent = this.value">
+                    <input type="range" name="Timeliness_of_Work" id="Timeliness_of_Work" min="1" max="5" value="3" oninput="updateAverage()">
                     <div class="range-labels"><span>1</span><span id="timelinessDisplay">3</span><span>5</span></div>
                 </div>
 
                 <div class="form-group">
                     <label for="Initiative">Initiative</label>
-                    <input type="range" name="Initiative" id="Initiative" min="1" max="5" value="3"
-                           oninput="document.getElementById('initiativeDisplay').textContent = this.value">
+                    <input type="range" name="Initiative" id="Initiative" min="1" max="5" value="3" oninput="updateAverage()">
                     <div class="range-labels"><span>1</span><span id="initiativeDisplay">3</span><span>5</span></div>
                 </div>
 
-                <div class="form-group form-span-2">
+                <div class="form-group">
                     <label for="Soft_Skills">Soft Skills</label>
-                    <input type="range" name="Soft_Skills" id="Soft_Skills" min="1" max="5" value="3"
-                           oninput="document.getElementById('softSkillsDisplay').textContent = this.value">
+                    <input type="range" name="Soft_Skills" id="Soft_Skills" min="1" max="5" value="3" oninput="updateAverage()">
                     <div class="range-labels"><span>1</span><span id="softSkillsDisplay">3</span><span>5</span></div>
+                </div>
+
+                <div class="form-group form-span-2">
+                    <label>Overall Rating</label>
+                    <div class="rating-badge" id="overallRating">3.00 / 5</div>
                 </div>
 
                 <div class="form-group form-span-2 btn-row">
@@ -88,4 +95,17 @@
         </form>
     </div>
 </div>
+
+<script>
+function updateAverage() {
+    const q = parseFloat(document.getElementById('Quality_of_Work').value) || 0;
+    const p = parseFloat(document.getElementById('Professionalism').value) || 0;
+    const t = parseFloat(document.getElementById('Timeliness_of_Work').value) || 0;
+    const i = parseFloat(document.getElementById('Initiative').value) || 0;
+    const s = parseFloat(document.getElementById('Soft_Skills').value) || 0;
+    const avg = ((q + p + t + i + s) / 5).toFixed(2);
+    document.getElementById('overallRating').textContent = avg + " / 5";
+}
+</script>
+
 {% endblock %}

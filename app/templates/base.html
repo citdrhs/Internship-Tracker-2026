@@ -19,12 +19,30 @@
         <nav class="primary-navigation">
             <ul>
                 <li><a href="{{ url_for('home') }}">Home</a></li>
-                <li><a href="{{ url_for('feedbackPage') }}">Feedback</a></li>
+
+                <!-- Mentors see: Submit Feedback -->
+                {% if session.get('is_mentor') %}
                 <li><a href="{{ url_for('submitFeedback') }}">Submit Feedback</a></li>
+                {% endif %}
+
+                <!-- Students see: Daily Worklog + Feedback  -->
                 {% if session.get('email') and not session.get('is_admin') and not session.get('is_teacher') and not session.get('is_mentor') %}
                 <li><a href="{{ url_for('progressCheck') }}">Daily Worklog</a></li>
+                <li><a href="{{ url_for('feedbackPage') }}">My Feedback</a></li>
                 {% endif %}
+
+                <!-- Admins + Mentors + Teachers see general Feedback list -->
+                {% if session.get('is_admin') or session.get('is_teacher') or session.get('is_mentor') %}
+                <li><a href="{{ url_for('feedbackPage') }}">Feedback</a></li>
+                {% endif %}
+
+                <!-- Only Admins see Admin Dashboard -->
+                {% if session.get('is_admin') %}
+                <li><a href="{{ url_for('admin') }}">Admin Dashboard</a></li>
+                {% endif %}
+
                 <li><a href="{{ url_for('about') }}">About</a></li>
+
                 {% if session.get('email') %}
                 <li><a href="{{ url_for('logout') }}">Logout</a></li>
                 {% else %}
@@ -34,7 +52,6 @@
             </ul>
         </nav>
     </div>
-    
 
     <div class="content">
         {% block content %} {% endblock %}
