@@ -1,0 +1,34 @@
+{% extends 'base.html' %}
+{% block title %}Edit Organization{% endblock %}
+{% block content %}
+<h1>Edit Organization</h1>
+<div class="container">
+    <div class="card">
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                {% for category, message in messages %}
+                    <div class="alert alert-{{ category }}">{{ message }}</div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+
+        <form method="post">
+            <div class="form-group">
+                <label for="organization_name">Organization Name</label>
+                <input
+                    type="text"
+                    id="organization_name"
+                    name="organization_name"
+                    value="{{ organization[1] }}"
+                    required
+                >
+            </div>
+
+            <div class="form-group btn-row">
+                <button type="submit" class="btn-submit">Save Changes</button>
+                <a href="{{ url_for('admin') }}" class="cancel-link">Cancel</a>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}

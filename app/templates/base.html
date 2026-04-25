@@ -10,7 +10,7 @@
 
     <div class="wrapper" id="navbar">
         <div class="brand">
-            <img class="brand-logo" src="{{ url_for('static', filename='cit-logo.png') }}" alt="CIT logo">
+            <img class="brand-logo" src="{{ url_for('static', filename='small-logo.svg') }}" alt="CIT logo">
             <div class="brand-text">
                 <div class="brand-title">Internship Tracker</div>
                 <div class="brand-subtitle">CIT • Daily Worklogs • Mentor Feedback</div>
@@ -18,18 +18,31 @@
         </div>
         <nav class="primary-navigation">
             <ul>
-                <li><a href="{{ url_for('home') }}">Home</a></li>
-                <li><a href="{{ url_for('feedbackPage') }}">Feedback</a></li>
-                <li><a href="{{ url_for('submitFeedback') }}">Submit Feedback</a></li>
-                {% if session.get('email') and not session.get('is_admin') and not session.get('is_teacher') and not session.get('is_mentor') %}
-                <li><a href="{{ url_for('progressCheck') }}">Daily Worklog</a></li>
-                {% endif %}
-                <li><a href="{{ url_for('about') }}">About</a></li>
                 {% if session.get('email') %}
-                <li><a href="{{ url_for('logout') }}">Logout</a></li>
+                    <li><a href="{{ url_for('home') }}">Home</a></li>
+                    <li><a href="{{ url_for('about') }}">About</a></li>
+
+                    {% if session.get('is_present_view') %}
+                        <li><a href="{{ url_for('progressCheck') }}">Daily Worklog</a></li>
+                        <li><a href="{{ url_for('feedbackPage') }}">Feedback</a></li>
+                        <li><a href="{{ url_for('submitFeedback') }}">Submit Feedback</a></li>
+                        <li><a href="{{ url_for('admin') }}">Admin</a></li>
+
+                    {% elif session.get('is_admin') %}
+                        <li><a href="{{ url_for('admin') }}">Admin</a></li>
+
+                    {% elif session.get('is_mentor') %}
+                        <li><a href="{{ url_for('feedbackPage') }}">Feedback</a></li>
+                        <li><a href="{{ url_for('submitFeedback') }}">Submit Feedback</a></li>
+
+                    {% else %}
+                        <li><a href="{{ url_for('progressCheck') }}">Daily Worklog</a></li>
+                    {% endif %}
+
+                    <li><a href="{{ url_for('logout') }}">Logout</a></li>
                 {% else %}
-                <li><a href="{{ url_for('login') }}">Login</a></li>
-                <li><a href="{{ url_for('register') }}">Register</a></li>
+                    <li><a href="{{ url_for('login') }}">Login</a></li>
+                    <li><a href="{{ url_for('register') }}">Register</a></li>
                 {% endif %}
             </ul>
         </nav>

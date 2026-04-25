@@ -414,6 +414,70 @@ h1 {
     gap: 15px;
 }
 
+/* Admin dashboard */
+#admin-container {
+    width: min(1120px, 100%);
+    margin: 0 auto;
+    display: block;
+    padding: 28px 20px 80px;
+}
+
+.admin-header {
+    margin-bottom: 18px;
+}
+
+.admin-header h1 {
+    margin: 0;
+    text-align: left;
+}
+
+.admin-panel {
+    width: 100%;
+    background-color: #ececec;
+    border-radius: 15px;
+    padding: 22px;
+    margin-bottom: 22px;
+    overflow-x: auto;
+}
+
+.admin-panel h2 {
+    margin-top: 0;
+}
+
+.admin-student-select,
+.admin-org-form {
+    margin-bottom: 18px;
+}
+
+.admin-select-row {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+}
+
+.admin-select-row select,
+.admin-select-row input {
+    flex: 1;
+    min-width: 0;
+}
+
+.admin-select-row button {
+    white-space: nowrap;
+}
+
+.admin-table {
+    width: 100%;
+    margin: 14px 0 24px;
+}
+
+.admin-organizations {
+    margin-top: 34px;
+}
+
+.admin-org-list {
+    margin-bottom: 0;
+}
+
 /* Home page*/
 
 .landing-main {
@@ -668,6 +732,10 @@ h1 {
     }
     .brand {
         min-width: 0;
+    }
+    .admin-select-row {
+        align-items: stretch;
+        flex-direction: column;
     }
 }
 
