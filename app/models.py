@@ -56,7 +56,7 @@ class MentorAssignment(db.Model):
     student_id = db.Column(db.Integer, db.ForeignKey('users.id', ondelete='CASCADE'), nullable=False)
     mentor_id = db.Column(db.Integer, db.ForeignKey('users.id', ondelete='CASCADE'), nullable=False)
     assigned_at = db.Column(db.DateTime, server_default=db.func.now())
-    __table_args__ = (db.UniqueConstraint('student_id', 'mentor_id', name='_student_mentor_uc'),)
+    __table_args__ = (db.UniqueConstraint('student_id', name='_student_mentor_uc'),)
 
 class PendingUser(db.Model):
     __tablename__ = 'pending_users'

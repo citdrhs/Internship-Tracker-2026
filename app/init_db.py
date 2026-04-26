@@ -61,7 +61,7 @@ CREATE TABLE mentor_assignments (
     student_id BIGINT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
     mentor_id BIGINT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
     assigned_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-    UNIQUE (student_id, mentor_id)
+    UNIQUE (student_id)
 );
 
 CREATE TABLE progress_checks (
