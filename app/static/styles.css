@@ -743,6 +743,7 @@ footer {
     bottom: 0;
     border-top: 2px solid #ececec;
     padding: 15px;
+    background-color: #ffffff;
 }
 
 footer a {
