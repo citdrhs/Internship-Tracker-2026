@@ -10,7 +10,7 @@ from flask_bcrypt import Bcrypt
 from flask_mail import Mail, Message
 from app.forms import LoginForm, RegisterForm
 from itsdangerous import URLSafeTimedSerializer
-from app.models import PendingUser, User, db
+from app.models import PendingUser, User, MentorAssignment, db
 
 BASE_DIR = Path(__file__).resolve().parent
 TEMPLATES_DIR = BASE_DIR / "templates"
@@ -68,6 +68,25 @@ def get_db_connection():
         port=settings["port"],
     )
 
+def fetch_all_mentors():
+    conn = get_db_connection()
+    try:
+        with conn.cursor() as cur:
+            cur.execute(
+                """
+                SELECT
+                    u.id,
+                    CONCAT(u.first_name, ' ', u.last_name) AS mentor_name,
+                    COALESCE(o.name, u.organization) AS organization_name
+                FROM users u
+                LEFT JOIN organizations o ON u.organization_id = o.id
+                WHERE COALESCE(u.is_mentor, FALSE) = TRUE
+                ORDER BY COALESCE(o.name, u.organization), u.first_name, u.last_name
+                """
+            )
+            return cur.fetchall()
+    finally:
+        conn.close()
 
 app = Flask(
     __name__,
@@ -93,7 +112,13 @@ def require_login():
         return redirect(url_for("login"))
     return None
 
+def is_present_view_session():
+    return bool(session.get("is_present_view"))
+
 def is_student_session():
+    if is_present_view_session():
+        return True
+
     return not any(
         [
             session.get("is_admin"),
@@ -107,52 +132,133 @@ def require_student():
     if login_redirect:
         return login_redirect
     if not is_student_session():
-        flash("That page is only available to students.", "warning")
+        flash("That page is only available to students or present view.", "warning")
         return redirect(url_for("home"))
     return None
 
-def fetch_students():
+def fetch_students(mentor_id=None):
     conn = get_db_connection()
     try:
         with conn.cursor() as cur:
-            cur.execute(
-                """
-                SELECT id, CONCAT(first_name, ' ', last_name) AS full_name
-                FROM users
-                WHERE COALESCE(is_admin, FALSE) = FALSE
-                  AND COALESCE(is_teacher, FALSE) = FALSE
-                  AND COALESCE(is_mentor, FALSE) = FALSE
-                ORDER BY first_name, last_name
-                """
-            )
+            if mentor_id is not None:
+                cur.execute(
+                    """
+                    SELECT u.id, CONCAT(u.first_name, ' ', u.last_name) AS full_name
+                    FROM users u
+                    JOIN mentor_assignments ma ON ma.student_id = u.id
+                    WHERE ma.mentor_id = %s
+                      AND COALESCE(u.is_admin, FALSE) = FALSE
+                      AND COALESCE(u.is_teacher, FALSE) = FALSE
+                      AND COALESCE(u.is_mentor, FALSE) = FALSE
+                      AND COALESCE(u.is_present_view, FALSE) = FALSE
+                    ORDER BY u.first_name, u.last_name
+                    """,
+                    (mentor_id,),
+                )
+            else:
+                cur.execute(
+                    """
+                    SELECT id, CONCAT(first_name, ' ', last_name) AS full_name
+                    FROM users
+                    WHERE COALESCE(is_admin, FALSE) = FALSE
+                      AND COALESCE(is_teacher, FALSE) = FALSE
+                      AND COALESCE(is_mentor, FALSE) = FALSE
+                      AND COALESCE(is_present_view, FALSE) = FALSE
+                    ORDER BY first_name, last_name
+                    """
+                )
             return cur.fetchall()
     finally:
         conn.close()
 
-def fetch_feedback():
+def fetch_feedback_students():
+    if session.get("is_admin") or session.get("is_present_view"):
+        return fetch_students()
+
+    if session.get("is_mentor"):
+        mentor_id = get_current_user_id()
+        if mentor_id is None:
+            return []
+        return fetch_students(mentor_id=mentor_id)
+
+    return []
+
+def can_access_student(student_id):
+    if session.get("is_admin") or session.get("is_present_view"):
+        return True
+
+    if not session.get("is_mentor"):
+        return False
+
+    mentor_id = get_current_user_id()
+    if mentor_id is None:
+        return False
+
     conn = get_db_connection()
     try:
         with conn.cursor() as cur:
             cur.execute(
                 """
-                SELECT
-                    f.id,
-                    CONCAT(u.first_name, ' ', u.last_name) AS student_name,
-                    f.week,
-                    f.description,
-                    f.action_items,
-                    f.focus_areas,
-                    f.rating,
-                    f.quality,
-                    f.professionalism,
-                    f.timeliness,
-                    f.initiative,
-                    f.softskills
-                FROM feedback f
-                JOIN users u ON f.student_id = u.id
-                ORDER BY f.week DESC, f.id DESC
-                """
+                SELECT 1
+                FROM mentor_assignments
+                WHERE mentor_id = %s
+                  AND student_id = %s
+                """,
+                (mentor_id, student_id),
             )
+            return cur.fetchone() is not None
+    finally:
+        conn.close()
+
+def fetch_feedback(mentor_id=None):
+    conn = get_db_connection()
+    try:
+        with conn.cursor() as cur:
+            if mentor_id is not None:
+                cur.execute(
+                    """
+                    SELECT
+                        f.id,
+                        CONCAT(u.first_name, ' ', u.last_name) AS student_name,
+                        f.week,
+                        f.description,
+                        f.action_items,
+                        f.focus_areas,
+                        f.rating,
+                        f.quality,
+                        f.professionalism,
+                        f.timeliness,
+                        f.initiative,
+                        f.softskills
+                    FROM feedback f
+                    JOIN users u ON f.student_id = u.id
+                    JOIN mentor_assignments ma ON ma.student_id = u.id
+                    WHERE ma.mentor_id = %s
+                    ORDER BY f.week DESC, f.id DESC
+                    """,
+                    (mentor_id,),
+                )
+            else:
+                cur.execute(
+                    """
+                    SELECT
+                        f.id,
+                        CONCAT(u.first_name, ' ', u.last_name) AS student_name,
+                        f.week,
+                        f.description,
+                        f.action_items,
+                        f.focus_areas,
+                        f.rating,
+                        f.quality,
+                        f.professionalism,
+                        f.timeliness,
+                        f.initiative,
+                        f.softskills
+                    FROM feedback f
+                    JOIN users u ON f.student_id = u.id
+                    ORDER BY f.week DESC, f.id DESC
+                    """
+                )
             return cur.fetchall()
     finally:
         conn.close()
@@ -185,6 +291,101 @@ def fetch_feedback_entry(feedback_id):
     finally:
         conn.close()
 
+def fetch_student_hours_summary(student_id):
+    conn = get_db_connection()
+    try:
+        with conn.cursor() as cur:
+            cur.execute(
+                """
+                WITH progress_totals AS (
+                    SELECT
+                        student_id,
+                        COALESCE(SUM(hours_worked), 0) AS total_hours,
+                        COUNT(id) AS days_logged
+                    FROM progress_checks
+                    GROUP BY student_id
+                ),
+                feedback_averages AS (
+                    SELECT
+                        student_id,
+                        ROUND(AVG(quality)::numeric, 2) AS avg_quality,
+                        ROUND(AVG(professionalism)::numeric, 2) AS avg_professionalism,
+                        ROUND(AVG(timeliness)::numeric, 2) AS avg_timeliness,
+                        ROUND(AVG(initiative)::numeric, 2) AS avg_initiative,
+                        ROUND(AVG(softskills)::numeric, 2) AS avg_softskills,
+                        ROUND(AVG(rating)::numeric, 2) AS total_average_rating
+                    FROM feedback
+                    GROUP BY student_id
+                ),
+                mentor_info AS (
+                    SELECT
+                        ma.student_id,
+                        STRING_AGG(DISTINCT CONCAT(m.first_name, ' ', m.last_name), ', ') AS mentor_name,
+                        STRING_AGG(DISTINCT COALESCE(o.name, m.organization), ', ') AS mentor_organization
+                    FROM mentor_assignments ma
+                    JOIN users m ON ma.mentor_id = m.id
+                    LEFT JOIN organizations o ON m.organization_id = o.id
+                    GROUP BY ma.student_id
+                )
+                SELECT
+                    u.id,
+                    CONCAT(u.first_name, ' ', u.last_name) AS student_name,
+                    COALESCE(pt.total_hours, 0) AS total_hours,
+                    COALESCE(pt.days_logged, 0) AS days_logged,
+                    COALESCE(mi.mentor_name, 'No mentor assigned') AS mentor_name,
+                    COALESCE(mi.mentor_organization, '') AS mentor_organization,
+                    fa.avg_quality,
+                    fa.avg_professionalism,
+                    fa.avg_timeliness,
+                    fa.avg_initiative,
+                    fa.avg_softskills,
+                    fa.total_average_rating
+                FROM users u
+                LEFT JOIN progress_totals pt ON pt.student_id = u.id
+                LEFT JOIN feedback_averages fa ON fa.student_id = u.id
+                LEFT JOIN mentor_info mi ON mi.student_id = u.id
+                WHERE u.id = %s
+                  AND COALESCE(u.is_admin, FALSE) = FALSE
+                  AND COALESCE(u.is_teacher, FALSE) = FALSE
+                  AND COALESCE(u.is_mentor, FALSE) = FALSE
+                  AND COALESCE(u.is_present_view, FALSE) = FALSE
+                """,
+                (student_id,),
+            )
+            return cur.fetchone()
+    finally:
+        conn.close()
+
+def fetch_feedback_for_student(student_id):
+    conn = get_db_connection()
+    try:
+        with conn.cursor() as cur:
+            cur.execute(
+                """
+                SELECT
+                    f.id,
+                    CONCAT(u.first_name, ' ', u.last_name) AS student_name,
+                    f.week,
+                    f.description,
+                    f.action_items,
+                    f.focus_areas,
+                    f.rating,
+                    f.quality,
+                    f.professionalism,
+                    f.timeliness,
+                    f.initiative,
+                    f.softskills
+                FROM feedback f
+                JOIN users u ON f.student_id = u.id
+                WHERE f.student_id = %s
+                ORDER BY f.week DESC, f.id DESC
+                """,
+                (student_id,),
+            )
+            return cur.fetchall()
+    finally:
+        conn.close()
+
 def fetch_progress_checks(student_id):
     conn = get_db_connection()
     try:
@@ -206,6 +407,61 @@ def fetch_progress_checks(student_id):
                 ORDER BY day_worked DESC, created_at DESC
                 """,
                 (student_id,),
+            )
+            return cur.fetchall()
+    finally:
+        conn.close()
+def fetch_organizations():
+    conn = get_db_connection()
+    try:
+        with conn.cursor() as cur:
+            cur.execute(
+                """
+                SELECT id, name
+                FROM organizations
+                ORDER BY name
+                """
+            )
+            return cur.fetchall()
+    finally:
+        conn.close()
+
+def fetch_organization_entry(organization_id):
+    conn = get_db_connection()
+    try:
+        with conn.cursor() as cur:
+            cur.execute(
+                """
+                SELECT id, name
+                FROM organizations
+                WHERE id = %s
+                """,
+                (organization_id,),
+            )
+            return cur.fetchone()
+    finally:
+        conn.close()
+
+def fetch_organization_name(organization_id):
+    if organization_id is None:
+        return None
+
+    organization = fetch_organization_entry(organization_id)
+    return organization[1] if organization else None
+
+def fetch_mentors_by_organization(organization_id):
+    conn = get_db_connection()
+    try:
+        with conn.cursor() as cur:
+            cur.execute(
+                """
+                SELECT id, CONCAT(first_name, ' ', last_name) AS full_name
+                FROM users
+                WHERE organization_id = %s
+                  AND COALESCE(is_mentor, FALSE) = TRUE
+                ORDER BY first_name, last_name
+                """,
+                (organization_id,),
             )
             return cur.fetchall()
     finally:
@@ -350,33 +606,12 @@ def login():
             flash("Incorrect password.", "danger")
             return redirect(url_for("login"))
 
-        code = form.security_code.data
-        updated = False
-        if code:
-            try:
-                code_int = int(code)
-                if code_int == int(os.environ.get("ADMIN_CODE", 0)):
-                    user.is_admin = True
-                    updated = True
-                elif code_int == int(os.environ.get("TEACHER_CODE", 0)):
-                    user.is_teacher = True
-                    updated = True
-                elif code_int == int(os.environ.get("MENTOR_CODE", 0)):
-                    user.is_mentor = True
-                    updated = True
-                if updated:
-                    db.session.commit()
-                    flash("Role updated based on security code.", "success")
-                else:
-                    flash("Invalid security code.", "warning")
-            except ValueError:
-                flash("Security code must be a number.", "danger")
-
         session["email"] = user.email
-        session["organization"] = user.organization
-        session["is_admin"] = user.is_admin
-        session["is_teacher"] = user.is_teacher
-        session["is_mentor"] = user.is_mentor
+        session["organization"] = fetch_organization_name(user.organization_id) or user.organization
+        session["is_admin"] = bool(user.is_admin)
+        session["is_teacher"] = bool(user.is_teacher)
+        session["is_mentor"] = bool(user.is_mentor)
+        session["is_present_view"] = bool(user.is_present_view)
 
         return redirect(url_for("home"))
 
@@ -398,14 +633,244 @@ def home():
 def about():
     return render_template("about.html")
 
+@app.route("/intr/admin", methods=["GET", "POST"])
+def admin():
+    login_redirect = require_login()
+    if login_redirect:
+        return login_redirect
+
+    if not session.get("is_admin") and not session.get("is_present_view"):
+        return redirect(url_for("home"))
+
+    if request.method == "POST":
+        organization_name = request.form.get("organization_name", "").strip()
+
+        if not organization_name:
+            flash("Organization name is required.", "danger")
+            return redirect(url_for("admin"))
+
+        conn = get_db_connection()
+        try:
+            with conn:
+                with conn.cursor() as cur:
+                    cur.execute(
+                        """
+                        INSERT INTO organizations (name)
+                        VALUES (%s)
+                        ON CONFLICT (name) DO NOTHING
+                        """,
+                        (organization_name,),
+                    )
+            flash("Organization added.", "success")
+        finally:
+            conn.close()
+
+        return redirect(url_for("admin"))
+
+    students = fetch_students()
+    organizations = fetch_organizations()
+    selected_student_id = request.args.get("student_id", "").strip()
+    selected_week = request.args.get("week", "").strip()
+    selected_student = None
+    selected_feedback = []
+    selected_week_feedback = []
+    week_options = []
+
+    if selected_student_id:
+        try:
+            student_id_value = int(selected_student_id)
+        except ValueError:
+            flash("Please select a valid student.", "danger")
+        else:
+            selected_student = fetch_student_hours_summary(student_id_value)
+            selected_feedback = fetch_feedback_for_student(student_id_value)
+
+            if selected_feedback:
+                week_options = sorted({feedback[2] for feedback in selected_feedback})
+
+            if selected_week:
+                try:
+                    selected_week_value = int(selected_week)
+                except ValueError:
+                    flash("Please select a valid week.", "danger")
+                else:
+                    selected_week_feedback = [
+                        feedback for feedback in selected_feedback if feedback[2] == selected_week_value
+                    ]
+
+            if selected_student is None:
+                flash("Student not found.", "warning")
+
+    return render_template(
+        "admin.html",
+        students=students,
+        selected_student_id=selected_student_id,
+        selected_student=selected_student,
+        selected_feedback=selected_feedback,
+        selected_week=selected_week,
+        selected_week_feedback=selected_week_feedback,
+        week_options=week_options,
+        organizations=organizations,
+    )
+
+@app.route("/intr/admin/present-view", methods=["POST"])
+def toggle_present_view():
+    login_redirect = require_login()
+    if login_redirect:
+        return login_redirect
+
+    if not session.get("is_admin") and not session.get("is_present_view"):
+        return redirect(url_for("home"))
+
+    session["is_present_view"] = not session.get("is_present_view", False)
+    return redirect(url_for("admin" if session.get("is_admin") or session.get("is_present_view") else "home"))
+
+@app.route("/intr/admin/organizations/<int:id>/edit", methods=["GET", "POST"])
+def editOrganization(id):
+    login_redirect = require_login()
+    if login_redirect:
+        return login_redirect
+
+    if not session.get("is_admin") and not session.get("is_present_view"):
+        return redirect(url_for("home"))
+
+    organization = fetch_organization_entry(id)
+    if organization is None:
+        flash("Organization not found.", "warning")
+        return redirect(url_for("admin"))
+
+    if request.method == "POST":
+        organization_name = request.form.get("organization_name", "").strip()
+
+        if not organization_name:
+            flash("Organization name is required.", "danger")
+            return render_template("editorganization.html", organization=organization)
+
+        conn = get_db_connection()
+        try:
+            with conn:
+                with conn.cursor() as cur:
+                    cur.execute(
+                        "UPDATE organizations SET name = %s WHERE id = %s",
+                        (organization_name, id),
+                    )
+                    cur.execute(
+                        "UPDATE users SET organization = %s WHERE organization = %s",
+                        (organization_name, organization[1]),
+                    )
+                    cur.execute(
+                        "UPDATE pending_users SET organization = %s WHERE organization = %s",
+                        (organization_name, organization[1]),
+                    )
+        except psycopg2.IntegrityError:
+            flash("Organization already exists.", "danger")
+            return render_template("editorganization.html", organization=organization)
+        finally:
+            conn.close()
+
+        flash("Organization updated.", "success")
+        return redirect(url_for("admin"))
+
+    return render_template("editorganization.html", organization=organization)
+
+@app.route("/intr/admin/organizations/<int:id>/delete", methods=["POST"])
+def deleteOrganization(id):
+    login_redirect = require_login()
+    if login_redirect:
+        return login_redirect
+
+    if not session.get("is_admin") and not session.get("is_present_view"):
+        return redirect(url_for("home"))
+
+    conn = get_db_connection()
+    try:
+        with conn:
+            with conn.cursor() as cur:
+                organization = fetch_organization_entry(id)
+                if organization is not None:
+                    cur.execute(
+                        "UPDATE users SET organization = NULL, organization_id = NULL WHERE organization_id = %s OR organization = %s",
+                        (id, organization[1]),
+                    )
+                    cur.execute(
+                        "UPDATE pending_users SET organization = NULL, organization_id = NULL WHERE organization_id = %s OR organization = %s",
+                        (id, organization[1]),
+                    )
+                cur.execute("DELETE FROM organizations WHERE id = %s", (id,))
+                deleted = cur.rowcount
+    finally:
+        conn.close()
+
+    if deleted:
+        flash("Organization deleted.", "success")
+    else:
+        flash("Organization not found.", "warning")
+    return redirect(url_for("admin"))
+
+
 @app.route("/intr/registration-pending")
 def registration_pending():
     return render_template("confirm_email.html", confirm_url="#")
 
+
+
+
 @app.route("/intr/register", methods=["GET", "POST"])
 def register():
     form = RegisterForm()
+    organizations = fetch_organizations()
+    mentors = fetch_all_mentors()
+
     if request.method == "POST" and form.validate_on_submit():
+        selected_role = request.form.get("role", "").strip()
+        selected_organization_id = request.form.get("organization", "").strip()
+        selected_mentor_id = request.form.get("mentor_id", "").strip()
+        security_code = form.security_code.data.strip() if form.security_code.data else ""
+
+        if selected_role not in ["student", "mentor", "admin"]:
+            flash("Please select Student, Mentor, or Admin.", "danger")
+            return render_template("register.html", form=form, organizations=organizations, mentors=mentors)
+
+        is_admin = False
+        is_mentor = False
+        is_teacher = False
+        organization_id_value = None
+        selected_organization = None
+
+        if selected_role == "student":
+            if not selected_mentor_id:
+                flash("Students must select a mentor.", "danger")
+                return render_template("register.html", form=form, organizations=organizations, mentors=mentors)
+
+        elif selected_role == "mentor":
+            if not selected_organization_id:
+                flash("Mentors must select an organization.", "danger")
+                return render_template("register.html", form=form, organizations=organizations, mentors=mentors)
+
+            try:
+                organization_id_value = int(selected_organization_id)
+            except ValueError:
+                flash("Please select a valid organization.", "danger")
+                return render_template("register.html", form=form, organizations=organizations, mentors=mentors)
+
+            selected_organization = fetch_organization_entry(organization_id_value)
+            if selected_organization is None:
+                flash("Please select a valid organization.", "danger")
+                return render_template("register.html", form=form, organizations=organizations, mentors=mentors)
+
+            if security_code != os.environ.get("MENTOR_CODE"):
+                flash("Invalid mentor security code.", "danger")
+                return render_template("register.html", form=form, organizations=organizations, mentors=mentors)
+
+            is_mentor = True
+
+        elif selected_role == "admin":
+            if security_code != os.environ.get("ADMIN_CODE"):
+                flash("Invalid admin security code.", "danger")
+                return render_template("register.html", form=form, organizations=organizations, mentors=mentors)
+
+            is_admin = True
+
         if User.query.filter_by(email=form.email.data).first():
             flash("Email already in use.", "danger")
             return redirect(url_for("register"))
@@ -432,12 +897,16 @@ def register():
             first_name=form.first_name.data,
             last_name=form.last_name.data,
             password=bcrypt.generate_password_hash(form.password.data).decode("utf-8"),
-            grade=form.grade.data,
-            organization=form.organization.data,
-            is_admin=False,
-            is_mentor=False,
-            is_teacher=False,
+            organization=selected_organization[1] if selected_organization else None,
+            organization_id=organization_id_value,
+            role=selected_role,
+            requested_mentor_id=int(selected_mentor_id) if selected_role == "student" else None,
+            is_admin=is_admin,
+            is_mentor=is_mentor,
+            is_teacher=is_teacher,
+            is_present_view=False,
         )
+
         db.session.add(pending_user)
         db.session.commit()
 
@@ -445,7 +914,12 @@ def register():
         flash("A confirmation email has been sent.", "info")
         return redirect(url_for("registration_pending"))
 
-    return render_template("register.html", form=form)
+    return render_template(
+        "register.html",
+        form=form,
+        organizations=organizations,
+        mentors=mentors,
+    )
 
 @app.route("/intr/feedback")
 def feedbackPage():
@@ -453,8 +927,16 @@ def feedbackPage():
     if login_redirect:
         return login_redirect
 
+    if not session.get("is_mentor") and not session.get("is_admin") and not session.get("is_present_view"):
+        flash("That page is only available to mentors, admins, or presenter view.", "warning")
+        return redirect(url_for("home"))
+
+    if session.get("is_admin") and not session.get("is_present_view"):
+        return redirect(url_for("admin"))
+
     try:
-        feedback = fetch_feedback()
+        mentor_id = get_current_user_id() if session.get("is_mentor") and not session.get("is_present_view") else None
+        feedback = fetch_feedback(mentor_id=mentor_id)
     except psycopg2.Error:
         flash("Feedback data could not be loaded. Run initdb.py to create the tables.", "danger")
         feedback = []
@@ -466,8 +948,12 @@ def submitFeedback():
     if login_redirect:
         return login_redirect
 
+    if not session.get("is_mentor") and not session.get("is_admin") and not session.get("is_present_view"):
+        flash("That page is only available to mentors, admins, or presenter view.", "warning")
+        return redirect(url_for("home"))
+
     try:
-        students = fetch_students()
+        students = fetch_feedback_students()
     except psycopg2.Error:
         flash("Student list could not be loaded. Run initdb.py to create the tables.", "danger")
         return redirect(url_for("feedbackPage"))
@@ -477,6 +963,10 @@ def submitFeedback():
             payload = validate_feedback_form()
         except ValueError as exc:
             flash(str(exc), "danger")
+            return render_template("feedbackform.html", students=students)
+
+        if not can_access_student(payload["student_id"]):
+            flash("You can only submit feedback for assigned students.", "danger")
             return render_template("feedbackform.html", students=students)
 
         mentor_id = get_current_user_id()
@@ -603,8 +1093,12 @@ def editFeedback(id):
     if login_redirect:
         return login_redirect
 
+    if not session.get("is_mentor") and not session.get("is_admin") and not session.get("is_present_view"):
+        flash("That page is only available to mentors, admins, or presenter view.", "warning")
+        return redirect(url_for("home"))
+
     try:
-        students = fetch_students()
+        students = fetch_feedback_students()
         feedback = fetch_feedback_entry(id)
     except psycopg2.Error:
         flash("Feedback entry could not be loaded.", "danger")
@@ -614,11 +1108,19 @@ def editFeedback(id):
         flash("Feedback entry not found.", "warning")
         return redirect(url_for("feedbackPage"))
 
+    if not can_access_student(feedback[1]):
+        flash("You can only edit feedback for assigned students.", "danger")
+        return redirect(url_for("feedbackPage"))
+
     if request.method == "POST":
         try:
             payload = validate_feedback_form()
         except ValueError as exc:
             flash(str(exc), "danger")
+            return render_template("editform.html", students=students, feedback=feedback)
+
+        if not can_access_student(payload["student_id"]):
+            flash("You can only move feedback to assigned students.", "danger")
             return render_template("editform.html", students=students, feedback=feedback)
 
         conn = get_db_connection()
@@ -671,6 +1173,19 @@ def deleteFeedback(id):
     if login_redirect:
         return login_redirect
 
+    if not session.get("is_mentor") and not session.get("is_admin") and not session.get("is_present_view"):
+        flash("That page is only available to mentors, admins, or presenter view.", "warning")
+        return redirect(url_for("home"))
+
+    feedback = fetch_feedback_entry(id)
+    if feedback is None:
+        flash("Feedback entry not found.", "warning")
+        return redirect(url_for("feedbackPage"))
+
+    if not can_access_student(feedback[1]):
+        flash("You can only delete feedback for assigned students.", "danger")
+        return redirect(url_for("feedbackPage"))
+
     conn = get_db_connection()
     try:
         with conn:
@@ -711,11 +1226,22 @@ def confirm_email(token):
         password=pending.password,
         grade=pending.grade,
         organization=pending.organization,
+        organization_id=pending.organization_id,
         is_admin=pending.is_admin,
         is_mentor=pending.is_mentor,
         is_teacher=pending.is_teacher,
+        is_present_view=pending.is_present_view,
     )
     db.session.add(new_user)
+    db.session.flush()
+
+    if pending.role == "student" and pending.requested_mentor_id:
+        assignment = MentorAssignment(
+            student_id=new_user.id,
+            mentor_id=pending.requested_mentor_id,
+        )
+        db.session.add(assignment)
+
     db.session.delete(pending)
     db.session.commit()
 

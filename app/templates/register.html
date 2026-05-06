@@ -20,26 +20,60 @@
                 {{ form.email.label }}
                 {{ form.email(class='form-control') }}
             </div>
+
             <div class="form-group">
                 {{ form.first_name.label }}
                 {{ form.first_name(class='form-control') }}
             </div>
+
             <div class="form-group">
                 {{ form.last_name.label }}
                 {{ form.last_name(class='form-control') }}
             </div>
+
             <div class="form-group">
-                {{ form.grade.label }}
-                {{ form.grade(class='form-control') }}
+                <label for="role">I am a...</label>
+                <select id="role" name="role" class="form-control" required>
+                    <option value="">Select role</option>
+                    <option value="student">Student</option>
+                    <option value="mentor">Mentor</option>
+                    <option value="admin">Admin</option>
+                </select>
             </div>
-            <div class="form-group">
-                {{ form.organization.label }}
-                {{ form.organization(class='form-control') }}
+
+            <div class="form-group" id="security-code-group" style="display: none;">
+                {{ form.security_code.label }}
+                {{ form.security_code(class='form-control') }}
+                <small>Required for mentors and admins.</small>
             </div>
+
+            <div class="form-group" id="mentor-organization-group" style="display: none;">
+                <label for="organization">Organization</label>
+                <select id="organization" name="organization" class="form-control">
+                    <option value="">Select your organization</option>
+                    {% for organization in organizations %}
+                        <option value="{{ organization[0] }}">{{ organization[1] }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div class="form-group" id="student-mentor-group" style="display: none;">
+                <label for="mentor_id">Mentor</label>
+                <select id="mentor_id" name="mentor_id" class="form-control">
+                    <option value="">Select your mentor</option>
+                    {% for mentor in mentors %}
+                        <option value="{{ mentor[0] }}">
+                            {{ mentor[1] }}{% if mentor[2] %} - {{ mentor[2] }}{% endif %}
+                        </option>
+                    {% endfor %}
+                </select>
+            </div>
+
             <div class="form-group">
                 {{ form.password.label }}
                 {{ form.password(class='form-control') }}
             </div>
+
             <div class="form-group">
                 {{ form.confirmPassword.label }}
                 {{ form.confirmPassword(class='form-control') }}
@@ -47,8 +81,37 @@
 
             <button type="submit" class="btn btn-primary">Register</button>
         </form>
+
         <p>Already registered? <a href="{{ url_for('login') }}">Log in here</a>.</p>
         <p><a href="{{ url_for('home') }}">Go back home</a>.</p>
     </div>
 </div>
+
+<script>
+    const roleSelect = document.getElementById("role");
+    const securityCodeGroup = document.getElementById("security-code-group");
+    const organizationGroup = document.getElementById("mentor-organization-group");
+    const mentorGroup = document.getElementById("student-mentor-group");
+
+    roleSelect.addEventListener("change", function () {
+        securityCodeGroup.style.display = "none";
+        organizationGroup.style.display = "none";
+        mentorGroup.style.display = "none";
+
+        if (roleSelect.value === "student") {
+            mentorGroup.style.display = "block";
+        }
+
+        if (roleSelect.value === "mentor") {
+            securityCodeGroup.style.display = "block";
+            organizationGroup.style.display = "block";
+        }
+
+        if (roleSelect.value === "admin") {
+            securityCodeGroup.style.display = "block";
+        }
+    });
+</script>
+
+
 {% endblock %}

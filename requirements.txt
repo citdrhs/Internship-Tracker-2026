@@ -20,3 +20,4 @@ python-dotenv==1.2.2
 psycopg2==2.9.11
 flask_wtf==1.2.2
 wtforms==3.2.1
+email_validator==2.3.0

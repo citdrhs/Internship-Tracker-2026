@@ -1,28 +1,203 @@
 {% extends 'base.html' %}
+
 {% block title %}Admin Dashboard{% endblock %}
+
 {% block content %}
-<div class="container" id="#admin-container">
-    <h1>Admin Dashboard</h1>
-    <p>Total hours worked by each student (aggregated from daily worklogs).</p>
+<div class="container" id="admin-container">
+    <header class="admin-header">
+        <h1>Admin Dashboard</h1>
+        <form method="POST" action="{{ url_for('toggle_present_view') }}">
+            <button type="submit">
+                {% if session.get('is_present_view') %}Turn Off Presenter View{% else %}Presenter View{% endif %}
+            </button>
+        </form>
+    </header>
 
-    <h2>Student Hours Summary</h2>
-    <table>
-        <tr>
-            <th>Student Name</th>
-            <th>Total Hours</th>
-            <th>Days Logged</th>
-        </tr>
-        {% for row in hours_data %}
-        <tr>
-            <td>{{ row[0] }}</td>
-            <td>{{ row[1] | round(1) }}</td>
-            <td>{{ row[2] }}</td>
-        </tr>
-        {% endfor %}
-    </table>
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+            {% for category, message in messages %}
+                <div class="alert alert-{{ category }}">{{ message }}</div>
+            {% endfor %}
+        {% endif %}
+    {% endwith %}
+    <section class="admin-panel admin-organizations">
+        <h2>Manage Organizations</h2>
 
-    {% if not hours_data %}
-    <p>No worklog data found yet.</p>
-    {% endif %}
+        <form method="POST" action="{{ url_for('admin') }}" class="admin-org-form">
+            <label for="organization_name">Organization Name</label>
+            <div class="admin-select-row">
+                <input
+                    type="text"
+                    id="organization_name"
+                    name="organization_name"
+                    placeholder="Enter organization name"
+                    required
+                >
+                <button type="submit">Add Organization</button>
+            </div>
+        </form>
+
+        <h3>Existing Organizations</h3>
+
+        {% if organizations %}
+            <table class="admin-table">
+                <tr>
+                    <th>Organization</th>
+                    <th>Actions</th>
+                </tr>
+                {% for organization in organizations %}
+                    <tr>
+                        <td>{{ organization[1] }}</td>
+                        <td>
+                            <div class="action-btns">
+                                <a href="{{ url_for('editOrganization', id=organization[0]) }}" class="btn-edit">Edit</a>
+                                <form method="post" action="{{ url_for('deleteOrganization', id=organization[0]) }}">
+                                    <button type="submit" class="btn-delete" onclick="return confirm('Delete this organization?')">Delete</button>
+                                </form>
+                            </div>
+                        </td>
+                    </tr>
+                {% endfor %}
+            </table>
+        {% else %}
+            <p>No organizations added yet.</p>
+        {% endif %}
+    </section>
+
+    
+    <section class="admin-panel">
+        <h2>Student Information</h2>
+        <form method="GET" action="{{ url_for('admin') }}" class="admin-student-select">
+            <label for="student_id">Student</label>
+            <div class="admin-select-row">
+                <select id="student_id" name="student_id" class="form-control" required>
+                    <option value="">Select a student</option>
+                    {% for student in students %}
+                        <option value="{{ student[0] }}" {% if selected_student_id == student[0]|string %}selected{% endif %}>
+                            {{ student[1] }}
+                        </option>
+                    {% endfor %}
+                </select>
+                <button type="submit">View Student</button>
+            </div>
+        </form>
+
+        {% if selected_student %}
+            <table class="admin-table">
+                <tr>
+                    <th>Student Name</th>
+                    <th>Mentor Name</th>
+                    <th>Mentor Organization</th>
+                    <th>Total Hours</th>
+                    <th>Days Logged</th>
+                </tr>
+                <tr>
+                    <td>{{ selected_student[1] }}</td>
+                    <td>{{ selected_student[4] }}</td>
+                    <td>{{ selected_student[5] or 'No organization listed' }}</td>
+                    <td>{{ selected_student[2] | round(1) }}</td>
+                    <td>{{ selected_student[3] }}</td>
+                </tr>
+            </table>
+
+            <h2>Weekly Feedback</h2>
+            {% if selected_feedback %}
+                <form method="GET" action="{{ url_for('admin') }}" class="admin-student-select">
+                    <input type="hidden" name="student_id" value="{{ selected_student_id }}">
+                    <label for="week">Select a week</label>
+                    <div class="admin-select-row">
+                        <select id="week" name="week" class="form-control" required>
+                            <option value="">-- Select a week --</option>
+                            {% for week in week_options %}
+                                <option value="{{ week }}" {% if selected_week == week|string %}selected{% endif %}>Week {{ week }}</option>
+                            {% endfor %}
+                        </select>
+                        <button type="submit">Load Week</button>
+                    </div>
+                    <p>{{ week_options|length }} week{{ week_options|length == 1 and '' or 's' }} available.</p>
+                </form>
+
+                {% if selected_week %}
+                    {% if selected_week_feedback %}
+                        <table class="admin-table">
+                            <tr>
+                                <th>Week</th>
+                                <th>Quality</th>
+                                <th>Professionalism</th>
+                                <th>Timeliness</th>
+                                <th>Initiative</th>
+                                <th>Soft Skills</th>
+                                <th>Average</th>
+                                <th>Feedback</th>
+                                <th>Action Items</th>
+                                <th>Focus Areas</th>
+                                <th>Actions</th>
+                            </tr>
+                            {% for feedback in selected_week_feedback %}
+                                <tr>
+                                    <td>{{ feedback[2] }}</td>
+                                    <td>{{ feedback[7] }}</td>
+                                    <td>{{ feedback[8] }}</td>
+                                    <td>{{ feedback[9] }}</td>
+                                    <td>{{ feedback[10] }}</td>
+                                    <td>{{ feedback[11] }}</td>
+                                    <td>
+                                        <div class="rating-badge">{{ feedback[6] }}<span>/5</span></div>
+                                    </td>
+                                    <td>{{ feedback[3] }}</td>
+                                    <td>{{ feedback[4] or '' }}</td>
+                                    <td>{{ feedback[5] or '' }}</td>
+                                    <td>
+                                        <div class="action-btns">
+                                            <a href="{{ url_for('editFeedback', id=feedback[0]) }}" class="btn-edit">Edit</a>
+                                            <form method="post" action="{{ url_for('deleteFeedback', id=feedback[0]) }}">
+                                                <button type="submit" class="btn-delete" onclick="return confirm('Delete this feedback?')">Delete</button>
+                                            </form>
+                                        </div>
+                                    </td>
+                                </tr>
+                            {% endfor %}
+                        </table>
+                    {% else %}
+                        <div class="empty-state">
+                            <p>No feedback entries found for Week {{ selected_week }}.</p>
+                        </div>
+                    {% endif %}
+                {% else %}
+                    <div class="empty-state">
+                        <p>Select a week to view that week’s ratings and feedback.</p>
+                    </div>
+                {% endif %}
+
+                <div class="weekly-averages">
+                    <h3>Student Averages</h3>
+                    <table class="admin-table">
+                        <tr>
+                            <th>Quality of Work Avg</th>
+                            <th>Professionalism Avg</th>
+                            <th>Timeliness Avg</th>
+                            <th>Initiative Avg</th>
+                            <th>Soft Skills Avg</th>
+                            <th>Total Average Rating</th>
+                        </tr>
+                        <tr>
+                            <td>{{ selected_student[6] if selected_student[6] is not none else 'No ratings' }}</td>
+                            <td>{{ selected_student[7] if selected_student[7] is not none else 'No ratings' }}</td>
+                            <td>{{ selected_student[8] if selected_student[8] is not none else 'No ratings' }}</td>
+                            <td>{{ selected_student[9] if selected_student[9] is not none else 'No ratings' }}</td>
+                            <td>{{ selected_student[10] if selected_student[10] is not none else 'No ratings' }}</td>
+                            <td>{{ selected_student[11] if selected_student[11] is not none else 'No ratings' }}</td>
+                        </tr>
+                    </table>
+                </div>
+            {% else %}
+                <p>No feedback found for this student.</p>
+            {% endif %}
+        {% else %}
+            <p>Select a student to view their hours and feedback.</p>
+        {% endif %}
+    </section>
+
+
 </div>
 {% endblock %}

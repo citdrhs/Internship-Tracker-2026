@@ -34,12 +34,6 @@
                 {{ form.password(class = 'form-control') }}
             </div>
 
-            <div class="form-group">
-                <label>{{ form.security_code.label }}</label>
-                {{ form.security_code(class = 'form-control') }}
-                <small>Leave blank if you are a student</small>
-            </div>
-
             <button type="submit" class="btn">Login</button>
         </form>
         <p>Need an account? <a href="{{ url_for('register') }}">Register here</a>.</p>

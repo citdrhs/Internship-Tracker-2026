@@ -4,8 +4,8 @@ from pathlib import Path
 import psycopg2
 from dotenv import load_dotenv
 
-BASE_DIR = Path(__file__).resolve().parent
-ENV_FILE = BASE_DIR / "env"
+BASE_DIR = Path(__file__).resolve().parent.parent
+ENV_FILE = BASE_DIR / ".env"
 
 DEFAULT_SCHEMA = """
 DROP TABLE IF EXISTS feedback CASCADE;
@@ -13,6 +13,13 @@ DROP TABLE IF EXISTS progress_checks CASCADE;
 DROP TABLE IF EXISTS mentor_assignments CASCADE;
 DROP TABLE IF EXISTS pending_users CASCADE;
 DROP TABLE IF EXISTS users CASCADE;
+DROP TABLE IF EXISTS organizations CASCADE;
+
+CREATE TABLE organizations (
+    id BIGSERIAL PRIMARY KEY,
+    name TEXT UNIQUE NOT NULL,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
 
 CREATE TABLE users (
     id BIGSERIAL PRIMARY KEY,
@@ -20,11 +27,13 @@ CREATE TABLE users (
     first_name TEXT NOT NULL,
     last_name TEXT NOT NULL,
     password TEXT NOT NULL,
-    grade VARCHAR(2),
+    grade VARCHAR(3),
     organization VARCHAR(200),
+    organization_id BIGINT REFERENCES organizations(id) ON DELETE SET NULL,
     is_admin BOOLEAN NOT NULL DEFAULT FALSE,
     is_mentor BOOLEAN NOT NULL DEFAULT FALSE,
     is_teacher BOOLEAN NOT NULL DEFAULT FALSE,
+    is_present_view BOOLEAN NOT NULL DEFAULT FALSE,
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
@@ -34,12 +43,17 @@ CREATE TABLE pending_users (
     first_name TEXT NOT NULL,
     last_name TEXT NOT NULL,
     password TEXT NOT NULL,
-    grade VARCHAR(2),
+    grade VARCHAR(3),
     organization VARCHAR(200),
+    organization_id BIGINT REFERENCES organizations(id) ON DELETE SET NULL,
+    role TEXT NOT NULL DEFAULT 'student',
+    requested_mentor_id BIGINT,
     is_admin BOOLEAN NOT NULL DEFAULT FALSE,
     is_mentor BOOLEAN NOT NULL DEFAULT FALSE,
     is_teacher BOOLEAN NOT NULL DEFAULT FALSE,
+    is_present_view BOOLEAN NOT NULL DEFAULT FALSE,
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+
 );
 
 CREATE TABLE mentor_assignments (
@@ -47,7 +61,7 @@ CREATE TABLE mentor_assignments (
     student_id BIGINT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
     mentor_id BIGINT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
     assigned_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-    UNIQUE (student_id, mentor_id)
+    UNIQUE (student_id)
 );
 
 CREATE TABLE progress_checks (
