@@ -6,6 +6,11 @@
 <div class="container" id="admin-container">
     <header class="admin-header">
         <h1>Admin Dashboard</h1>
+        <form method="POST" action="{{ url_for('toggle_present_view') }}">
+            <button type="submit">
+                {% if session.get('is_present_view') %}Turn Off Presenter View{% else %}Presenter View{% endif %}
+            </button>
+        </form>
     </header>
 
     {% with messages = get_flashed_messages(with_categories=true) %}
@@ -15,7 +20,51 @@
             {% endfor %}
         {% endif %}
     {% endwith %}
+    <section class="admin-panel admin-organizations">
+        <h2>Manage Organizations</h2>
 
+        <form method="POST" action="{{ url_for('admin') }}" class="admin-org-form">
+            <label for="organization_name">Organization Name</label>
+            <div class="admin-select-row">
+                <input
+                    type="text"
+                    id="organization_name"
+                    name="organization_name"
+                    placeholder="Enter organization name"
+                    required
+                >
+                <button type="submit">Add Organization</button>
+            </div>
+        </form>
+
+        <h3>Existing Organizations</h3>
+
+        {% if organizations %}
+            <table class="admin-table">
+                <tr>
+                    <th>Organization</th>
+                    <th>Actions</th>
+                </tr>
+                {% for organization in organizations %}
+                    <tr>
+                        <td>{{ organization[1] }}</td>
+                        <td>
+                            <div class="action-btns">
+                                <a href="{{ url_for('editOrganization', id=organization[0]) }}" class="btn-edit">Edit</a>
+                                <form method="post" action="{{ url_for('deleteOrganization', id=organization[0]) }}">
+                                    <button type="submit" class="btn-delete" onclick="return confirm('Delete this organization?')">Delete</button>
+                                </form>
+                            </div>
+                        </td>
+                    </tr>
+                {% endfor %}
+            </table>
+        {% else %}
+            <p>No organizations added yet.</p>
+        {% endif %}
+    </section>
+
+    
     <section class="admin-panel">
         <h2>Student Information</h2>
         <form method="GET" action="{{ url_for('admin') }}" class="admin-student-select">
@@ -110,48 +159,6 @@
         {% endif %}
     </section>
 
-    <section class="admin-panel admin-organizations">
-        <h2>Manage Organizations</h2>
 
-        <form method="POST" action="{{ url_for('admin') }}" class="admin-org-form">
-            <label for="organization_name">Organization Name</label>
-            <div class="admin-select-row">
-                <input
-                    type="text"
-                    id="organization_name"
-                    name="organization_name"
-                    placeholder="Enter organization name"
-                    required
-                >
-                <button type="submit">Add Organization</button>
-            </div>
-        </form>
-
-        <h3>Existing Organizations</h3>
-
-        {% if organizations %}
-            <table class="admin-table">
-                <tr>
-                    <th>Organization</th>
-                    <th>Actions</th>
-                </tr>
-                {% for organization in organizations %}
-                    <tr>
-                        <td>{{ organization[1] }}</td>
-                        <td>
-                            <div class="action-btns">
-                                <a href="{{ url_for('editOrganization', id=organization[0]) }}" class="btn-edit">Edit</a>
-                                <form method="post" action="{{ url_for('deleteOrganization', id=organization[0]) }}">
-                                    <button type="submit" class="btn-delete" onclick="return confirm('Delete this organization?')">Delete</button>
-                                </form>
-                            </div>
-                        </td>
-                    </tr>
-                {% endfor %}
-            </table>
-        {% else %}
-            <p>No organizations added yet.</p>
-        {% endif %}
-    </section>
 </div>
 {% endblock %}
