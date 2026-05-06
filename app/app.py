@@ -907,19 +907,19 @@ def feedbackPage():
     login_redirect = require_login()
     if login_redirect:
         return login_redirect
-
-    if not session.get("is_mentor") and not session.get("is_admin") and not session.get("is_present_view"):
-        student_id = get_current_user_id
-        feedback = fetch_feedback_for_student(student_id)
-        #flash("That page is only available to mentors, admins, or presenter view.", "warning")
-        #return redirect(url_for("home"))
-
-    if session.get("is_admin") and not session.get("is_present_view"):
-        return redirect(url_for("admin"))
-
     try:
-        mentor_id = get_current_user_id() if session.get("is_mentor") and not session.get("is_present_view") else None
-        feedback = fetch_feedback(mentor_id=mentor_id)
+        if not session.get("is_mentor") and not session.get("is_admin") and not session.get("is_present_view"):
+            student_id = get_current_user_id()
+            feedback = fetch_feedback_for_student(student_id)
+            #flash("That page is only available to mentors, admins, or presenter view.", "warning")
+            #return redirect(url_for("home"))
+
+        elif session.get("is_admin") and not session.get("is_present_view"):
+            return redirect(url_for("admin"))
+
+        else:
+            mentor_id = get_current_user_id() if session.get("is_mentor") and not session.get("is_present_view") else None
+            feedback = fetch_feedback(mentor_id=mentor_id)
     except psycopg2.Error:
         flash("Feedback data could not be loaded. Run initdb.py to create the tables.", "danger")
         feedback = []
