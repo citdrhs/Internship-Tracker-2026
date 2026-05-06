@@ -21,7 +21,9 @@
             <th>Action Items</th>
             <th>Focus Areas</th>
             <th>Average</th>
+            {% if session.get("is_admin") or session.get("is_mentor") %}
             <th>Actions</th>
+            {% endif %}
         </tr>
         {% for f in feedback %}
         <tr>
@@ -33,6 +35,7 @@
             <td>
                 <div class="rating-badge">{{ f[6] }}<span>/5</span></div>
             </td>
+            {% if session.get("is_admin") or session.get("is_mentor") %}
             <td>
                 <div class="action-btns">
                     <a href="{{ url_for('editFeedback', id=f[0]) }}" class="btn-edit">Edit</a>
@@ -41,6 +44,7 @@
                     </form>
                 </div>
             </td>
+            {% endif % }
         </tr>
         {% endfor %}
     </table>
