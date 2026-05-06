@@ -694,6 +694,18 @@ def admin():
         organizations=organizations,
     )
 
+@app.route("/intr/admin/present-view", methods=["POST"])
+def toggle_present_view():
+    login_redirect = require_login()
+    if login_redirect:
+        return login_redirect
+
+    if not session.get("is_admin") and not session.get("is_present_view"):
+        return redirect(url_for("home"))
+
+    session["is_present_view"] = not session.get("is_present_view", False)
+    return redirect(url_for("admin" if session.get("is_admin") or session.get("is_present_view") else "home"))
+
 @app.route("/intr/admin/organizations/<int:id>/edit", methods=["GET", "POST"])
 def editOrganization(id):
     login_redirect = require_login()
