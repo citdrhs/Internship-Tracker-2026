@@ -12,30 +12,6 @@
         {% endif %}
     {% endwith %}
 
-    <!-- Weekly Feedback Dropdown -->
-    <div class="feedback-dropdown-section">
-        <label for="weeklyFeedback"><strong>View Feedback by Week:</strong></label>
-        <select id="weeklyFeedback" class="feedback-select">
-            <option value="">-- Select a Week --</option>
-            <option value="week1">Week 1 (3 entries, Avg: 4.3/5)</option>
-            <option value="week2">Week 2 (4 entries, Avg: 4.5/5)</option>
-            <option value="week3">Week 3 (3 entries, Avg: 4.0/5)</option>
-            <option value="week4">Week 4 (5 entries, Avg: 4.6/5)</option>
-            <option value="week5">Week 5 (2 entries, Avg: 4.2/5)</option>
-            <option value="all">All Weeks (17 total entries, Avg: 4.3/5)</option>
-        </select>
-    </div>
-
-    <!-- Weekly Summary Details -->
-    <div id="weeklySummary" class="weekly-summary hidden">
-        <h3 id="summaryTitle"></h3>
-        <div class="summary-stats">
-            <p><strong>Total Entries:</strong> <span id="entryCount">0</span></p>
-            <p><strong>Average Rating:</strong> <span id="avgRating">0</span>/5</p>
-            <p><strong>Top Focus Area:</strong> <span id="topFocus">-</span></p>
-        </div>
-    </div>
-
     {% if feedback %}
     <table>
         <tr>

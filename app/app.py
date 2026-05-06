@@ -670,8 +670,11 @@ def admin():
     students = fetch_students()
     organizations = fetch_organizations()
     selected_student_id = request.args.get("student_id", "").strip()
+    selected_week = request.args.get("week", "").strip()
     selected_student = None
     selected_feedback = []
+    selected_week_feedback = []
+    week_options = []
 
     if selected_student_id:
         try:
@@ -682,6 +685,19 @@ def admin():
             selected_student = fetch_student_hours_summary(student_id_value)
             selected_feedback = fetch_feedback_for_student(student_id_value)
 
+            if selected_feedback:
+                week_options = sorted({feedback[2] for feedback in selected_feedback})
+
+            if selected_week:
+                try:
+                    selected_week_value = int(selected_week)
+                except ValueError:
+                    flash("Please select a valid week.", "danger")
+                else:
+                    selected_week_feedback = [
+                        feedback for feedback in selected_feedback if feedback[2] == selected_week_value
+                    ]
+
             if selected_student is None:
                 flash("Student not found.", "warning")
 
@@ -691,6 +707,9 @@ def admin():
         selected_student_id=selected_student_id,
         selected_student=selected_student,
         selected_feedback=selected_feedback,
+        selected_week=selected_week,
+        selected_week_feedback=selected_week_feedback,
+        week_options=week_options,
         organizations=organizations,
     )
 

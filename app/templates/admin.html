@@ -100,57 +100,96 @@
                 </tr>
             </table>
 
-            <h2>Ratings</h2>
-            <table class="admin-table">
-                <tr>
-                    <th>Quality of Work Avg</th>
-                    <th>Professionalism Avg</th>
-                    <th>Timeliness Avg</th>
-                    <th>Initiative Avg</th>
-                    <th>Soft Skills Avg</th>
-                    <th>Total Average Rating</th>
-                </tr>
-                <tr>
-                    <td>{{ selected_student[6] if selected_student[6] is not none else 'No ratings' }}</td>
-                    <td>{{ selected_student[7] if selected_student[7] is not none else 'No ratings' }}</td>
-                    <td>{{ selected_student[8] if selected_student[8] is not none else 'No ratings' }}</td>
-                    <td>{{ selected_student[9] if selected_student[9] is not none else 'No ratings' }}</td>
-                    <td>{{ selected_student[10] if selected_student[10] is not none else 'No ratings' }}</td>
-                    <td>{{ selected_student[11] if selected_student[11] is not none else 'No ratings' }}</td>
-                </tr>
-            </table>
-
-            <h2>Feedback</h2>
+            <h2>Weekly Feedback</h2>
             {% if selected_feedback %}
-                <table class="admin-table">
-                    <tr>
-                        <th>Week</th>
-                        <th>Feedback</th>
-                        <th>Action Items</th>
-                        <th>Focus Areas</th>
-                        <th>Average</th>
-                        <th>Actions</th>
-                    </tr>
-                    {% for feedback in selected_feedback %}
+                <form method="GET" action="{{ url_for('admin') }}" class="admin-student-select">
+                    <input type="hidden" name="student_id" value="{{ selected_student_id }}">
+                    <label for="week">Select a week</label>
+                    <div class="admin-select-row">
+                        <select id="week" name="week" class="form-control" required>
+                            <option value="">-- Select a week --</option>
+                            {% for week in week_options %}
+                                <option value="{{ week }}" {% if selected_week == week|string %}selected{% endif %}>Week {{ week }}</option>
+                            {% endfor %}
+                        </select>
+                        <button type="submit">Load Week</button>
+                    </div>
+                    <p>{{ week_options|length }} week{{ week_options|length == 1 and '' or 's' }} available.</p>
+                </form>
+
+                {% if selected_week %}
+                    {% if selected_week_feedback %}
+                        <table class="admin-table">
+                            <tr>
+                                <th>Week</th>
+                                <th>Quality</th>
+                                <th>Professionalism</th>
+                                <th>Timeliness</th>
+                                <th>Initiative</th>
+                                <th>Soft Skills</th>
+                                <th>Average</th>
+                                <th>Feedback</th>
+                                <th>Action Items</th>
+                                <th>Focus Areas</th>
+                                <th>Actions</th>
+                            </tr>
+                            {% for feedback in selected_week_feedback %}
+                                <tr>
+                                    <td>{{ feedback[2] }}</td>
+                                    <td>{{ feedback[7] }}</td>
+                                    <td>{{ feedback[8] }}</td>
+                                    <td>{{ feedback[9] }}</td>
+                                    <td>{{ feedback[10] }}</td>
+                                    <td>{{ feedback[11] }}</td>
+                                    <td>
+                                        <div class="rating-badge">{{ feedback[6] }}<span>/5</span></div>
+                                    </td>
+                                    <td>{{ feedback[3] }}</td>
+                                    <td>{{ feedback[4] or '' }}</td>
+                                    <td>{{ feedback[5] or '' }}</td>
+                                    <td>
+                                        <div class="action-btns">
+                                            <a href="{{ url_for('editFeedback', id=feedback[0]) }}" class="btn-edit">Edit</a>
+                                            <form method="post" action="{{ url_for('deleteFeedback', id=feedback[0]) }}">
+                                                <button type="submit" class="btn-delete" onclick="return confirm('Delete this feedback?')">Delete</button>
+                                            </form>
+                                        </div>
+                                    </td>
+                                </tr>
+                            {% endfor %}
+                        </table>
+                    {% else %}
+                        <div class="empty-state">
+                            <p>No feedback entries found for Week {{ selected_week }}.</p>
+                        </div>
+                    {% endif %}
+                {% else %}
+                    <div class="empty-state">
+                        <p>Select a week to view that week’s ratings and feedback.</p>
+                    </div>
+                {% endif %}
+
+                <div class="weekly-averages">
+                    <h3>Student Averages</h3>
+                    <table class="admin-table">
                         <tr>
-                            <td>{{ feedback[2] }}</td>
-                            <td>{{ feedback[3] }}</td>
-                            <td>{{ feedback[4] or '' }}</td>
-                            <td>{{ feedback[5] or '' }}</td>
-                            <td>
-                                <div class="rating-badge">{{ feedback[6] }}<span>/5</span></div>
-                            </td>
-                            <td>
-                                <div class="action-btns">
-                                    <a href="{{ url_for('editFeedback', id=feedback[0]) }}" class="btn-edit">Edit</a>
-                                    <form method="post" action="{{ url_for('deleteFeedback', id=feedback[0]) }}">
-                                        <button type="submit" class="btn-delete" onclick="return confirm('Delete this feedback?')">Delete</button>
-                                    </form>
-                                </div>
-                            </td>
+                            <th>Quality of Work Avg</th>
+                            <th>Professionalism Avg</th>
+                            <th>Timeliness Avg</th>
+                            <th>Initiative Avg</th>
+                            <th>Soft Skills Avg</th>
+                            <th>Total Average Rating</th>
                         </tr>
-                    {% endfor %}
-                </table>
+                        <tr>
+                            <td>{{ selected_student[6] if selected_student[6] is not none else 'No ratings' }}</td>
+                            <td>{{ selected_student[7] if selected_student[7] is not none else 'No ratings' }}</td>
+                            <td>{{ selected_student[8] if selected_student[8] is not none else 'No ratings' }}</td>
+                            <td>{{ selected_student[9] if selected_student[9] is not none else 'No ratings' }}</td>
+                            <td>{{ selected_student[10] if selected_student[10] is not none else 'No ratings' }}</td>
+                            <td>{{ selected_student[11] if selected_student[11] is not none else 'No ratings' }}</td>
+                        </tr>
+                    </table>
+                </div>
             {% else %}
                 <p>No feedback found for this student.</p>
             {% endif %}

@@ -737,86 +737,73 @@ h1 {
     }
 }
 
-/* Feedback Dropdown Section */
-.feedback-dropdown-section {
-    margin-bottom: 25px;
-    padding: 15px;
-    background-color: #f9f9f9;
-    border-radius: 8px;
-    border-left: 4px solid rgb(22, 4, 77);
-    display: flex;
+
+
+/* Admin weekly feedback section */
+.admin-student-select {
+    margin-bottom: 24px;
+    padding: 18px;
+    background-color: #faf7ff;
+    border: 1px solid #e5defc;
+    border-radius: 10px;
+}
+
+.admin-student-select label {
+    display: block;
+    margin-bottom: 8px;
+    font-weight: 600;
+    color: rgb(22, 4, 77);
+}
+
+.admin-student-select .admin-select-row {
     gap: 12px;
     align-items: center;
+    flex-wrap: wrap;
 }
 
-.feedback-dropdown-section label {
-    margin: 0;
-    font-weight: 600;
-    color: rgb(22, 4, 77);
-    white-space: nowrap;
-}
-
-.feedback-select {
+.admin-student-select select {
     flex: 1;
-    min-width: 200px;
-    padding: 10px 12px;
-    border: 2px solid #e0e0e0;
-    border-radius: 6px;
-    font-size: 14px;
-    background-color: #ffffff;
-    cursor: pointer;
-    transition: border-color 0.2s;
-}
-
-.feedback-select:hover {
-    border-color: rgb(22, 4, 77);
-}
-
-.feedback-select:focus {
-    border-color: rgb(22, 4, 77);
-    box-shadow: 0 0 0 3px rgba(22, 4, 77, 0.1);
-}
-
-/* Weekly Summary */
-.weekly-summary {
-    margin-bottom: 20px;
-    padding: 15px;
-    background-color: #f0f0ff;
+    min-width: 220px;
+    padding: 12px 14px;
+    border: 1px solid #d9d2f8;
     border-radius: 8px;
-    border-left: 4px solid #6c63ff;
-}
-
-.weekly-summary.hidden {
-    display: none;
-}
-
-.weekly-summary h3 {
-    margin: 0 0 12px 0;
-    color: rgb(22, 4, 77);
-    font-size: 16px;
-}
-
-.summary-stats {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-    gap: 15px;
-}
-
-.summary-stats p {
-    margin: 0;
-    padding: 10px;
     background-color: #ffffff;
-    border-radius: 6px;
-    font-size: 14px;
-}
-
-.summary-stats strong {
     color: rgb(22, 4, 77);
 }
 
-.summary-stats span {
-    color: #6c63ff;
-    font-weight: 600;
+.admin-student-select button {
+    padding: 12px 18px;
+    border-radius: 8px;
+    border: none;
+    background-color: #6c63ff;
+    color: #ffffff;
+    cursor: pointer;
+    transition: background-color 0.2s ease;
+}
+
+.admin-student-select button:hover {
+    background-color: #5248d1;
+}
+
+.weekly-averages {
+    margin-top: 22px;
+    padding: 18px;
+    background-color: #f4f3ff;
+    border: 1px solid #e0d9ff;
+    border-radius: 10px;
+}
+
+.weekly-averages h3 {
+    margin-top: 0;
+    margin-bottom: 16px;
+    color: rgb(22, 4, 77);
+}
+
+@media (max-width: 900px) {
+    .admin-student-select .admin-select-row {
+        flex-direction: column;
+        align-items: stretch;
+    }
 }
 
 footer {
