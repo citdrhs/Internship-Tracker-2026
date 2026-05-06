@@ -909,8 +909,10 @@ def feedbackPage():
         return login_redirect
 
     if not session.get("is_mentor") and not session.get("is_admin") and not session.get("is_present_view"):
-        flash("That page is only available to mentors, admins, or presenter view.", "warning")
-        return redirect(url_for("home"))
+        student_id = get_current_user_id
+        feedback = fetch_feedback_for_student(student_id)
+        #flash("That page is only available to mentors, admins, or presenter view.", "warning")
+        #return redirect(url_for("home"))
 
     if session.get("is_admin") and not session.get("is_present_view"):
         return redirect(url_for("admin"))
