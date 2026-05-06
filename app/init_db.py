@@ -36,12 +36,14 @@ CREATE TABLE users (
     first_name TEXT NOT NULL,
     last_name TEXT NOT NULL,
     password TEXT NOT NULL,
-    grade VARCHAR(3),
     organization VARCHAR(200),
     organization_id BIGINT REFERENCES organizations(id) ON DELETE SET NULL,
     is_admin BOOLEAN NOT NULL DEFAULT FALSE,
     is_mentor BOOLEAN NOT NULL DEFAULT FALSE,
     is_teacher BOOLEAN NOT NULL DEFAULT FALSE,
+    form1 BYTEA,
+    form2 BYTEA,
+    form3 BYTEA,
     is_present_view BOOLEAN NOT NULL DEFAULT FALSE,
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
@@ -52,7 +54,6 @@ CREATE TABLE pending_users (
     first_name TEXT NOT NULL,
     last_name TEXT NOT NULL,
     password TEXT NOT NULL,
-    grade VARCHAR(3),
     organization VARCHAR(200),
     organization_id BIGINT REFERENCES organizations(id) ON DELETE SET NULL,
     role TEXT NOT NULL DEFAULT 'student',
@@ -122,8 +123,8 @@ def get_connection():
     db_name = os.getenv("DB")
     db_user = os.getenv("DB_UN")
     db_password = os.getenv("DB_PW")
-    db_host = os.getenv("DB_HOST", "drhscit.org")
-    db_port = int(os.getenv("DB_PORT", "5434"))
+    db_host = os.getenv("DB_HOST", "localhost")
+    db_port = int(os.getenv("DB_PORT", "5432"))
 
     missing = [
         key
@@ -156,7 +157,7 @@ def main() -> None:
     finally:
         connection.close()
 
-    print("Initialized Internship Tracker schema on drhscit.org:5434")
+    print(f"Initialized Internship Tracker schema on {os.getenv("DB_HOST", "localhost")}:{int(os.getenv("DB_PORT", "5432"))}")
 
 
 if __name__ == "__main__":
