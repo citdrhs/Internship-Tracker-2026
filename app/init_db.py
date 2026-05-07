@@ -14,10 +14,19 @@ DROP TABLE IF EXISTS mentor_assignments CASCADE;
 DROP TABLE IF EXISTS pending_users CASCADE;
 DROP TABLE IF EXISTS users CASCADE;
 DROP TABLE IF EXISTS organizations CASCADE;
+DROP TABLE IF EXISTS mentors CASCADE;
+
 
 CREATE TABLE organizations (
     id BIGSERIAL PRIMARY KEY,
-    name TEXT UNIQUE NOT NULL,
+    name TEXT NOT NULL,
+    address TEXT UNIQUE NOT NULL,
+    email TEXT UNIQUE NOT NULL,
+    phone_number BIGINT NOT NULL,
+    state TEXT NOT NULL,
+    city TEXT NOT NULL,
+    zip BIGINT NOT NULL,
+    website_url TEXT NOT NULL,
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
@@ -93,6 +102,16 @@ CREATE TABLE feedback (
     softskills SMALLINT NOT NULL CHECK (softskills BETWEEN 1 AND 5),
     rating NUMERIC(4,2) NOT NULL CHECK (rating BETWEEN 1 AND 5),
     submitted_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE TABLE mentors (
+    id BIGSERIAL PRIMARY KEY,
+    first_name TEXT NOT NULL,
+    last_name TEXT NOT NULL,
+    email TEXT UNIQUE NOT NULL,
+    phone_number BIGINT NOT NULL,
+    organization VARCHAR(200),
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 """
 
