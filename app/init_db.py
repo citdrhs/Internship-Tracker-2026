@@ -4,8 +4,8 @@ from pathlib import Path
 import psycopg2
 from dotenv import load_dotenv
 
-BASE_DIR = Path(__file__).resolve().parent
-ENV_FILE = BASE_DIR / "env"
+BASE_DIR = Path(__file__).resolve().parent.parent
+ENV_FILE = BASE_DIR / ".env"
 
 DEFAULT_SCHEMA = """
 DROP TABLE IF EXISTS feedback CASCADE;
