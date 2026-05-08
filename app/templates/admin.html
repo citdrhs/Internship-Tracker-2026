@@ -82,9 +82,9 @@
             </div>
         </form>
 
-        {% if selected_student %}
-            <div class="profile-card">
-                <h2>Student Profile</h2>
+        <div class="profile-card">
+            <h2>Student Profile</h2>
+            {% if selected_student %}
                 <div class="profile-grid">
                     <div>
                         <p class="profile-label">Name</p>
@@ -181,10 +181,10 @@
                         </tr>
                     </table>
                 </section>
-            </div>
-        {% else %}
-            <p>Select a student to view their hours and feedback.</p>
-        {% endif %}
+            {% else %}
+                <p>Select a student to view their profile, feedback, and averages.</p>
+            {% endif %}
+        </div>
     </section>
 
 
