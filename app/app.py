@@ -8,9 +8,9 @@ from dotenv import load_dotenv
 from flask import Flask, flash, redirect, render_template, request, session, url_for
 from flask_bcrypt import Bcrypt
 from flask_mail import Mail, Message
-from app.forms import LoginForm, RegisterForm
+from forms import LoginForm, RegisterForm
 from itsdangerous import URLSafeTimedSerializer
-from app.models import PendingUser, User, db
+from models import PendingUser, User, db
 
 BASE_DIR = Path(__file__).resolve().parent
 TEMPLATES_DIR = BASE_DIR / "templates"
@@ -24,8 +24,8 @@ def get_database_settings():
     db_name = os.environ.get("DB")
     db_user = os.environ.get("DB_UN")
     db_password = os.environ.get("DB_PW")
-    db_host = os.environ.get("DB_HOST", "drhscit.org")
-    db_port = int(os.environ.get("DB_PORT", "5434"))
+    db_host = os.environ.get("DB_HOST", "localhost")
+    db_port = int(os.environ.get("DB_PORT", "5432"))
 
     if db_name and db_user and db_password:
         return {
@@ -345,7 +345,8 @@ def login():
         if not user:
             flash("Email does not exist.", "danger")
             return redirect(url_for("login"))
-
+        
+        print(type(form.password.data))
         if not bcrypt.check_password_hash(user.password, form.password.data):
             flash("Incorrect password.", "danger")
             return redirect(url_for("login"))
@@ -432,7 +433,6 @@ def register():
             first_name=form.first_name.data,
             last_name=form.last_name.data,
             password=bcrypt.generate_password_hash(form.password.data).decode("utf-8"),
-            grade=form.grade.data,
             organization=form.organization.data,
             is_admin=False,
             is_mentor=False,
@@ -709,7 +709,6 @@ def confirm_email(token):
         first_name=pending.first_name,
         last_name=pending.last_name,
         password=pending.password,
-        grade=pending.grade,
         organization=pending.organization,
         is_admin=pending.is_admin,
         is_mentor=pending.is_mentor,

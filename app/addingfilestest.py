@@ -10,7 +10,7 @@ ENV_FILE = BASE_DIR / "env"
 
 from init_db import get_connection
 
-def add_file_to_column(file_name: str, column_name: str, record_id:int, conn, cur):
+def add_file_to_column(file_name: str, column_name: str, record_id:int, conn, cur) -> None:
     with open(file_name, 'rb') as f:
         file = f.read()
 
@@ -22,11 +22,11 @@ def add_file_to_column(file_name: str, column_name: str, record_id:int, conn, cu
     conn.commit()
     print(f"Added {file_name} to database")
 
-def main():
+def main() -> None:
     conn = get_connection()
     cur = conn.cursor()
     
-    add_file_to_column('cute.jpg', 'form2', 0, conn, cur)
+    add_file_to_column('cute.jpg', 'form2', 1, conn, cur)
 
     cur.close()
     conn.close()

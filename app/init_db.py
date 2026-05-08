@@ -90,8 +90,8 @@ def get_connection():
     db_name = os.getenv("DB")
     db_user = os.getenv("DB_UN")
     db_password = os.getenv("DB_PW")
-    db_host = os.getenv("DB_HOST", "localhost")
-    db_port = int(os.getenv("DB_PORT", "5432"))
+    db_host = os.getenv("DB_HOST", "drhscit.org")
+    db_port = int(os.getenv("DB_PORT", "5434"))
 
     missing = [
         key

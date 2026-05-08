@@ -29,7 +29,6 @@ class RegisterForm(FlaskForm):
     email = StringField('Email', validators = [DataRequired(), Email()])
     first_name = StringField('First Name', validators = [DataRequired()])
     last_name = StringField('Last Name', validators = [DataRequired()])
-    grade = SelectField('Grade', choices=[('8', '8'),('9', '9'), ('10', '10'), ('11', '11'), ('12', '12'), ('n/a', 'n/a')], default = 'n/a')
     organization = StringField('Organization')
     password = PasswordField('Password', validators = [DataRequired()])
     confirmPassword = PasswordField('Confirm Password', validators=[DataRequired()])

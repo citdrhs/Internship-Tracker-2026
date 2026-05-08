@@ -37,7 +37,6 @@ class User(db.Model):
     is_admin = db.Column(db.Boolean, nullable = False, default = False)
     is_mentor = db.Column(db.Boolean, nullable = False, default = False)
     is_teacher = db.Column(db.Boolean, nullable = False, default = False)
-    grade = db.Column(db.String(2), nullable=True)
 
 
 class PendingUser(db.Model):
@@ -51,5 +50,4 @@ class PendingUser(db.Model):
     is_admin = db.Column(db.Boolean, nullable=False, default=False)
     is_mentor = db.Column(db.Boolean, nullable=False, default=False)
     is_teacher = db.Column(db.Boolean, nullable=False, default=False)
-    grade = db.Column(db.String(2), nullable=True)
 
