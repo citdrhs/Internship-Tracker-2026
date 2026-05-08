@@ -442,6 +442,54 @@ h1 {
     margin-top: 0;
 }
 
+.profile-card {
+    background-color: #ffffff;
+    border-radius: 18px;
+    padding: 24px;
+    margin-bottom: 22px;
+    margin-top: 16px;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.04);
+    border: 1px solid #e8e8e8;
+}
+
+.profile-card h2 {
+    margin-top: 0;
+    margin-bottom: 20px;
+    color: rgb(22, 4, 77);
+    font-size: 22px;
+}
+
+.profile-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 18px;
+    margin-bottom: 24px;
+}
+
+.profile-card p {
+    margin: 0;
+}
+
+.profile-label {
+    margin-bottom: 6px;
+    font-size: 13px;
+    font-weight: 600;
+    color: rgb(22, 4, 77);
+    text-transform: uppercase;
+    letter-spacing: 0.02em;
+}
+
+.student-feedback-section,
+.student-averages {
+    margin-top: 18px;
+}
+
+.student-feedback-section h3,
+.student-averages h3 {
+    margin-bottom: 14px;
+    color: rgb(22, 4, 77);
+}
+
 .admin-student-select,
 .admin-org-form {
     margin-bottom: 18px;
@@ -795,6 +843,75 @@ h1 {
     .admin-select-row {
         align-items: stretch;
         flex-direction: column;
+    }
+}
+
+
+
+/* Admin weekly feedback section */
+.admin-student-select {
+    margin-bottom: 24px;
+    padding: 18px;
+    background-color: #faf7ff;
+    border: 1px solid #e5defc;
+    border-radius: 10px;
+}
+
+.admin-student-select label {
+    display: block;
+    margin-bottom: 8px;
+    font-weight: 600;
+    color: rgb(22, 4, 77);
+}
+
+.admin-student-select .admin-select-row {
+    gap: 12px;
+    align-items: center;
+    flex-wrap: wrap;
+}
+
+.admin-student-select select {
+    flex: 1;
+    min-width: 220px;
+    padding: 12px 14px;
+    border: 1px solid #d9d2f8;
+    border-radius: 8px;
+    background-color: #ffffff;
+    color: rgb(22, 4, 77);
+}
+
+.admin-student-select button {
+    padding: 12px 18px;
+    border-radius: 8px;
+    border: none;
+    background-color: #6c63ff;
+    color: #ffffff;
+    cursor: pointer;
+    transition: background-color 0.2s ease;
+}
+
+.admin-student-select button:hover {
+    background-color: #5248d1;
+}
+
+.weekly-averages {
+    margin-top: 22px;
+    padding: 18px;
+    background-color: #f4f3ff;
+    border: 1px solid #e0d9ff;
+    border-radius: 10px;
+}
+
+.weekly-averages h3 {
+    margin-top: 0;
+    margin-bottom: 16px;
+    color: rgb(22, 4, 77);
+}
+
+@media (max-width: 900px) {
+    .admin-student-select .admin-select-row {
+        flex-direction: column;
+        align-items: stretch;
     }
 }
 
