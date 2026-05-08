@@ -423,6 +423,9 @@ def fetch_student_hours_summary(student_id):
                 SELECT
                     u.id,
                     CONCAT(u.first_name, ' ', u.last_name) AS student_name,
+                    u.email,
+                    COALESCE(u.grade, '') AS grade,
+                    COALESCE(u.organization, '') AS organization,
                     COALESCE(pt.total_hours, 0) AS total_hours,
                     COALESCE(pt.days_logged, 0) AS days_logged,
                     COALESCE(mi.mentor_name, 'No mentor assigned') AS mentor_name,

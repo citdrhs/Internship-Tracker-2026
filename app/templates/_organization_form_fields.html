@@ -1,10 +1,15 @@
+{% set organization_name = organization_name | default('', true) %}
+{% set organization_details = organization_details | default({}, true) %}
+{% set organization_text_fields = organization_text_fields | default([], true) %}
+{% set organization_checkbox_fields = organization_checkbox_fields | default([], true) %}
+
 <div class="form-group">
     <label for="organization_name">Organization Name</label>
     <input
         type="text"
         id="organization_name"
         name="organization_name"
-        value="{{ organization_name | default('', true) }}"
+        value="{{ organization_name }}"
         placeholder="Enter organization name"
         required
     >
