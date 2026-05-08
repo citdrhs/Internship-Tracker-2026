@@ -13,16 +13,8 @@
         {% endwith %}
 
         <form method="post">
-            <div class="form-group">
-                <label for="organization_name">Organization Name</label>
-                <input
-                    type="text"
-                    id="organization_name"
-                    name="organization_name"
-                    value="{{ organization[1] }}"
-                    required
-                >
-            </div>
+            {% set organization_name = organization[1] %}
+            {% include '_organization_form_fields.html' %}
 
             <div class="form-group btn-row">
                 <button type="submit" class="btn-submit">Save Changes</button>

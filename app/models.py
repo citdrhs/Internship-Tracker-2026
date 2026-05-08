@@ -32,6 +32,7 @@ class Organization(db.Model):
     __tablename__ = 'organizations'
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(200), unique=True, nullable=False)
+    details = db.Column(db.JSON, nullable=False, default=dict)
     created_at = db.Column(db.DateTime, nullable=False, default=db.func.now())
 
 class User(db.Model):
@@ -74,4 +75,3 @@ class PendingUser(db.Model):
     is_teacher = db.Column(db.Boolean, nullable=False, default=False)
     is_present_view = db.Column(db.Boolean, nullable=False, default=False)
     grade = db.Column(db.String(3), nullable=True)
-

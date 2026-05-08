@@ -23,19 +23,16 @@
     <section class="admin-panel admin-organizations">
         <h2>Manage Organizations</h2>
 
-        <form method="POST" action="{{ url_for('admin') }}" class="admin-org-form">
-            <label for="organization_name">Organization Name</label>
-            <div class="admin-select-row">
-                <input
-                    type="text"
-                    id="organization_name"
-                    name="organization_name"
-                    placeholder="Enter organization name"
-                    required
-                >
-                <button type="submit">Add Organization</button>
-            </div>
-        </form>
+        <details class="admin-org-details">
+            <summary>Add Organization</summary>
+
+            <form method="POST" action="{{ url_for('admin') }}" class="admin-org-form">
+                {% set organization_name = '' %}
+                {% set organization_details = {} %}
+                {% include '_organization_form_fields.html' %}
+                <button type="submit">Submit</button>
+            </form>
+        </details>
 
         <h3>Existing Organizations</h3>
 

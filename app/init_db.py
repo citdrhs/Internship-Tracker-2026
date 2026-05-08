@@ -18,6 +18,7 @@ DROP TABLE IF EXISTS organizations CASCADE;
 CREATE TABLE organizations (
     id BIGSERIAL PRIMARY KEY,
     name TEXT UNIQUE NOT NULL,
+    details JSONB NOT NULL DEFAULT '{}'::jsonb,
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
