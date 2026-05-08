@@ -510,6 +510,30 @@ def ensure_organization_details_column(conn):
         cur.execute(
             "ALTER TABLE organizations ADD COLUMN IF NOT EXISTS details JSONB NOT NULL DEFAULT '{}'::jsonb"
         )
+        cur.execute(
+            """
+            SELECT column_name
+            FROM information_schema.columns
+            WHERE table_name = 'organizations'
+              AND column_name = ANY(%s)
+            """,
+            (
+                [
+                    "address",
+                    "email",
+                    "phone_number",
+                    "state",
+                    "city",
+                    "zip",
+                    "website_url",
+                ],
+            ),
+        )
+        for column_name, in cur.fetchall():
+            cur.execute(f"ALTER TABLE organizations ALTER COLUMN {column_name} DROP NOT NULL")
+        cur.execute(
+            "CREATE UNIQUE INDEX IF NOT EXISTS organizations_name_unique_idx ON organizations (name)"
+        )
 
 def parse_organization_details():
     details = {}
