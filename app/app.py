@@ -1,15 +1,21 @@
+# For environment variables (.env)
 import os
 from pathlib import Path
 from urllib.parse import quote_plus
 
+# psycopg2 is the import for the database
 import psycopg2
 from better_profanity import profanity
 from dotenv import load_dotenv
+
+# App connection
 from flask import Flask, flash, redirect, render_template, request, session, url_for
 from flask_bcrypt import Bcrypt
 from flask_mail import Mail, Message
-from forms import LoginForm, RegisterForm
 from itsdangerous import URLSafeTimedSerializer
+
+# Manually defined classes that have information necessary to submit the respective forms
+from forms import LoginForm, RegisterForm
 from models import PendingUser, User, db
 
 BASE_DIR = Path(__file__).resolve().parent
@@ -18,7 +24,6 @@ STATIC_DIR = BASE_DIR / "static"
 
 load_dotenv()
 profanity.load_censor_words()
-
 
 def get_database_settings():
     db_name = os.environ.get("DB")

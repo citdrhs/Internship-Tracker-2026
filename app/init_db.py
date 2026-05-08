@@ -12,21 +12,16 @@ DROP TABLE IF EXISTS feedback CASCADE;
 DROP TABLE IF EXISTS progress_checks CASCADE;
 DROP TABLE IF EXISTS mentor_assignments CASCADE;
 DROP TABLE IF EXISTS pending_users CASCADE;
-DROP TABLE IF EXISTS users CASCADE;
+DROP TABLE IF EXISTS students CASCADE;
+DROP TABLE IF EXISTS mentors CASCADE;
 
-CREATE TABLE users (
+CREATE TABLE students (
     id BIGSERIAL PRIMARY KEY,
     email TEXT UNIQUE NOT NULL,
     first_name TEXT NOT NULL,
     last_name TEXT NOT NULL,
     password TEXT NOT NULL,
     organization VARCHAR(200),
-    is_admin BOOLEAN NOT NULL DEFAULT FALSE,
-    is_mentor BOOLEAN NOT NULL DEFAULT FALSE,
-    is_teacher BOOLEAN NOT NULL DEFAULT FALSE,
-    form1 BYTEA,
-    form2 BYTEA,
-    form3 BYTEA,
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
@@ -46,7 +41,7 @@ CREATE TABLE pending_users (
 CREATE TABLE mentor_assignments (
     id BIGSERIAL PRIMARY KEY,
     student_id BIGINT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
-    mentor_id BIGINT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    mentor_id BIGINT NOT NULL REFERENCES mentors(id) ON DELETE CASCADE,
     assigned_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     UNIQUE (student_id, mentor_id)
 );
@@ -80,6 +75,23 @@ CREATE TABLE feedback (
     softskills SMALLINT NOT NULL CHECK (softskills BETWEEN 1 AND 5),
     rating NUMERIC(4,2) NOT NULL CHECK (rating BETWEEN 1 AND 5),
     submitted_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE TABLE organizations (
+    id BIGSERIAL PRIMARY KEY,
+    organization_name VARCHAR(256) NOT NULL,
+    city VARCHAR(128) NOT NULL,
+    state VARCHAR(128) NOT NULL,
+    zip_code VARCHAR(16) NOT NULL,
+    country_code VARCHAR(64) NOT NULL,
+    phone_number VARCHAR(64) NOT NULL
+);
+
+CREATE TABLE mentors (
+    id BIGSERIAL PRIMARY KEY,
+    organization_id BIGINT NOT NULL REFERENCES organization(id) ON DELETE CASCADE,
+    phone_number VARCHAR(16) NOT NULL,
+    submitted_at TIMESPAMPTZ NOT NULL DEFAULT NOW()
 );
 """
 
