@@ -1,16 +1,22 @@
+# For environment variables (.env)
 import os
 from pathlib import Path
 from urllib.parse import quote_plus
 
+# psycopg2 is the import for the database
 import psycopg2
 from psycopg2.extras import Json
 from better_profanity import profanity
 from dotenv import load_dotenv
+
+# App connection
 from flask import Flask, flash, redirect, render_template, request, session, url_for
 from flask_bcrypt import Bcrypt
 from flask_mail import Mail, Message
-from forms import LoginForm, RegisterForm
 from itsdangerous import URLSafeTimedSerializer
+
+# Manually defined classes that have information necessary to submit the respective forms
+from forms import LoginForm, RegisterForm
 from models import PendingUser, User, MentorAssignment, db
 
 BASE_DIR = Path(__file__).resolve().parent
@@ -19,98 +25,6 @@ STATIC_DIR = BASE_DIR / "static"
 
 load_dotenv()
 profanity.load_censor_words()
-
-ORGANIZATION_TEXT_FIELDS = [
-    {
-        "name": "organization_number",
-        "label": "Organization Number",
-        "type": "number",
-        "placeholder": "Enter organization number",
-    },
-    {
-        "name": "organization_address",
-        "label": "Organization Address",
-        "type": "text",
-        "placeholder": "Enter organization address",
-    },
-    {
-        "name": "organization_city",
-        "label": "Organization City",
-        "type": "text",
-        "placeholder": "Enter organization city",
-    },
-    {
-        "name": "organization_state",
-        "label": "Organization State",
-        "type": "text",
-        "placeholder": "Enter organization state",
-    },
-    {
-        "name": "organization_zip",
-        "label": "Organization ZIP Code",
-        "type": "number",
-        "placeholder": "Enter organization zip code",
-    },
-    {
-        "name": "organization_web",
-        "label": "Organization Website",
-        "type": "url",
-        "placeholder": "Enter organization website",
-    },
-    {
-        "name": "screening",
-        "label": "What type of screening is required?",
-        "type": "text",
-        "placeholder": "Enter here",
-    },
-]
-
-ORGANIZATION_CHECKBOX_FIELDS = [
-    {
-        "name": "atmosphere",
-        "label": "Is the atmosphere of the workplace conducive to the Work-based Learning experience?",
-    },
-    {
-        "name": "facilities",
-        "label": "Are the facilities and equipment conducive to student safety in the area in which students will be completing the WBL experience?",
-    },
-    {
-        "name": "accommodation",
-        "label": "Will the workplace provide accommodation(s) for students with disabilities?",
-    },
-    {
-        "name": "pay",
-        "label": "Is the workplace offering paid student experiences?",
-    },
-    {
-        "name": "wage_requirements",
-        "label": "For paid experiences, are all federal and state wage requirements met?",
-    },
-    {
-        "name": "equal_opportunity",
-        "label": "Does the workplace provide equal opportunities for students without discrimination based on race, sex, color, national origin, religion, sexual orientation, gender identity, age, political affiliation or against otherwise qualified persons with disabilities?",
-    },
-    {
-        "name": "va_verify",
-        "label": "Has the employer verified students will not be working in direct contact with anyone on the Virginia State Police Sex Offender Registry pursuant to Section 22.1-296.1 of the Code of Virginia?",
-    },
-    {
-        "name": "supervision",
-        "label": "Will the employer ensure students will always be working under the supervision of an industry professional at the workplace?",
-    },
-    {
-        "name": "mentorship",
-        "label": "Will the employer provide structured mentorship with an industry professional at the workplace?",
-    },
-    {
-        "name": "virginia_5cs",
-        "label": "Will the employer provide opportunities for students to build Virginia's 5 Cs (critical thinking, collaboration, communication, creative thinking, and citizenship) on a daily basis?",
-    },
-    {
-        "name": "hours",
-        "label": "Will the employer provide students with at least 160 hours of WBL experience?",
-    },
-]
 
 
 def get_database_settings():
