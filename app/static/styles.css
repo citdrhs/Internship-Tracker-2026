@@ -447,6 +447,67 @@ h1 {
     margin-bottom: 18px;
 }
 
+.admin-org-details {
+    margin-bottom: 22px;
+}
+
+.admin-org-details summary {
+    display: inline-flex;
+    width: fit-content;
+    list-style: none;
+    border-radius: 15px;
+    background-color: rgb(22, 4, 77);
+    color: white;
+    padding: 8px 12px;
+    font-weight: 700;
+    cursor: pointer;
+}
+
+.admin-org-details summary::-webkit-details-marker {
+    display: none;
+}
+
+.admin-org-details summary:hover {
+    background-color: #555555;
+}
+
+.admin-org-form {
+    display: grid;
+    gap: 14px;
+    margin-top: 16px;
+    max-width: 700px;
+}
+
+.admin-org-form input[type="number"],
+.admin-org-form input[type="text"],
+.admin-org-form input[type="url"] {
+    width: 100%;
+    margin-left: 0;
+}
+
+.admin-checkbox-group {
+    display: grid;
+    gap: 8px;
+    border: 2px solid #d0d0d0;
+    border-radius: 10px;
+    padding: 12px;
+}
+
+.admin-checkbox-group legend {
+    font-weight: 700;
+}
+
+.admin-checkbox-group label {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 1rem;
+}
+
+.admin-checkbox-group input {
+    margin-left: 0;
+}
+
 .admin-select-row {
     display: flex;
     gap: 10px;
