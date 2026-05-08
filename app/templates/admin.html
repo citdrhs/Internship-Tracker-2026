@@ -66,7 +66,7 @@
 
     
     <section class="admin-panel">
-        <h2>Student INFORMATION</h2>
+        <h2>Student Information</h2>
         <form method="GET" action="{{ url_for('admin') }}" class="admin-student-select">
             <label for="student_id">Student</label>
             <div class="admin-select-row">
@@ -82,9 +82,9 @@
             </div>
         </form>
 
-        <div class="profile-card">
-            <h2>Student Profile</h2>
-            {% if selected_student %}
+        {% if selected_student %}
+            <div class="profile-card">
+                <h2>Student Profile</h2>
                 <div class="profile-grid">
                     <div>
                         <p class="profile-label">Name</p>
@@ -181,10 +181,10 @@
                         </tr>
                     </table>
                 </section>
-            {% else %}
-                <p>Select a student to view their profile, feedback, and averages.</p>
-            {% endif %}
-        </div>
+            </div>
+        {% else %}
+            <p>Select a student to view their profile, feedback, and averages.</p>
+        {% endif %}
     </section>
 
 
