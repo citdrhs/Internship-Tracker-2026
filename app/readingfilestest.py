@@ -2,6 +2,7 @@ import os
 from pathlib import Path
 
 import psycopg2
+from psycopg2 import sql
 from dotenv import load_dotenv
 
 BASE_DIR = Path(__file__).resolve().parent
@@ -9,8 +10,10 @@ ENV_FILE = BASE_DIR / "env"
 
 from init_db import get_connection
 
-def write_to_bin_file(output_file_name: str, record_id: int, conn, cur):
-    query = "SELECT form1 FROM users WHERE id = %s;"
+def write_to_bin_file(output_file_name: str, column_name: str, record_id: int, conn, cur) -> None:
+    query = sql.SQL("SELECT form1 FROM users WHERE id = %s;").format(
+        col = sql.Identifier(column_name)
+    )
     cur.execute(query, (record_id,))
 
     row = cur.fetchone()
@@ -29,7 +32,7 @@ def main():
     conn = get_connection()
     cur = conn.cursor()
 
-    write_to_bin_file("testreading.jpg", 0, conn, cur)
+    write_to_bin_file("testreading.jpg", 'form2', 1, conn, cur)
 
     cur.close()
     conn.close()
