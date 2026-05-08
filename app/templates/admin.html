@@ -83,42 +83,46 @@
         </form>
 
         {% if selected_student %}
-            <table class="admin-table">
-                <tr>
-                    <th>Student Name</th>
-                    <th>Mentor Name</th>
-                    <th>Mentor Organization</th>
-                    <th>Total Hours</th>
-                    <th>Days Logged</th>
-                </tr>
-                <tr>
-                    <td>{{ selected_student[1] }}</td>
-                    <td>{{ selected_student[4] }}</td>
-                    <td>{{ selected_student[5] or 'No organization listed' }}</td>
-                    <td>{{ selected_student[2] | round(1) }}</td>
-                    <td>{{ selected_student[3] }}</td>
-                </tr>
-            </table>
-
-            <h2>Weekly Feedback</h2>
-            {% if selected_feedback %}
-                <form method="GET" action="{{ url_for('admin') }}" class="admin-student-select">
-                    <input type="hidden" name="student_id" value="{{ selected_student_id }}">
-                    <label for="week">Select a week</label>
-                    <div class="admin-select-row">
-                        <select id="week" name="week" class="form-control" required>
-                            <option value="">-- Select a week --</option>
-                            {% for week in week_options %}
-                                <option value="{{ week }}" {% if selected_week == week|string %}selected{% endif %}>Week {{ week }}</option>
-                            {% endfor %}
-                        </select>
-                        <button type="submit">Load Week</button>
+            <div class="profile-card">
+                <h2>Student Profile</h2>
+                <div class="profile-grid">
+                    <div>
+                        <p class="profile-label">Name</p>
+                        <p>{{ selected_student[1] }}</p>
                     </div>
-                    <p>{{ week_options|length }} week{{ week_options|length == 1 and '' or 's' }} available.</p>
-                </form>
+                    <div>
+                        <p class="profile-label">Email</p>
+                        <p>{{ selected_student[2] }}</p>
+                    </div>
+                    <div>
+                        <p class="profile-label">Grade</p>
+                        <p>{{ selected_student[3] or 'N/A' }}</p>
+                    </div>
+                    <div>
+                        <p class="profile-label">Organization</p>
+                        <p>{{ selected_student[4] or 'N/A' }}</p>
+                    </div>
+                    <div>
+                        <p class="profile-label">Total Hours</p>
+                        <p>{{ selected_student[5] | round(1) }}</p>
+                    </div>
+                    <div>
+                        <p class="profile-label">Days Logged</p>
+                        <p>{{ selected_student[6] }}</p>
+                    </div>
+                    <div>
+                        <p class="profile-label">Mentor</p>
+                        <p>{{ selected_student[7] }}</p>
+                    </div>
+                    <div>
+                        <p class="profile-label">Mentor Organization</p>
+                        <p>{{ selected_student[8] or 'N/A' }}</p>
+                    </div>
+                </div>
 
-                {% if selected_week %}
-                    {% if selected_week_feedback %}
+                <section class="student-feedback-section">
+                    <h3>Weekly Feedback</h3>
+                    {% if selected_feedback %}
                         <table class="admin-table">
                             <tr>
                                 <th>Week</th>
@@ -131,9 +135,8 @@
                                 <th>Feedback</th>
                                 <th>Action Items</th>
                                 <th>Focus Areas</th>
-                                <th>Actions</th>
                             </tr>
-                            {% for feedback in selected_week_feedback %}
+                            {% for feedback in selected_feedback %}
                                 <tr>
                                     <td>{{ feedback[2] }}</td>
                                     <td>{{ feedback[7] }}</td>
@@ -147,30 +150,18 @@
                                     <td>{{ feedback[3] }}</td>
                                     <td>{{ feedback[4] or '' }}</td>
                                     <td>{{ feedback[5] or '' }}</td>
-                                    <td>
-                                        <div class="action-btns">
-                                            <a href="{{ url_for('editFeedback', id=feedback[0]) }}" class="btn-edit">Edit</a>
-                                            <form method="post" action="{{ url_for('deleteFeedback', id=feedback[0]) }}">
-                                                <button type="submit" class="btn-delete" onclick="return confirm('Delete this feedback?')">Delete</button>
-                                            </form>
-                                        </div>
-                                    </td>
                                 </tr>
                             {% endfor %}
                         </table>
                     {% else %}
                         <div class="empty-state">
-                            <p>No feedback entries found for Week {{ selected_week }}.</p>
+                            <p>No weekly feedback available for this student.</p>
                         </div>
                     {% endif %}
-                {% else %}
-                    <div class="empty-state">
-                        <p>Select a week to view that week’s ratings and feedback.</p>
-                    </div>
-                {% endif %}
+                </section>
 
-                <div class="weekly-averages">
-                    <h3>Student Averages</h3>
+                <section class="student-averages">
+                    <h3>Overall Feedback Averages</h3>
                     <table class="admin-table">
                         <tr>
                             <th>Quality of Work Avg</th>
@@ -181,18 +172,16 @@
                             <th>Total Average Rating</th>
                         </tr>
                         <tr>
-                            <td>{{ selected_student[6] if selected_student[6] is not none else 'No ratings' }}</td>
-                            <td>{{ selected_student[7] if selected_student[7] is not none else 'No ratings' }}</td>
-                            <td>{{ selected_student[8] if selected_student[8] is not none else 'No ratings' }}</td>
                             <td>{{ selected_student[9] if selected_student[9] is not none else 'No ratings' }}</td>
                             <td>{{ selected_student[10] if selected_student[10] is not none else 'No ratings' }}</td>
                             <td>{{ selected_student[11] if selected_student[11] is not none else 'No ratings' }}</td>
+                            <td>{{ selected_student[12] if selected_student[12] is not none else 'No ratings' }}</td>
+                            <td>{{ selected_student[13] if selected_student[13] is not none else 'No ratings' }}</td>
+                            <td>{{ selected_student[14] if selected_student[14] is not none else 'No ratings' }}</td>
                         </tr>
                     </table>
-                </div>
-            {% else %}
-                <p>No feedback found for this student.</p>
-            {% endif %}
+                </section>
+            </div>
         {% else %}
             <p>Select a student to view their hours and feedback.</p>
         {% endif %}
