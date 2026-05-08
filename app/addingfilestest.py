@@ -26,7 +26,7 @@ def main() -> None:
     conn = get_connection()
     cur = conn.cursor()
     
-    add_file_to_column('cute.jpg', 'form2', 1, conn, cur)
+    add_file_to_column('cute.jpg', 'wbl_checklist', 0, conn, cur)
 
     cur.close()
     conn.close()
