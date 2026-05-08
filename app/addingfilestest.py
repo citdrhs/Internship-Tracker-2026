@@ -14,7 +14,7 @@ def add_file_to_column(file_name: str, column_name: str, record_id:int, conn, cu
     with open(file_name, 'rb') as f:
         file = f.read()
 
-    query = sql.SQL("UPDATE users SET {col} = %s WHERE id = %s").format(
+    query = sql.SQL("UPDATE organizations SET {col} = %s WHERE id = %s").format(
     col=sql.Identifier(column_name)
     )
     
