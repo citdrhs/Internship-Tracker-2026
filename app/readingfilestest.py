@@ -11,7 +11,7 @@ ENV_FILE = BASE_DIR / "env"
 from init_db import get_connection
 
 def write_to_bin_file(output_file_name: str, column_name: str, record_id: int, conn, cur) -> None:
-    query = sql.SQL("SELECT form1 FROM users WHERE id = %s;").format(
+    query = sql.SQL("SELECT {col} FROM organizations WHERE id = %s;").format(
         col = sql.Identifier(column_name)
     )
     cur.execute(query, (record_id,))
@@ -32,7 +32,7 @@ def main():
     conn = get_connection()
     cur = conn.cursor()
 
-    write_to_bin_file("testreading.jpg", 'form2', 1, conn, cur)
+    write_to_bin_file("testreading.jpg", 'wbl_checklist', 0, conn, cur)
 
     cur.close()
     conn.close()
