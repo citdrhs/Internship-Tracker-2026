@@ -447,7 +447,16 @@ h1 {
     border-radius: 18px;
     padding: 24px;
     margin-bottom: 22px;
+    margin-top: 16px;
     box-shadow: 0 10px 30px rgba(0, 0, 0, 0.04);
+    border: 1px solid #e8e8e8;
+}
+
+.profile-card h2 {
+    margin-top: 0;
+    margin-bottom: 20px;
+    color: rgb(22, 4, 77);
+    font-size: 22px;
 }
 
 .profile-grid {
