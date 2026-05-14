@@ -2,7 +2,73 @@ from flask_wtf import FlaskForm
 from wtforms import StringField, PasswordField, SubmitField, IntegerField, DateField, SelectField, BooleanField
 from wtforms.validators import DataRequired, Length, Email, EqualTo, ValidationError, NumberRange, Optional
 
-from app.app import fetch_organizations, fetch_mentors
+import os
+import psycopg2
+from psycopg2.extras import DictCursor
+
+def get_database_settings():
+    db_name = os.environ.get("DB")
+    db_user = os.environ.get("DB_UN")
+    db_password = os.environ.get("DB_PW")
+    db_host = os.environ.get("DB_HOST", "localhost")
+    db_port = int(os.environ.get("DB_PORT", "5432"))
+
+    if db_name and db_user and db_password:
+        return {
+            "dbname": db_name,
+            "user": db_user,
+            "password": db_password,
+            "host": db_host,
+            "port": db_port,
+        }
+
+    database_uri = os.environ.get("DATABASE_URI")
+    if database_uri:
+        return {"database_uri": database_uri}
+
+    raise ValueError("Database configuration is missing. Set DB, DB_UN, and DB_PW in env.")
+
+def get_db_connection():
+    settings = get_database_settings()
+    if "database_uri" in settings:
+        return psycopg2.connect(settings["database_uri"])
+
+    return psycopg2.connect(
+        dbname=settings["dbname"],
+        user=settings["user"],
+        password=settings["password"],
+        host=settings["host"],
+        port=settings["port"],
+    )
+
+def fetch_organizations():
+    conn = get_db_connection()
+    try:
+        with conn.cursor(cursor_factory= DictCursor) as cur:
+            cur.execute(
+                """
+                SELECT id, organization_name
+                FROM organizations
+                ORDER BY organization_name
+                """
+            )
+            return cur.fetchall()
+    finally:
+        conn.close()
+
+def fetch_mentors():
+    conn = get_db_connection()
+    try:
+        with conn.cursor(cursor_factory= DictCursor) as cur:
+            cur.execute(
+                """
+                SELECT *
+                FROM mentors;
+                """
+            )
+            return cur.fetchall()
+    finally:
+        conn.close()
 
 #==================================================================================================================================================================#
 #                                                                                                                                                                  #

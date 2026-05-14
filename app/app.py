@@ -16,7 +16,7 @@ from flask_mail import Mail, Message
 from itsdangerous import URLSafeTimedSerializer
 
 # Manually defined classes that have information necessary to submit the respective forms
-from forms import LoginForm, RegisterForm
+from forms import LoginForm, RegisterForm, get_database_settings, get_db_connection, fetch_mentors, fetch_organizations
 from models import PendingUser, Student, Mentor, Admin, db
 
 BASE_DIR = Path(__file__).resolve().parent
@@ -25,30 +25,6 @@ STATIC_DIR = BASE_DIR / "static"
 
 load_dotenv()
 profanity.load_censor_words()
-
-
-def get_database_settings():
-    db_name = os.environ.get("DB")
-    db_user = os.environ.get("DB_UN")
-    db_password = os.environ.get("DB_PW")
-    db_host = os.environ.get("DB_HOST", "localhost")
-    db_port = int(os.environ.get("DB_PORT", "5432"))
-
-    if db_name and db_user and db_password:
-        return {
-            "dbname": db_name,
-            "user": db_user,
-            "password": db_password,
-            "host": db_host,
-            "port": db_port,
-        }
-
-    database_uri = os.environ.get("DATABASE_URI")
-    if database_uri:
-        return {"database_uri": database_uri}
-
-    raise ValueError("Database configuration is missing. Set DB, DB_UN, and DB_PW in env.")
-
 
 def build_sqlalchemy_uri():
     settings = get_database_settings()
@@ -60,34 +36,6 @@ def build_sqlalchemy_uri():
         f"{quote_plus(settings['user'])}:{quote_plus(settings['password'])}"
         f"@{settings['host']}:{settings['port']}/{settings['dbname']}"
     )
-
-
-def get_db_connection():
-    settings = get_database_settings()
-    if "database_uri" in settings:
-        return psycopg2.connect(settings["database_uri"])
-
-    return psycopg2.connect(
-        dbname=settings["dbname"],
-        user=settings["user"],
-        password=settings["password"],
-        host=settings["host"],
-        port=settings["port"],
-    )
-
-def fetch_mentors():
-    conn = get_db_connection()
-    try:
-        with conn.cursor(cursor_factory= DictCursor) as cur:
-            cur.execute(
-                """
-                SELECT *
-                FROM mentors;
-                """
-            )
-            return cur.fetchall()
-    finally:
-        conn.close()
 
 app = Flask(
     __name__,
@@ -445,21 +393,6 @@ def ensure_organization_details_column(conn):
         cur.execute(
             "CREATE UNIQUE INDEX IF NOT EXISTS organizations_name_unique_idx ON organizations (name)"
         )
-
-def fetch_organizations():
-    conn = get_db_connection()
-    try:
-        with conn.cursor(cursor_factory= DictCursor) as cur:
-            cur.execute(
-                """
-                SELECT id, organization_name
-                FROM organizations
-                ORDER BY organization_name
-                """
-            )
-            return cur.fetchall()
-    finally:
-        conn.close()
 
 def fetch_organization_entry(organization_id):
     conn = get_db_connection()
