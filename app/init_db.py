@@ -29,8 +29,9 @@ CREATE TABLE organizations (
     zip_code VARCHAR(16) NOT NULL,
     website VARCHAR(512) NOT NULL,
     type_of_screening VARCHAR(128),
-    WBL_checklist BYTEA NOT NULL,
-    Training_agreement_form BYTEA NOT NULL,
+    WBL_checklist BYTEA,
+    Training_agreement_form BYTEA,
+    confirmed_by_admin_id BIGINT NOT NULL,
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
