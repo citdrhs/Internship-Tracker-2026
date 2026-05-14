@@ -15,16 +15,17 @@ DROP TABLE IF EXISTS pending_users CASCADE;
 DROP TABLE IF EXISTS users CASCADE;
 DROP TABLE IF EXISTS students CASCADE;
 DROP TABLE IF EXISTS mentors CASCADE;
+DROP TABLE IF EXISTS admin CASCADE;
 DROP TABLE IF EXISTS admins CASCADE;
 DROP TABLE IF EXISTS organizations CASCADE;
 
 CREATE TABLE admins (
     id BIGSERIAL PRIMARY KEY,
-    first_name VARCHAR(100) NOT NULL,
-    middle_name VARCHAR(100),
-    last_name VARCHAR(100) NOt NULL,
-    email VARCHAR(128) NOT NULL,
-    phone_number VARCHAR(16) NOT NULL,
+    email VARCHAR(512) UNIQUE NOT NULL,
+    first_name VARCHAR(128) NOT NULL,
+    last_name VARCHAR(128) NOT NULL,
+    password VARCHAR(128) NOT NULL,
+    is_present_view BOOLEAN NOT NULL DEFAULT FALSE,
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
@@ -45,58 +46,37 @@ CREATE TABLE organizations (
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
+CREATE TABLE mentors (
+    id BIGSERIAL PRIMARY KEY,
+    email VARCHAR(512) UNIQUE NOT NULL,
+    first_name VARCHAR(128) NOT NULL,
+    last_name VARCHAR(128) NOT NULL,
+    password VARCHAR(128) NOT NULL,
+    organization_id BIGINT REFERENCES organizations(id) ON DELETE CASCADE,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
 CREATE TABLE students (
     id BIGSERIAL PRIMARY KEY,
-    email TEXT UNIQUE NOT NULL,
-    first_name TEXT NOT NULL,
-    last_name TEXT NOT NULL,
-    password TEXT NOT NULL,
-    organization VARCHAR(200),
-    organization_id BIGINT REFERENCES organizations(id) ON DELETE SET NULL,
-    is_present_view BOOLEAN NOT NULL DEFAULT FALSE,
+    email VARCHAR(512) UNIQUE NOT NULL,
+    first_name VARCHAR(128) NOT NULL,
+    last_name VARCHAR(128) NOT NULL,
+    password VARCHAR(128) NOT NULL,
+    mentor_id BIGINT REFERENCES mentors(id) ON DELETE CASCADE,
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
-);
-
-CREATE TABLE mentors (
-    id BIGSERIAL PRIMARY KEY,
-    organization_id BIGINT NOT NULL REFERENCES organizations(id) ON DELETE CASCADE,
-    phone_number VARCHAR(16) NOT NULL,
-    email VARCHAR(128) NOT NULL,
-    submitted_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
-);
-
-
-CREATE TABLE admin (
-    id BIGSERIAL PRIMARY KEY,
-    first_name VARCHAR(100) NOT NULL,
-    middle_name VARCHAR(100),
-    last_name VARCHAR(100) NOt NULL,
-    email VARCHAR(128) NOT NULL,
-    phone_number VARCHAR(16) NOT NULL,
-    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
-);
-
-CREATE TABLE mentors (
-    id BIGSERIAL PRIMARY KEY,
-    organization_id BIGINT NOT NULL REFERENCES organizations(id) ON DELETE CASCADE,
-    phone_number VARCHAR(16) NOT NULL,
-    email VARCHAR(128) NOT NULL,
-    submitted_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
 CREATE TABLE pending_users (
     id BIGSERIAL PRIMARY KEY,
-    email TEXT UNIQUE NOT NULL,
-    first_name TEXT NOT NULL,
-    last_name TEXT NOT NULL,
-    password TEXT NOT NULL,
-    organization VARCHAR(200),
-    organization_id BIGINT REFERENCES organizations(id) ON DELETE SET NULL,
-    role TEXT NOT NULL DEFAULT 'student',
-    requested_mentor_id BIGINT,
+    email VARCHAR(512) UNIQUE NOT NULL,
+    first_name VARCHAR(128) NOT NULL,
+    last_name VARCHAR(128) NOT NULL,
+    password VARCHAR(128) NOT NULL,
+    organization_id BIGINT REFERENCES organizations(id) ON DELETE CASCADE,
+    mentor_id BIGINT,
     is_admin BOOLEAN NOT NULL DEFAULT FALSE,
     is_mentor BOOLEAN NOT NULL DEFAULT FALSE,
-    is_teacher BOOLEAN NOT NULL DEFAULT FALSE,
+    is_student BOOLEAN NOT NULL DEFAULT FALSE,
     is_present_view BOOLEAN NOT NULL DEFAULT FALSE,
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 
@@ -139,23 +119,6 @@ CREATE TABLE feedback (
     softskills SMALLINT NOT NULL CHECK (softskills BETWEEN 1 AND 5),
     rating NUMERIC(4,2) NOT NULL CHECK (rating BETWEEN 1 AND 5),
     submitted_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
-);
-
-CREATE TABLE organizations (
-    id BIGSERIAL PRIMARY KEY,
-    organization_name VARCHAR(256) NOT NULL,
-    city VARCHAR(128) NOT NULL,
-    state VARCHAR(128) NOT NULL,
-    zip_code VARCHAR(16) NOT NULL,
-    country_code VARCHAR(64) NOT NULL,
-    phone_number VARCHAR(64) NOT NULL
-);
-
-CREATE TABLE mentors (
-    id BIGSERIAL PRIMARY KEY,
-    organization_id BIGINT NOT NULL REFERENCES organization(id) ON DELETE CASCADE,
-    phone_number VARCHAR(16) NOT NULL,
-    submitted_at TIMESPAMPTZ NOT NULL DEFAULT NOW()
 );
 """
 

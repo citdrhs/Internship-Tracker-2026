@@ -5,7 +5,7 @@ from urllib.parse import quote_plus
 
 # psycopg2 is the import for the database
 import psycopg2
-from psycopg2.extras import Json
+from psycopg2.extras import Json, DictCursor, DictRow
 from better_profanity import profanity
 from dotenv import load_dotenv
 
@@ -17,7 +17,7 @@ from itsdangerous import URLSafeTimedSerializer
 
 # Manually defined classes that have information necessary to submit the respective forms
 from forms import LoginForm, RegisterForm
-from models import PendingUser, User, MentorAssignment, db
+from models import PendingUser, Student, Mentor, Admin, db
 
 BASE_DIR = Path(__file__).resolve().parent
 TEMPLATES_DIR = BASE_DIR / "templates"
@@ -75,20 +75,14 @@ def get_db_connection():
         port=settings["port"],
     )
 
-def fetch_all_mentors():
+def fetch_mentors():
     conn = get_db_connection()
     try:
-        with conn.cursor() as cur:
+        with conn.cursor(cursor_factory= DictCursor) as cur:
             cur.execute(
                 """
-                SELECT
-                    u.id,
-                    CONCAT(u.first_name, ' ', u.last_name) AS mentor_name,
-                    COALESCE(o.name, u.organization) AS organization_name
-                FROM users u
-                LEFT JOIN organizations o ON u.organization_id = o.id
-                WHERE COALESCE(u.is_mentor, FALSE) = TRUE
-                ORDER BY COALESCE(o.name, u.organization), u.first_name, u.last_name
+                SELECT *
+                FROM mentors;
                 """
             )
             return cur.fetchall()
@@ -146,7 +140,7 @@ def require_student():
 def fetch_students(mentor_id=None):
     conn = get_db_connection()
     try:
-        with conn.cursor() as cur:
+        with conn.cursor(cursor_factory= DictCursor) as cur:
             if mentor_id is not None:
                 cur.execute(
                     """
@@ -203,7 +197,7 @@ def can_access_student(student_id):
 
     conn = get_db_connection()
     try:
-        with conn.cursor() as cur:
+        with conn.cursor(cursor_factory= DictCursor) as cur:
             cur.execute(
                 """
                 SELECT 1
@@ -220,7 +214,7 @@ def can_access_student(student_id):
 def fetch_feedback(mentor_id=None):
     conn = get_db_connection()
     try:
-        with conn.cursor() as cur:
+        with conn.cursor(cursor_factory= DictCursor) as cur:
             if mentor_id is not None:
                 cur.execute(
                     """
@@ -273,7 +267,7 @@ def fetch_feedback(mentor_id=None):
 def fetch_feedback_entry(feedback_id):
     conn = get_db_connection()
     try:
-        with conn.cursor() as cur:
+        with conn.cursor(cursor_factory= DictCursor) as cur:
             cur.execute(
                 """
                 SELECT
@@ -369,7 +363,7 @@ def fetch_student_hours_summary(student_id):
 def fetch_feedback_for_student(student_id):
     conn = get_db_connection()
     try:
-        with conn.cursor() as cur:
+        with conn.cursor(cursor_factory= DictCursor) as cur:
             cur.execute(
                 """
                 SELECT
@@ -399,7 +393,7 @@ def fetch_feedback_for_student(student_id):
 def fetch_progress_checks(student_id):
     conn = get_db_connection()
     try:
-        with conn.cursor() as cur:
+        with conn.cursor(cursor_factory= DictCursor) as cur:
             cur.execute(
                 """
                 SELECT
@@ -423,7 +417,7 @@ def fetch_progress_checks(student_id):
         conn.close()
 
 def ensure_organization_details_column(conn):
-    with conn.cursor() as cur:
+    with conn.cursor(cursor_factory= DictCursor) as cur:
         cur.execute(
             "ALTER TABLE organizations ADD COLUMN IF NOT EXISTS details JSONB NOT NULL DEFAULT '{}'::jsonb"
         )
@@ -452,27 +446,15 @@ def ensure_organization_details_column(conn):
             "CREATE UNIQUE INDEX IF NOT EXISTS organizations_name_unique_idx ON organizations (name)"
         )
 
-def parse_organization_details():
-    details = {}
-
-    for field in ORGANIZATION_TEXT_FIELDS:
-        details[field["name"]] = request.form.get(field["name"], "").strip()
-
-    for field in ORGANIZATION_CHECKBOX_FIELDS:
-        details[field["name"]] = request.form.get(field["name"]) == "on"
-
-    details["signature"] = request.form.get("signature", "").strip()
-    return details
-
 def fetch_organizations():
     conn = get_db_connection()
     try:
-        with conn.cursor() as cur:
+        with conn.cursor(cursor_factory= DictCursor) as cur:
             cur.execute(
                 """
-                SELECT id, name
+                SELECT id, organization_name
                 FROM organizations
-                ORDER BY name
+                ORDER BY organization_name
                 """
             )
             return cur.fetchall()
@@ -482,9 +464,7 @@ def fetch_organizations():
 def fetch_organization_entry(organization_id):
     conn = get_db_connection()
     try:
-        with conn:
-            ensure_organization_details_column(conn)
-        with conn.cursor() as cur:
+        with conn.cursor(cursor_factory= DictCursor) as cur:
             cur.execute(
                 """
                 SELECT id, name, details
@@ -507,7 +487,7 @@ def fetch_organization_name(organization_id):
 def fetch_mentors_by_organization(organization_id):
     conn = get_db_connection()
     try:
-        with conn.cursor() as cur:
+        with conn.cursor(cursor_factory= DictCursor) as cur:
             cur.execute(
                 """
                 SELECT id, CONCAT(first_name, ' ', last_name) AS full_name
@@ -521,13 +501,6 @@ def fetch_mentors_by_organization(organization_id):
             return cur.fetchall()
     finally:
         conn.close()
-
-def get_current_user_id():
-    email = session.get("email")
-    if not email:
-        return None
-    user = User.query.filter_by(email=email).first()
-    return user.id if user else None
 
 def validate_progress_check_form():
     day_worked = request.form.get("day_worked", "").strip()
@@ -651,25 +624,36 @@ def login():
     form = LoginForm()
 
     if request.method == "POST" and form.validate_on_submit():
-        user = User.query.filter_by(email=form.email.data).first()
-
-        if not user:
+        email = request.form.get("email", "").strip()
+        email_in_tables = [fetch_exists(table, 'email', email) for table in ('admins', 'mentors', 'students')]
+        if not any(email_in_tables):
             flash("Email does not exist.", "danger")
-            return redirect(url_for("login"))
+            return render_template('login.html', form=form)
         
-        print(type(form.password.data))
-        if not bcrypt.check_password_hash(user.password, form.password.data):
-            flash("Incorrect password.", "danger")
-            return redirect(url_for("login"))
+        if email_in_tables[0]:
+            user = fetch_entry('admins', 'email', email)
+        elif email_in_tables[1]:
+            user = fetch_entry('mentors', 'email', email)
+        else:
+            user = fetch_entry('students', 'email', email)
+        # print(type(user))
+        if type(user) is DictRow:
+            # print("Found")
+            if not bcrypt.check_password_hash(user['password'], form.password.data):
+                flash("Incorrect password.", "danger")
+                return render_template('login.html', form=form)
 
-        session["email"] = user.email
-        session["organization"] = fetch_organization_name(user.organization_id) or user.organization
-        session["is_admin"] = bool(user.is_admin)
-        session["is_teacher"] = bool(user.is_teacher)
-        session["is_mentor"] = bool(user.is_mentor)
-        session["is_present_view"] = bool(user.is_present_view)
+            session["email"] = user['email']
+            if email_in_tables[1]:
+                session['organization_id'] = user['organization_id']
+            if email_in_tables[2]:
+                session['mentor_id'] = user['mentor_id']
+            session['is_admin'] = email_in_tables[0]
+            session['is_mentor'] = email_in_tables[1]
+            session['is_student'] = email_in_tables[2]
+            session["is_present_view"] = False if not email_in_tables[0] else user['is_present_view']
 
-        return redirect(url_for("home"))
+            return redirect(url_for("home"))
 
     return render_template("login.html", form=form)
 
@@ -868,60 +852,98 @@ def deleteOrganization(id):
         flash("Organization not found.", "warning")
     return redirect(url_for("admin"))
 
+def fetch_entry(table_name: str, target_column: str = "N/A", target_val: str = "N/A", columns = None):
+    selected = "*" if columns is None else ", ".join(columns)
+    if target_column == "N/A":
+        condition = ""
+    elif not fetch_exists(table_name, target_column, target_val):
+        return {}
+    elif target_column == "id":
+        condition = f"WHERE {target_column} = {target_val}"
+    else:
+        condition = f"WHERE {target_column} = '{target_val}'"
+    with get_db_connection() as conn:
+        with conn.cursor(cursor_factory = DictCursor) as cur:
+            cur.execute(
+                f"""
+                SELECT {selected}
+                FROM {table_name}
+                {condition};
+                """
+            )
+            if target_column == "N/A":
+                result = cur.fetchall()
+            else: 
+                result = cur.fetchone()
+            
+            return result if result is not None else {}
+
+def fetch_exists(table_name: str, column_name: str, value: str):
+    if column_name != "id":
+        value = f"'{value}'"
+    with get_db_connection() as conn:
+        with conn.cursor() as cur:
+            cur.execute(
+                f"""
+                SELECT EXISTS(
+                    SELECT 1
+                    FROM {table_name}
+                    WHERE {column_name} = {value}
+                );
+                """
+            )
+
+            result = cur.fetchone()
+            return result[0] if result is not None else False
 
 @app.route("/intr/registration-pending")
 def registration_pending():
     return render_template("confirm_email.html", confirm_url="#")
 
-
-
-
 @app.route("/intr/register", methods=["GET", "POST"])
 def register():
     form = RegisterForm()
     organizations = fetch_organizations()
-    mentors = fetch_all_mentors()
+    mentors = fetch_mentors()
 
     if request.method == "POST" and form.validate_on_submit():
-        selected_role = request.form.get("role", "").strip()
-        selected_organization_id = request.form.get("organization", "").strip()
-        selected_mentor_id = request.form.get("mentor_id", "").strip()
-        security_code = form.security_code.data.strip() if form.security_code.data else ""
+        selected_role = form.role.data.strip()
+        selected_organization_id = form.organization_id.data
+        selected_mentor_id = form.mentor_id.data
+        security_code = form.security_code.data
+        email = form.email.data
+        password = form.password.data
+        confirm_password = form.confirmPassword.data
 
-        if selected_role not in ["student", "mentor", "admin"]:
+        if not selected_role:
             flash("Please select Student, Mentor, or Admin.", "danger")
             return render_template("register.html", form=form, organizations=organizations, mentors=mentors)
 
         is_admin = False
         is_mentor = False
-        is_teacher = False
+        is_student = False
         organization_id_value = None
-        selected_organization = None
+        mentor_id_value = None
 
         if selected_role == "student":
             if not selected_mentor_id:
                 flash("Students must select a mentor.", "danger")
                 return render_template("register.html", form=form, organizations=organizations, mentors=mentors)
+            
+            mentor_id_value = int(selected_mentor_id)
+
+            is_student = True
 
         elif selected_role == "mentor":
             if not selected_organization_id:
                 flash("Mentors must select an organization.", "danger")
                 return render_template("register.html", form=form, organizations=organizations, mentors=mentors)
 
-            try:
-                organization_id_value = int(selected_organization_id)
-            except ValueError:
-                flash("Please select a valid organization.", "danger")
-                return render_template("register.html", form=form, organizations=organizations, mentors=mentors)
-
-            selected_organization = fetch_organization_entry(organization_id_value)
-            if selected_organization is None:
-                flash("Please select a valid organization.", "danger")
-                return render_template("register.html", form=form, organizations=organizations, mentors=mentors)
-
             if security_code != os.environ.get("MENTOR_CODE"):
                 flash("Invalid mentor security code.", "danger")
                 return render_template("register.html", form=form, organizations=organizations, mentors=mentors)
+            
+            organization_id_value = int(selected_organization_id)
 
             is_mentor = True
 
@@ -931,12 +953,12 @@ def register():
                 return render_template("register.html", form=form, organizations=organizations, mentors=mentors)
 
             is_admin = True
-
-        if User.query.filter_by(email=form.email.data).first():
+        
+        if (any([fetch_exists(table_name = table, column_name = 'email', value = email) for table in ['students', 'mentors', 'admins']])):
             flash("Email already in use.", "danger")
             return redirect(url_for("register"))
 
-        existing_pending = PendingUser.query.filter_by(email=form.email.data).first()
+        existing_pending = PendingUser.query.filter_by(email=email).first()
         if existing_pending:
             db.session.delete(existing_pending)
             db.session.commit()
@@ -945,27 +967,25 @@ def register():
             flash("No profanity allowed.", "danger")
             return redirect(url_for("register"))
 
-        if len(form.password.data) < 8:
+        if len(password if password is not None else "") < 8:
             flash("Password must be at least 8 characters.", "danger")
             return redirect(url_for("register"))
 
-        if form.password.data != form.confirmPassword.data:
+        if password != confirm_password:
             flash("Passwords do not match.", "danger")
             return redirect(url_for("register"))
 
         pending_user = PendingUser(
-            email=form.email.data,
-            first_name=form.first_name.data,
-            last_name=form.last_name.data,
-            password=bcrypt.generate_password_hash(form.password.data).decode("utf-8"),
-            organization=selected_organization[1] if selected_organization else None,
-            organization_id=organization_id_value,
-            role=selected_role,
-            requested_mentor_id=int(selected_mentor_id) if selected_role == "student" else None,
-            is_admin=is_admin,
-            is_mentor=is_mentor,
-            is_teacher=is_teacher,
-            is_present_view=False,
+            email = email,
+            first_name = form.first_name.data,
+            last_name = form.last_name.data,
+            password = bcrypt.generate_password_hash(form.password.data).decode("utf-8"),
+            organization_id = organization_id_value,
+            mentor_id = mentor_id_value,
+            is_student = is_student,
+            is_admin = is_admin,
+            is_mentor = is_mentor,
+            is_present_view = False,
         )
 
         db.session.add(pending_user)
@@ -1262,6 +1282,32 @@ def deleteFeedback(id):
         flash("Feedback entry not found.", "warning")
     return redirect(url_for("feedbackPage"))
 
+def create_new_admin(info):
+    return Admin(
+        email = info.email,
+        first_name = info.first_name,
+        last_name = info.last_name, 
+        password = info.password,
+    )
+
+def create_new_mentor(info):
+    return Mentor(
+        email = info.email,
+        first_name = info.first_name,
+        last_name = info.last_name, 
+        password = info.password,
+        organization_id = info.organization_id
+    )
+
+def create_new_student(info):
+    return Student(
+        email = info.email,
+        first_name = info.first_name,
+        last_name = info.last_name, 
+        password = info.password,
+        mentor_id = info.mentor_id
+    )
+
 @app.route("/intr/confirm/<token>/")
 def confirm_email(token):
     email = confirm_token(token)
@@ -1273,34 +1319,35 @@ def confirm_email(token):
     if not pending:
         flash("No matching pending registration.", "danger")
         return redirect(url_for("register"))
-
-    if User.query.filter_by(email=email).first():
-        db.session.delete(pending)
-        db.session.commit()
-        flash("Account already confirmed. Please log in.", "info")
-        return redirect(url_for("login"))
-
-    new_user = User(
-        email=pending.email,
-        first_name=pending.first_name,
-        last_name=pending.last_name,
-        password=pending.password,
-        organization=pending.organization,
-        organization_id=pending.organization_id,
-        is_admin=pending.is_admin,
-        is_mentor=pending.is_mentor,
-        is_teacher=pending.is_teacher,
-        is_present_view=pending.is_present_view,
-    )
-    db.session.add(new_user)
-    db.session.flush()
-
-    if pending.role == "student" and pending.requested_mentor_id:
-        assignment = MentorAssignment(
-            student_id=new_user.id,
-            mentor_id=pending.requested_mentor_id,
-        )
-        db.session.add(assignment)
+    
+    if pending.is_admin:
+        if fetch_exists('admins', 'email', email):
+            db.session.delete(pending)
+            db.session.commit()
+            flash("Account already confirmed. Please log in.", "info")
+            return redirect(url_for("login"))
+        
+        db.session.add(create_new_admin(pending))
+        db.session.flush()
+    elif pending.is_mentor:
+        if fetch_exists('mentors', 'email', email):
+            db.session.delete(pending)
+            db.session.commit()
+            flash("Account already confirmed. Please log in.", "info")
+            return redirect(url_for("login"))
+        
+        db.session.add(create_new_mentor(pending))
+        db.session.flush()
+    
+    else:
+        if fetch_exists('students', 'email', email):
+            db.session.delete(pending)
+            db.session.commit()
+            flash("Account already confirmed. Please log in.", "info")
+            return redirect(url_for("login"))
+        
+        db.session.add(create_new_student(pending))
+        db.session.flush()
 
     db.session.delete(pending)
     db.session.commit()

@@ -2,6 +2,8 @@ from flask_wtf import FlaskForm
 from wtforms import StringField, PasswordField, SubmitField, IntegerField, DateField, SelectField, BooleanField
 from wtforms.validators import DataRequired, Length, Email, EqualTo, ValidationError, NumberRange, Optional
 
+from app.app import fetch_organizations, fetch_mentors
+
 #==================================================================================================================================================================#
 #                                                                                                                                                                  #
 #Project: CIT Internship Tracker                                                                                                                                   #
@@ -23,15 +25,13 @@ from wtforms.validators import DataRequired, Length, Email, EqualTo, ValidationE
 #                                                                                                                                                                  #
 #==================================================================================================================================================================#
 
-
-
 class RegisterForm(FlaskForm):
-    email = StringField('Email', validators = [DataRequired(), Email()])
+    email = StringField('Email', validators = [DataRequired(), Email()], filters=[lambda x: x.strip() if x else None])
     first_name = StringField('First Name', validators = [DataRequired()])
     last_name = StringField('Last Name', validators = [DataRequired()])
     role = SelectField("I am a...", choices= [("", "Select Role"), ("student", "Student"), ("mentor", "Mentor"), ("admin", "Admin")])
-    mentor_id = StringField("Mentor id", validators = [Optional()])
-    organization_id = StringField("Organization id", validators = [Optional()])
+    organization_id = SelectField("Organizations", choices = [("", "Select your organization")] + [(org['id'], org['organization_name']) for org in fetch_organizations()])
+    mentor_id = SelectField("Mentors", choices = [("", "Select your mentor")] + [(mentor['id'], f"{mentor['first_name']} {mentor['last_name']}") for mentor in fetch_mentors()])
     security_code = StringField("Security Code", validators=[Optional()])
     password = PasswordField('Password', validators = [DataRequired()])
     confirmPassword = PasswordField('Confirm Password', validators=[DataRequired()])
