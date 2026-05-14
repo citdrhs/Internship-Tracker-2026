@@ -15,8 +15,18 @@ DROP TABLE IF EXISTS pending_users CASCADE;
 DROP TABLE IF EXISTS users CASCADE;
 DROP TABLE IF EXISTS students CASCADE;
 DROP TABLE IF EXISTS mentors CASCADE;
-DROP TABLE IF EXISTS admin CASCADE;
+DROP TABLE IF EXISTS admins CASCADE;
 DROP TABLE IF EXISTS organizations CASCADE;
+
+CREATE TABLE admins (
+    id BIGSERIAL PRIMARY KEY,
+    first_name VARCHAR(100) NOT NULL,
+    middle_name VARCHAR(100),
+    last_name VARCHAR(100) NOt NULL,
+    email VARCHAR(128) NOT NULL,
+    phone_number VARCHAR(16) NOT NULL,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
 
 CREATE TABLE organizations (
     id BIGSERIAL PRIMARY KEY,
@@ -31,7 +41,7 @@ CREATE TABLE organizations (
     type_of_screening VARCHAR(128),
     WBL_checklist BYTEA,
     Training_agreement_form BYTEA,
-    confirmed_by_admin_id BIGINT NOT NULL,
+    confirmed_by_admin_id BIGINT NOT NULL REFERENCES admins(id) ON DELETE CASCADE,
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
@@ -72,17 +82,6 @@ CREATE TABLE mentors (
     phone_number VARCHAR(16) NOT NULL,
     email VARCHAR(128) NOT NULL,
     submitted_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
-);
-
-
-CREATE TABLE admin (
-    id BIGSERIAL PRIMARY KEY,
-    first_name VARCHAR(100) NOT NULL,
-    middle_name VARCHAR(100),
-    last_name VARCHAR(100) NOt NULL,
-    email VARCHAR(128) NOT NULL,
-    phone_number VARCHAR(16) NOT NULL,
-    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
 CREATE TABLE pending_users (

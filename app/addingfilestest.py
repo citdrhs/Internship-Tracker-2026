@@ -15,7 +15,7 @@ def add_file_to_column(file_name: str, column_name: str, record_id: int, conn, c
         file = f.read()
 
     query = sql.SQL("UPDATE organizations SET {col} = %s WHERE id = %s").format(
-    col=sql.Identifier(column_name)
+        col=sql.Identifier(column_name)
     )
     
     cur.execute(query, (psycopg2.Binary(file), record_id,))
