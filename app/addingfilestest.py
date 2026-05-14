@@ -10,7 +10,7 @@ ENV_FILE = BASE_DIR / "env"
 
 from init_db import get_connection
 
-def add_file_to_column(file_name: str, column_name: str, record_id:int, conn, cur) -> None:
+def add_file_to_column(file_name: str, column_name: str, record_id: int, conn, cur) -> None:
     with open(file_name, 'rb') as f:
         file = f.read()
 

@@ -32,7 +32,7 @@ def main():
     conn = get_connection()
     cur = conn.cursor()
 
-    write_to_bin_file("testreading.jpg", 'wbl_checklist', 0, conn, cur)
+    write_to_bin_file("output.avif", 'wbl_checklist', 0, conn, cur)
 
     cur.close()
     conn.close()
