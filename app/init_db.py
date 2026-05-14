@@ -22,7 +22,6 @@ CREATE TABLE users (
     password TEXT NOT NULL,
     grade VARCHAR(2),
     organization VARCHAR(200),
-    organization_id BIGINT REFERENCES organizations(id) ON DELETE SET NULL,
     is_admin BOOLEAN NOT NULL DEFAULT FALSE,
     is_mentor BOOLEAN NOT NULL DEFAULT FALSE,
     is_teacher BOOLEAN NOT NULL DEFAULT FALSE,
