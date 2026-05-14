@@ -13,22 +13,6 @@ DROP TABLE IF EXISTS progress_checks CASCADE;
 DROP TABLE IF EXISTS mentor_assignments CASCADE;
 DROP TABLE IF EXISTS pending_users CASCADE;
 DROP TABLE IF EXISTS users CASCADE;
-DROP TABLE IF EXISTS organizations CASCADE;
-DROP TABLE IF EXISTS mentors CASCADE;
-
-
-CREATE TABLE organizations (
-    id BIGSERIAL PRIMARY KEY,
-    name TEXT NOT NULL,
-    address TEXT UNIQUE NOT NULL,
-    email TEXT UNIQUE NOT NULL,
-    phone_number BIGINT NOT NULL,
-    state TEXT NOT NULL,
-    city TEXT NOT NULL,
-    zip BIGINT NOT NULL,
-    website_url TEXT NOT NULL,
-    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
-);
 
 CREATE TABLE users (
     id BIGSERIAL PRIMARY KEY,
@@ -36,13 +20,12 @@ CREATE TABLE users (
     first_name TEXT NOT NULL,
     last_name TEXT NOT NULL,
     password TEXT NOT NULL,
-    grade VARCHAR(3),
+    grade VARCHAR(2),
     organization VARCHAR(200),
     organization_id BIGINT REFERENCES organizations(id) ON DELETE SET NULL,
     is_admin BOOLEAN NOT NULL DEFAULT FALSE,
     is_mentor BOOLEAN NOT NULL DEFAULT FALSE,
     is_teacher BOOLEAN NOT NULL DEFAULT FALSE,
-    is_present_view BOOLEAN NOT NULL DEFAULT FALSE,
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
@@ -52,7 +35,7 @@ CREATE TABLE pending_users (
     first_name TEXT NOT NULL,
     last_name TEXT NOT NULL,
     password TEXT NOT NULL,
-    grade VARCHAR(3),
+    grade VARCHAR(2),
     organization VARCHAR(200),
     organization_id BIGINT REFERENCES organizations(id) ON DELETE SET NULL,
     role TEXT NOT NULL DEFAULT 'student',
@@ -67,15 +50,15 @@ CREATE TABLE pending_users (
 
 CREATE TABLE mentor_assignments (
     id BIGSERIAL PRIMARY KEY,
-    student_id BIGINT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
-    mentor_id BIGINT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    student_id BIGINT NOT NULL REFERENCES students(id) ON DELETE CASCADE,
+    mentor_id BIGINT NOT NULL REFERENCES mentors(id) ON DELETE CASCADE,
     assigned_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     UNIQUE (student_id)
 );
 
 CREATE TABLE progress_checks (
     id BIGSERIAL PRIMARY KEY,
-    student_id BIGINT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    student_id BIGINT NOT NULL REFERENCES students(id) ON DELETE CASCADE,
     day_worked DATE NOT NULL,
     hours_worked NUMERIC(5,2) NOT NULL CHECK (hours_worked >= 0 AND hours_worked <= 24),
     what_they_did TEXT NOT NULL,
@@ -89,8 +72,8 @@ CREATE TABLE progress_checks (
 
 CREATE TABLE feedback (
     id BIGSERIAL PRIMARY KEY,
-    student_id BIGINT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
-    mentor_id BIGINT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    student_id BIGINT NOT NULL REFERENCES students(id) ON DELETE CASCADE,
+    mentor_id BIGINT NOT NULL REFERENCES mentors(id) ON DELETE CASCADE,
     week INTEGER NOT NULL CHECK (week BETWEEN 1 AND 52),
     description TEXT NOT NULL,
     action_items TEXT,
@@ -156,7 +139,10 @@ def main() -> None:
     finally:
         connection.close()
 
-    print("Initialized Internship Tracker schema on drhscit.org:5434")
+    db_host = os.getenv("DB_HOST", "localhost")
+    db_port = int(os.getenv("DB_PORT", "5432"))
+
+    print(f"Initialized Internship Tracker schema on {db_host}:{db_port}")
 
 
 if __name__ == "__main__":
