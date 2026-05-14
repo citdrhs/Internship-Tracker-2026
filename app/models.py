@@ -35,21 +35,35 @@ class Organization(db.Model):
     details = db.Column(db.JSON, nullable=False, default=dict)
     created_at = db.Column(db.DateTime, nullable=False, default=db.func.now())
 
-class User(db.Model):
-    __tablename__ = 'users'
+class Student(db.Model):
+    __tablename__ = 'students'
     id = db.Column(db.Integer, primary_key=True)
-    email = db.Column(db.String(200), unique=True, nullable=False)
-    first_name = db.Column(db.String(200), nullable=False)
-    last_name = db.Column(db.String(200), nullable=False)
-    password = db.Column(db.String(500), nullable=False)
-    organization = db.Column(db.String(200), nullable=True)
-    organization_id = db.Column(db.Integer, db.ForeignKey('organizations.id', ondelete='SET NULL'), nullable=True)
-    is_admin = db.Column(db.Boolean, nullable = False, default = False)
-    is_mentor = db.Column(db.Boolean, nullable = False, default = False)
-    is_teacher = db.Column(db.Boolean, nullable = False, default = False)
-    is_present_view = db.Column(db.Boolean, nullable=False, default=False)
-    grade = db.Column(db.String(2), nullable=True)
+    email = db.Column(db.String(512), unique=True, nullable=False)
+    first_name = db.Column(db.String(128), nullable=False)
+    last_name = db.Column(db.String(128), nullable=False)
+    password = db.Column(db.String(128), nullable=False)
+    mentor_id = db.Column(db.Integer, db.ForeignKey('mentors.id', ondelete='CASCADE'), nullable=False)
+    created_at = db.Column(db.DateTime, nullable=False, default=db.func.now())
 
+class Mentor(db.Model):
+    __tablename__ = 'students'
+    id = db.Column(db.Integer, primary_key=True)
+    email = db.Column(db.String(512), unique=True, nullable=False)
+    first_name = db.Column(db.String(128), nullable=False)
+    last_name = db.Column(db.String(128), nullable=False)
+    password = db.Column(db.String(128), nullable=False)
+    organization_id = db.Column(db.Integer, db.ForeignKey('organizations.id', ondelete='CASCADE'), nullable=False)
+    created_at = db.Column(db.DateTime, nullable=False, default=db.func.now())
+
+class Admin(db.Model):
+    __tablename__ = 'students'
+    id = db.Column(db.Integer, primary_key=True)
+    email = db.Column(db.String(512), unique=True, nullable=False)
+    first_name = db.Column(db.String(128), nullable=False)
+    last_name = db.Column(db.String(128), nullable=False)
+    password = db.Column(db.String(128), nullable=False)
+    is_present_view = db.Column(db.Booleam, nullable = False, default = False)
+    created_at = db.Column(db.DateTime, nullable=False, default=db.func.now())
 
 class MentorAssignment(db.Model):
     __tablename__ = 'mentor_assignments'
@@ -74,4 +88,3 @@ class PendingUser(db.Model):
     is_mentor = db.Column(db.Boolean, nullable=False, default=False)
     is_teacher = db.Column(db.Boolean, nullable=False, default=False)
     is_present_view = db.Column(db.Boolean, nullable=False, default=False)
-    grade = db.Column(db.String(3), nullable=True)

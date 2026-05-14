@@ -32,13 +32,8 @@
             </div>
 
             <div class="form-group">
-                <label for="role">I am a...</label>
-                <select id="role" name="role" class="form-control" required>
-                    <option value="">Select role</option>
-                    <option value="student">Student</option>
-                    <option value="mentor">Mentor</option>
-                    <option value="admin">Admin</option>
-                </select>
+                {{ form.role.label }}
+                {{ form.role(class = 'form-control') }}
             </div>
 
             <div class="form-group" id="security-code-group" style="display: none;">
