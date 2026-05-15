@@ -523,6 +523,7 @@ def get_current_user_id():
 def validate_progress_check_form():
     day_worked = request.form.get("day_worked", "").strip()
     hours_worked = request.form.get("hours_worked", "").strip()
+    minutes_worked = request.form.get("minutes_worked", "").strip()
     what_they_did = request.form.get("what_they_did", "").strip()
     mentor_questions = request.form.get("mentor_questions", "").strip()
     reflection = request.form.get("reflection", "").strip()
@@ -533,20 +534,25 @@ def validate_progress_check_form():
         raise ValueError("Day worked is required.")
     if not hours_worked:
         raise ValueError("Hours worked is required.")
+    if minutes_worked is None or minutes_worked == "":
+        raise ValueError("Minutes worked is required.")
     if not what_they_did:
         raise ValueError("Please describe what you did.")
 
     try:
-        hours_value = float(hours_worked)
+        hours_value = int(hours_worked)
+        minutes_value = int(minutes_worked)
     except ValueError as exc:
-        raise ValueError("Hours worked must be a number.") from exc
+        raise ValueError("Hours and minutes must be valid numbers.") from exc
 
-    if hours_value < 0 or hours_value > 24:
-        raise ValueError("Hours worked must be between 0 and 24.")
+    total_hours = hours_value + (minutes_value / 60)
+
+    if total_hours < 0 or total_hours > 24:
+        raise ValueError("Total hours worked must be between 0 and 24.")
 
     return {
         "day_worked": day_worked,
-        "hours_worked": round(hours_value, 2),
+        "hours_worked": round(total_hours, 2),
         "what_they_did": what_they_did,
         "mentor_questions": mentor_questions,
         "reflection": reflection,

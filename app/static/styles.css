@@ -170,6 +170,28 @@ label, input, .btn{
     
 }
 
+.hours-minutes-group {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+    width: 100%;
+}
+
+.select-wrapper {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.select-wrapper label {
+    font-weight: 600;
+    font-size: 1rem;
+}
+
+.select-wrapper select {
+    font-size: 1rem;
+}
+
 input {
     border-radius: 15px;
     border: 2px solid rgb(22, 4, 77);
