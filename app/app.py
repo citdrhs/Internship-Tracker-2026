@@ -5,6 +5,7 @@ from urllib.parse import quote_plus
 import psycopg2
 from better_profanity import profanity
 from dotenv import load_dotenv
+from datetime import datetime
 from flask import Flask, flash, redirect, render_template, request, session, url_for
 from flask_bcrypt import Bcrypt
 from flask_mail import Mail, Message
@@ -414,6 +415,48 @@ def fetch_progress_checks(student_id):
             return cur.fetchall()
     finally:
         conn.close()
+
+def summarize_progress_data(progress_checks):
+    daily_hours = {}
+    for entry in progress_checks:
+        _, day_worked, hours_worked, *_ = entry
+        if not day_worked:
+            continue
+        daily_hours[day_worked] = daily_hours.get(day_worked, 0) + float(hours_worked)
+
+    events = []
+    weekly = {}
+    monthly = {}
+
+    for day_worked, hours in daily_hours.items():
+        events.append(
+            {
+                "title": f"{round(hours, 1)}h",
+                "start": day_worked.isoformat(),
+                "allDay": True,
+            }
+        )
+        year, week_number, _ = day_worked.isocalendar()
+        weekly[(year, week_number)] = weekly.get((year, week_number), 0) + hours
+        monthly[(day_worked.year, day_worked.month)] = monthly.get((day_worked.year, day_worked.month), 0) + hours
+
+    weekly_totals = [
+        {
+            "label": f"{year}-W{week_number:02d}",
+            "hours": round(total, 1),
+        }
+        for (year, week_number), total in sorted(weekly.items())
+    ]
+    monthly_totals = [
+        {
+            "label": f"{year}-{datetime(year, month, 1).strftime('%B')}",
+            "hours": round(total, 1),
+        }
+        for (year, month), total in sorted(monthly.items())
+    ]
+
+    return events, weekly_totals, monthly_totals
+
 def fetch_organizations():
     conn = get_db_connection()
     try:
@@ -675,6 +718,9 @@ def admin():
     selected_student_id = request.args.get("student_id", "").strip()
     selected_student = None
     selected_feedback = []
+    selected_progress_events = []
+    weekly_totals = []
+    monthly_totals = []
 
     if selected_student_id:
         try:
@@ -684,6 +730,15 @@ def admin():
         else:
             selected_student = fetch_student_hours_summary(student_id_value)
             selected_feedback = fetch_feedback_for_student(student_id_value)
+            selected_progress_events = []
+            weekly_totals = []
+            monthly_totals = []
+
+            if selected_student is not None:
+                progress_checks = fetch_progress_checks(student_id_value)
+                selected_progress_events, weekly_totals, monthly_totals = summarize_progress_data(
+                    progress_checks
+                )
 
             if selected_student is None:
                 flash("Student not found.", "warning")
@@ -694,6 +749,9 @@ def admin():
         selected_student_id=selected_student_id,
         selected_student=selected_student,
         selected_feedback=selected_feedback,
+        selected_progress_events=selected_progress_events,
+        weekly_totals=weekly_totals,
+        monthly_totals=monthly_totals,
         organizations=organizations,
     )
 

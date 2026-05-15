@@ -833,6 +833,61 @@ h1 {
     background-color: #5248d1;
 }
 
+.student-calendar-section {
+    margin-top: 24px;
+}
+
+.calendar-grid {
+    display: grid;
+    grid-template-columns: minmax(320px, 2fr) minmax(260px, 1fr);
+    gap: 24px;
+    align-items: start;
+}
+
+#student-calendar {
+    min-height: 540px;
+    border: 1px solid #e5defc;
+    border-radius: 14px;
+    padding: 12px;
+    background-color: #ffffff;
+}
+
+.calendar-sidebar {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+.summary-card {
+    padding: 20px;
+    border-radius: 14px;
+    border: 1px solid #e5defc;
+    background-color: #faf7ff;
+}
+
+.summary-card h4 {
+    margin-top: 0;
+    margin-bottom: 12px;
+    font-size: 1rem;
+}
+
+.summary-card ul {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.summary-card li {
+    margin-bottom: 10px;
+    line-height: 1.4;
+}
+
+@media (max-width: 1040px) {
+    .calendar-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
 .weekly-averages {
     margin-top: 22px;
     padding: 18px;
