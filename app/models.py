@@ -32,6 +32,25 @@ class Organization(db.Model):
     __tablename__ = 'organizations'
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(200), unique=True, nullable=False)
+    organization_number = db.Column(db.String(200), nullable=True)
+    organization_address = db.Column(db.String(200), nullable=True)
+    organization_city = db.Column(db.String(200), nullable=True)
+    organization_state = db.Column(db.String(200), nullable=True)
+    organization_zip = db.Column(db.String(200), nullable=True)
+    organization_web = db.Column(db.String(200), nullable=True)
+    screening = db.Column(db.String(200), nullable=True)
+    atmosphere = db.Column(db.Boolean, nullable=False, default=False)
+    facilities = db.Column(db.Boolean, nullable=False, default=False)
+    accommodation = db.Column(db.Boolean, nullable=False, default=False)
+    pay = db.Column(db.Boolean, nullable=False, default=False)
+    wage_requirements = db.Column(db.Boolean, nullable=False, default=False)
+    equal_opportunity = db.Column(db.Boolean, nullable=False, default=False)
+    va_verify = db.Column(db.Boolean, nullable=False, default=False)
+    supervision = db.Column(db.Boolean, nullable=False, default=False)
+    mentorship = db.Column(db.Boolean, nullable=False, default=False)
+    virginia_5cs = db.Column(db.Boolean, nullable=False, default=False)
+    hours = db.Column(db.Boolean, nullable=False, default=False)
+    signature = db.Column(db.String(200), nullable=True)
     created_at = db.Column(db.DateTime, nullable=False, default=db.func.now())
 
 class User(db.Model):
@@ -74,4 +93,3 @@ class PendingUser(db.Model):
     is_teacher = db.Column(db.Boolean, nullable=False, default=False)
     is_present_view = db.Column(db.Boolean, nullable=False, default=False)
     grade = db.Column(db.String(3), nullable=True)
-

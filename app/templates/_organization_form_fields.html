@@ -1,0 +1,54 @@
+{% set organization_name = organization_name | default('', true) %}
+{% set organization_details = organization_details | default({}, true) %}
+{% set organization_text_fields = organization_text_fields | default([], true) %}
+{% set organization_checkbox_fields = organization_checkbox_fields | default([], true) %}
+
+<div class="form-group">
+    <label for="organization_name">Organization Name</label>
+    <input
+        type="text"
+        id="organization_name"
+        name="organization_name"
+        value="{{ organization_name }}"
+        placeholder="Enter organization name"
+        required
+    >
+</div>
+
+{% for field in organization_text_fields %}
+    <div class="form-group">
+        <label for="{{ field.name }}">{{ field.label }}</label>
+        <input
+            type="{{ field.type }}"
+            id="{{ field.name }}"
+            name="{{ field.name }}"
+            value="{{ organization_details.get(field.name, '') }}"
+            placeholder="{{ field.placeholder }}"
+        >
+    </div>
+{% endfor %}
+
+<fieldset class="admin-checkbox-group">
+    <legend>Checkboxes</legend>
+    {% for field in organization_checkbox_fields %}
+        <label>
+            <input
+                type="checkbox"
+                name="{{ field.name }}"
+                {% if organization_details.get(field.name) %}checked{% endif %}
+            >
+            {{ field.label }}
+        </label>
+    {% endfor %}
+</fieldset>
+
+<div class="form-group">
+    <label for="signature">Type your Full Name. (Note: This counts as your legal signature)</label>
+    <input
+        type="text"
+        id="signature"
+        name="signature"
+        value="{{ organization_details.get('signature', '') }}"
+        placeholder="Enter Printed Name"
+    >
+</div>

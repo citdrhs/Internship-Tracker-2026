@@ -21,6 +21,104 @@ STATIC_DIR = BASE_DIR / "static"
 load_dotenv()
 profanity.load_censor_words()
 
+ORGANIZATION_TEXT_FIELDS = [
+    {
+        "name": "organization_number",
+        "label": "Organization Number",
+        "type": "number",
+        "placeholder": "Enter organization number",
+    },
+    {
+        "name": "organization_address",
+        "label": "Organization Address",
+        "type": "text",
+        "placeholder": "Enter organization address",
+    },
+    {
+        "name": "organization_city",
+        "label": "Organization City",
+        "type": "text",
+        "placeholder": "Enter organization city",
+    },
+    {
+        "name": "organization_state",
+        "label": "Organization State",
+        "type": "text",
+        "placeholder": "Enter organization state",
+    },
+    {
+        "name": "organization_zip",
+        "label": "Organization ZIP Code",
+        "type": "number",
+        "placeholder": "Enter organization zip code",
+    },
+    {
+        "name": "organization_web",
+        "label": "Organization Website",
+        "type": "url",
+        "placeholder": "Enter organization website",
+    },
+    {
+        "name": "screening",
+        "label": "What type of screening is required?",
+        "type": "text",
+        "placeholder": "Enter here",
+    },
+]
+
+ORGANIZATION_CHECKBOX_FIELDS = [
+    {
+        "name": "atmosphere",
+        "label": "Is the atmosphere of the workplace conducive to the Work-based Learning experience?",
+    },
+    {
+        "name": "facilities",
+        "label": "Are the facilities and equipment conducive to student safety in the area in which students will be completing the WBL experience?",
+    },
+    {
+        "name": "accommodation",
+        "label": "Will the workplace provide accommodation(s) for students with disabilities?",
+    },
+    {
+        "name": "pay",
+        "label": "Is the workplace offering paid student experiences?",
+    },
+    {
+        "name": "wage_requirements",
+        "label": "For paid experiences, are all federal and state wage requirements met?",
+    },
+    {
+        "name": "equal_opportunity",
+        "label": "Does the workplace provide equal opportunities for students without discrimination based on race, sex, color, national origin, religion, sexual orientation, gender identity, age, political affiliation or against otherwise qualified persons with disabilities?",
+    },
+    {
+        "name": "va_verify",
+        "label": "Has the employer verified students will not be working in direct contact with anyone on the Virginia State Police Sex Offender Registry pursuant to Section 22.1-296.1 of the Code of Virginia?",
+    },
+    {
+        "name": "supervision",
+        "label": "Will the employer ensure students will always be working under the supervision of an industry professional at the workplace?",
+    },
+    {
+        "name": "mentorship",
+        "label": "Will the employer provide structured mentorship with an industry professional at the workplace?",
+    },
+    {
+        "name": "virginia_5cs",
+        "label": "Will the employer provide opportunities for students to build Virginia's 5 Cs (critical thinking, collaboration, communication, creative thinking, and citizenship) on a daily basis?",
+    },
+    {
+        "name": "hours",
+        "label": "Will the employer provide students with at least 160 hours of WBL experience?",
+    },
+]
+
+ORGANIZATION_DETAIL_COLUMN_TYPES = {
+    **{field["name"]: "TEXT" for field in ORGANIZATION_TEXT_FIELDS},
+    **{field["name"]: "BOOLEAN NOT NULL DEFAULT FALSE" for field in ORGANIZATION_CHECKBOX_FIELDS},
+    "signature": "TEXT",
+}
+
 
 def get_database_settings():
     db_name = os.environ.get("DB")
@@ -457,6 +555,28 @@ def summarize_progress_data(progress_checks):
     ]
 
     return events, weekly_totals, monthly_totals
+def parse_organization_details():
+    details = {}
+
+    for field in ORGANIZATION_TEXT_FIELDS:
+        details[field["name"]] = request.form.get(field["name"], "").strip()
+
+    for field in ORGANIZATION_CHECKBOX_FIELDS:
+        details[field["name"]] = request.form.get(field["name"]) == "on"
+
+    details["signature"] = request.form.get("signature", "").strip()
+    return details
+
+def ensure_organization_detail_columns(conn):
+    with conn.cursor() as cur:
+        for column_name, column_type in ORGANIZATION_DETAIL_COLUMN_TYPES.items():
+            cur.execute(f"ALTER TABLE organizations ADD COLUMN IF NOT EXISTS {column_name} {column_type}")
+
+def organization_details_from_row(row):
+    return {
+        column_name: row[index + 2]
+        for index, column_name in enumerate(ORGANIZATION_DETAIL_COLUMN_TYPES)
+    }
 
 def fetch_organizations():
     conn = get_db_connection()
@@ -476,16 +596,18 @@ def fetch_organizations():
 def fetch_organization_entry(organization_id):
     conn = get_db_connection()
     try:
+        with conn:
+            ensure_organization_detail_columns(conn)
         with conn.cursor() as cur:
+            detail_columns = ", ".join(ORGANIZATION_DETAIL_COLUMN_TYPES)
             cur.execute(
-                """
-                SELECT id, name
-                FROM organizations
-                WHERE id = %s
-                """,
+                f"SELECT id, name, {detail_columns} FROM organizations WHERE id = %s",
                 (organization_id,),
             )
-            return cur.fetchone()
+            organization = cur.fetchone()
+            if organization is None:
+                return None
+            return organization[0], organization[1], organization_details_from_row(organization)
     finally:
         conn.close()
 
@@ -694,6 +816,7 @@ def admin():
 
     if request.method == "POST":
         organization_name = request.form.get("organization_name", "").strip()
+        organization_details = parse_organization_details()
 
         if not organization_name:
             flash("Organization name is required.", "danger")
@@ -702,14 +825,14 @@ def admin():
         conn = get_db_connection()
         try:
             with conn:
+                ensure_organization_detail_columns(conn)
                 with conn.cursor() as cur:
+                    detail_columns = list(ORGANIZATION_DETAIL_COLUMN_TYPES)
+                    columns = ", ".join(["name", *detail_columns])
+                    placeholders = ", ".join(["%s"] * (len(detail_columns) + 1))
                     cur.execute(
-                        """
-                        INSERT INTO organizations (name)
-                        VALUES (%s)
-                        ON CONFLICT (name) DO NOTHING
-                        """,
-                        (organization_name,),
+                        f"INSERT INTO organizations ({columns}) VALUES ({placeholders}) ON CONFLICT (name) DO NOTHING",
+                        (organization_name, *[organization_details[column] for column in detail_columns]),
                     )
             flash("Organization added.", "success")
         finally:
@@ -758,6 +881,8 @@ def admin():
         weekly_totals=weekly_totals,
         monthly_totals=monthly_totals,
         organizations=organizations,
+        organization_text_fields=ORGANIZATION_TEXT_FIELDS,
+        organization_checkbox_fields=ORGANIZATION_CHECKBOX_FIELDS,
     )
 
 @app.route("/intr/admin/present-view", methods=["POST"])
@@ -788,18 +913,32 @@ def editOrganization(id):
 
     if request.method == "POST":
         organization_name = request.form.get("organization_name", "").strip()
+        organization_details = parse_organization_details()
 
         if not organization_name:
             flash("Organization name is required.", "danger")
-            return render_template("editorganization.html", organization=organization)
+            return render_template(
+                "editorganization.html",
+                organization=organization,
+                organization_details=organization_details,
+                organization_text_fields=ORGANIZATION_TEXT_FIELDS,
+                organization_checkbox_fields=ORGANIZATION_CHECKBOX_FIELDS,
+            )
 
         conn = get_db_connection()
         try:
             with conn:
+                ensure_organization_detail_columns(conn)
                 with conn.cursor() as cur:
+                    detail_columns = list(ORGANIZATION_DETAIL_COLUMN_TYPES)
+                    detail_updates = ", ".join(f"{column} = %s" for column in detail_columns)
                     cur.execute(
-                        "UPDATE organizations SET name = %s WHERE id = %s",
-                        (organization_name, id),
+                        f"UPDATE organizations SET name = %s, {detail_updates} WHERE id = %s",
+                        (
+                            organization_name,
+                            *[organization_details[column] for column in detail_columns],
+                            id,
+                        ),
                     )
                     cur.execute(
                         "UPDATE users SET organization = %s WHERE organization = %s",
@@ -811,14 +950,26 @@ def editOrganization(id):
                     )
         except psycopg2.IntegrityError:
             flash("Organization already exists.", "danger")
-            return render_template("editorganization.html", organization=organization)
+            return render_template(
+                "editorganization.html",
+                organization=organization,
+                organization_details=organization_details,
+                organization_text_fields=ORGANIZATION_TEXT_FIELDS,
+                organization_checkbox_fields=ORGANIZATION_CHECKBOX_FIELDS,
+            )
         finally:
             conn.close()
 
         flash("Organization updated.", "success")
         return redirect(url_for("admin"))
 
-    return render_template("editorganization.html", organization=organization)
+    return render_template(
+        "editorganization.html",
+        organization=organization,
+        organization_details=organization[2] or {},
+        organization_text_fields=ORGANIZATION_TEXT_FIELDS,
+        organization_checkbox_fields=ORGANIZATION_CHECKBOX_FIELDS,
+    )
 
 @app.route("/intr/admin/organizations/<int:id>/delete", methods=["POST"])
 def deleteOrganization(id):
