@@ -31,18 +31,8 @@ CREATE TABLE admins (
 
 CREATE TABLE organizations (
     id BIGSERIAL PRIMARY KEY,
-    organization_name VARCHAR(256) NOT NULL,
-    email VARCHAR(128) NOT NULL,
-    phone_number VARCHAR(64) NOT NULL,
-    address VARCHAR(128) NOT NULL,
-    city VARCHAR(128) NOT NULL,
-    state VARCHAR(128) NOT NULL,
-    zip_code VARCHAR(16) NOT NULL,
-    website VARCHAR(512) NOT NULL,
-    type_of_screening VARCHAR(128),
-    WBL_checklist BYTEA,
-    Training_agreement_form BYTEA,
-    confirmed_by_admin_id BIGINT NOT NULL REFERENCES admins(id) ON DELETE CASCADE,
+    name VARCHAR(200) UNIQUE NOT NULL,
+    details JSONB NOT NULL DEFAULT '{}'::jsonb,
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
@@ -52,7 +42,7 @@ CREATE TABLE mentors (
     first_name VARCHAR(128) NOT NULL,
     last_name VARCHAR(128) NOT NULL,
     password VARCHAR(128) NOT NULL,
-    organization_id BIGINT REFERENCES organizations(id) ON DELETE CASCADE,
+    organization_id BIGINT NOT NULL REFERENCES organizations(id) ON DELETE CASCADE,
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
@@ -62,7 +52,7 @@ CREATE TABLE students (
     first_name VARCHAR(128) NOT NULL,
     last_name VARCHAR(128) NOT NULL,
     password VARCHAR(128) NOT NULL,
-    mentor_id BIGINT REFERENCES mentors(id) ON DELETE CASCADE,
+    mentor_id BIGINT NOT NULL REFERENCES mentors(id) ON DELETE CASCADE,
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
@@ -72,7 +62,7 @@ CREATE TABLE pending_users (
     first_name VARCHAR(128) NOT NULL,
     last_name VARCHAR(128) NOT NULL,
     password VARCHAR(128) NOT NULL,
-    organization_id BIGINT REFERENCES organizations(id) ON DELETE CASCADE,
+    organization_id BIGINT REFERENCES organizations(id) ON DELETE SET NULL,
     mentor_id BIGINT,
     is_admin BOOLEAN NOT NULL DEFAULT FALSE,
     is_mentor BOOLEAN NOT NULL DEFAULT FALSE,
@@ -163,7 +153,7 @@ def main() -> None:
     finally:
         connection.close()
 
-    print(f"Initialized Internship Tracker schema on {os.getenv("DB_HOST", "localhost")}:{int(os.getenv("DB_PORT", "5432"))}")
+    print(f"Initialized Internship Tracker schema on {os.getenv('DB_HOST', 'localhost')}:{int(os.getenv('DB_PORT', '5432'))}")
 
 
 if __name__ == "__main__":

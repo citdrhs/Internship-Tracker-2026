@@ -15,15 +15,20 @@ from flask_bcrypt import Bcrypt
 from flask_mail import Mail, Message
 from itsdangerous import URLSafeTimedSerializer
 
+load_dotenv()
+
 # Manually defined classes that have information necessary to submit the respective forms
-from forms import LoginForm, RegisterForm, get_database_settings, get_db_connection, fetch_mentors, fetch_organizations
-from models import PendingUser, Student, Mentor, Admin, db
+try:
+    from .forms import LoginForm, RegisterForm, get_database_settings, get_db_connection, fetch_mentors, fetch_organizations
+    from .models import PendingUser, Student, Mentor, Admin, db
+except ImportError:
+    from forms import LoginForm, RegisterForm, get_database_settings, get_db_connection, fetch_mentors, fetch_organizations
+    from models import PendingUser, Student, Mentor, Admin, db
 
 BASE_DIR = Path(__file__).resolve().parent
 TEMPLATES_DIR = BASE_DIR / "templates"
 STATIC_DIR = BASE_DIR / "static"
 
-load_dotenv()
 profanity.load_censor_words()
 
 def build_sqlalchemy_uri():
@@ -56,6 +61,12 @@ db.init_app(app)
 bcrypt = Bcrypt(app)
 mail = Mail(app)
 
+ORGANIZATION_TEXT_FIELDS = []
+ORGANIZATION_CHECKBOX_FIELDS = []
+
+def parse_organization_details():
+    return {"signature": request.form.get("signature", "").strip()}
+
 def require_login():
     if "email" not in session:
         return redirect(url_for("login"))
@@ -85,6 +96,22 @@ def require_student():
         return redirect(url_for("home"))
     return None
 
+def get_current_user_id():
+    return session.get("user_id")
+
+def get_feedback_mentor_id(student_id):
+    if session.get("is_mentor"):
+        return get_current_user_id()
+
+    conn = get_db_connection()
+    try:
+        with conn.cursor() as cur:
+            cur.execute("SELECT mentor_id FROM students WHERE id = %s", (student_id,))
+            row = cur.fetchone()
+            return row[0] if row else None
+    finally:
+        conn.close()
+
 def fetch_students(mentor_id=None):
     conn = get_db_connection()
     try:
@@ -93,13 +120,8 @@ def fetch_students(mentor_id=None):
                 cur.execute(
                     """
                     SELECT u.id, CONCAT(u.first_name, ' ', u.last_name) AS full_name
-                    FROM users u
-                    JOIN mentor_assignments ma ON ma.student_id = u.id
-                    WHERE ma.mentor_id = %s
-                      AND COALESCE(u.is_admin, FALSE) = FALSE
-                      AND COALESCE(u.is_teacher, FALSE) = FALSE
-                      AND COALESCE(u.is_mentor, FALSE) = FALSE
-                      AND COALESCE(u.is_present_view, FALSE) = FALSE
+                    FROM students u
+                    WHERE u.mentor_id = %s
                     ORDER BY u.first_name, u.last_name
                     """,
                     (mentor_id,),
@@ -108,11 +130,7 @@ def fetch_students(mentor_id=None):
                 cur.execute(
                     """
                     SELECT id, CONCAT(first_name, ' ', last_name) AS full_name
-                    FROM users
-                    WHERE COALESCE(is_admin, FALSE) = FALSE
-                      AND COALESCE(is_teacher, FALSE) = FALSE
-                      AND COALESCE(is_mentor, FALSE) = FALSE
-                      AND COALESCE(is_present_view, FALSE) = FALSE
+                    FROM students
                     ORDER BY first_name, last_name
                     """
                 )
@@ -149,9 +167,9 @@ def can_access_student(student_id):
             cur.execute(
                 """
                 SELECT 1
-                FROM mentor_assignments
+                FROM students
                 WHERE mentor_id = %s
-                  AND student_id = %s
+                  AND id = %s
                 """,
                 (mentor_id, student_id),
             )
@@ -168,7 +186,7 @@ def fetch_feedback(mentor_id=None):
                     """
                     SELECT
                         f.id,
-                        CONCAT(u.first_name, ' ', u.last_name) AS student_name,
+                        CONCAT(s.first_name, ' ', s.last_name) AS student_name,
                         f.week,
                         f.description,
                         f.action_items,
@@ -180,9 +198,8 @@ def fetch_feedback(mentor_id=None):
                         f.initiative,
                         f.softskills
                     FROM feedback f
-                    JOIN users u ON f.student_id = u.id
-                    JOIN mentor_assignments ma ON ma.student_id = u.id
-                    WHERE ma.mentor_id = %s
+                    JOIN students s ON f.student_id = s.id
+                    WHERE s.mentor_id = %s
                     ORDER BY f.week DESC, f.id DESC
                     """,
                     (mentor_id,),
@@ -192,7 +209,7 @@ def fetch_feedback(mentor_id=None):
                     """
                     SELECT
                         f.id,
-                        CONCAT(u.first_name, ' ', u.last_name) AS student_name,
+                        CONCAT(s.first_name, ' ', s.last_name) AS student_name,
                         f.week,
                         f.description,
                         f.action_items,
@@ -204,7 +221,7 @@ def fetch_feedback(mentor_id=None):
                         f.initiative,
                         f.softskills
                     FROM feedback f
-                    JOIN users u ON f.student_id = u.id
+                    JOIN students s ON f.student_id = s.id
                     ORDER BY f.week DESC, f.id DESC
                     """
                 )
@@ -268,20 +285,20 @@ def fetch_student_hours_summary(student_id):
                 ),
                 mentor_info AS (
                     SELECT
-                        ma.student_id,
+                        s.id AS student_id,
                         STRING_AGG(DISTINCT CONCAT(m.first_name, ' ', m.last_name), ', ') AS mentor_name,
-                        STRING_AGG(DISTINCT COALESCE(o.name, m.organization), ', ') AS mentor_organization
-                    FROM mentor_assignments ma
-                    JOIN users m ON ma.mentor_id = m.id
+                        STRING_AGG(DISTINCT COALESCE(o.name, ''), ', ') AS mentor_organization
+                    FROM students s
+                    JOIN mentors m ON s.mentor_id = m.id
                     LEFT JOIN organizations o ON m.organization_id = o.id
-                    GROUP BY ma.student_id
+                    GROUP BY s.id
                 )
                 SELECT
-                    u.id,
-                    CONCAT(u.first_name, ' ', u.last_name) AS student_name,
-                    u.email,
-                    COALESCE(u.grade, '') AS grade,
-                    COALESCE(u.organization, '') AS organization,
+                    s.id,
+                    CONCAT(s.first_name, ' ', s.last_name) AS student_name,
+                    s.email,
+                    '' AS grade,
+                    COALESCE(o.name, '') AS organization,
                     COALESCE(pt.total_hours, 0) AS total_hours,
                     COALESCE(pt.days_logged, 0) AS days_logged,
                     COALESCE(mi.mentor_name, 'No mentor assigned') AS mentor_name,
@@ -292,15 +309,13 @@ def fetch_student_hours_summary(student_id):
                     fa.avg_initiative,
                     fa.avg_softskills,
                     fa.total_average_rating
-                FROM users u
-                LEFT JOIN progress_totals pt ON pt.student_id = u.id
-                LEFT JOIN feedback_averages fa ON fa.student_id = u.id
-                LEFT JOIN mentor_info mi ON mi.student_id = u.id
-                WHERE u.id = %s
-                  AND COALESCE(u.is_admin, FALSE) = FALSE
-                  AND COALESCE(u.is_teacher, FALSE) = FALSE
-                  AND COALESCE(u.is_mentor, FALSE) = FALSE
-                  AND COALESCE(u.is_present_view, FALSE) = FALSE
+                FROM students s
+                LEFT JOIN mentors m ON s.mentor_id = m.id
+                LEFT JOIN organizations o ON m.organization_id = o.id
+                LEFT JOIN progress_totals pt ON pt.student_id = s.id
+                LEFT JOIN feedback_averages fa ON fa.student_id = s.id
+                LEFT JOIN mentor_info mi ON mi.student_id = s.id
+                WHERE s.id = %s
                 """,
                 (student_id,),
             )
@@ -316,7 +331,7 @@ def fetch_feedback_for_student(student_id):
                 """
                 SELECT
                     f.id,
-                    CONCAT(u.first_name, ' ', u.last_name) AS student_name,
+                    CONCAT(s.first_name, ' ', s.last_name) AS student_name,
                     f.week,
                     f.description,
                     f.action_items,
@@ -328,7 +343,7 @@ def fetch_feedback_for_student(student_id):
                     f.initiative,
                     f.softskills
                 FROM feedback f
-                JOIN users u ON f.student_id = u.id
+                JOIN students s ON f.student_id = s.id
                 WHERE f.student_id = %s
                 ORDER BY f.week DESC, f.id DESC
                 """,
@@ -424,9 +439,8 @@ def fetch_mentors_by_organization(organization_id):
             cur.execute(
                 """
                 SELECT id, CONCAT(first_name, ' ', last_name) AS full_name
-                FROM users
+                FROM mentors
                 WHERE organization_id = %s
-                  AND COALESCE(is_mentor, FALSE) = TRUE
                 ORDER BY first_name, last_name
                 """,
                 (organization_id,),
@@ -577,6 +591,7 @@ def login():
                 return render_template('login.html', form=form)
 
             session["email"] = user['email']
+            session["user_id"] = user["id"]
             if email_in_tables[1]:
                 session['organization_id'] = user['organization_id']
             if email_in_tables[2]:
@@ -720,14 +735,6 @@ def editOrganization(id):
                         "UPDATE organizations SET name = %s, details = %s WHERE id = %s",
                         (organization_name, Json(organization_details), id),
                     )
-                    cur.execute(
-                        "UPDATE users SET organization = %s WHERE organization = %s",
-                        (organization_name, organization[1]),
-                    )
-                    cur.execute(
-                        "UPDATE pending_users SET organization = %s WHERE organization = %s",
-                        (organization_name, organization[1]),
-                    )
         except psycopg2.IntegrityError:
             flash("Organization already exists.", "danger")
             return render_template(
@@ -767,12 +774,8 @@ def deleteOrganization(id):
                 organization = fetch_organization_entry(id)
                 if organization is not None:
                     cur.execute(
-                        "UPDATE users SET organization = NULL, organization_id = NULL WHERE organization_id = %s OR organization = %s",
-                        (id, organization[1]),
-                    )
-                    cur.execute(
-                        "UPDATE pending_users SET organization = NULL, organization_id = NULL WHERE organization_id = %s OR organization = %s",
-                        (id, organization[1]),
+                        "UPDATE pending_users SET organization_id = NULL WHERE organization_id = %s",
+                        (id,),
                     )
                 cur.execute("DELETE FROM organizations WHERE id = %s", (id,))
                 deleted = cur.rowcount
@@ -983,10 +986,10 @@ def submitFeedback():
             flash("You can only submit feedback for assigned students.", "danger")
             return render_template("feedbackform.html", students=students)
 
-        mentor_id = get_current_user_id()
+        mentor_id = get_feedback_mentor_id(payload["student_id"])
         if mentor_id is None:
-            flash("You must be logged in as a valid user to submit feedback.", "danger")
-            return redirect(url_for("login"))
+            flash("Selected student does not have a mentor assigned.", "danger")
+            return render_template("feedbackform.html", students=students)
 
         conn = get_db_connection()
         try:

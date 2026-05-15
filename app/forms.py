@@ -5,6 +5,9 @@ from wtforms.validators import DataRequired, Length, Email, EqualTo, ValidationE
 import os
 import psycopg2
 from psycopg2.extras import DictCursor
+from dotenv import load_dotenv
+
+load_dotenv()
 
 def get_database_settings():
     db_name = os.environ.get("DB")
@@ -47,9 +50,9 @@ def fetch_organizations():
         with conn.cursor(cursor_factory= DictCursor) as cur:
             cur.execute(
                 """
-                SELECT id, organization_name
+                SELECT id, name AS organization_name
                 FROM organizations
-                ORDER BY organization_name
+                ORDER BY name
                 """
             )
             return cur.fetchall()
@@ -96,12 +99,21 @@ class RegisterForm(FlaskForm):
     first_name = StringField('First Name', validators = [DataRequired()])
     last_name = StringField('Last Name', validators = [DataRequired()])
     role = SelectField("I am a...", choices= [("", "Select Role"), ("student", "Student"), ("mentor", "Mentor"), ("admin", "Admin")])
-    organization_id = SelectField("Organizations", choices = [("", "Select your organization")] + [(org['id'], org['organization_name']) for org in fetch_organizations()])
-    mentor_id = SelectField("Mentors", choices = [("", "Select your mentor")] + [(mentor['id'], f"{mentor['first_name']} {mentor['last_name']}") for mentor in fetch_mentors()])
+    organization_id = SelectField("Organizations", choices = [("", "Select your organization")])
+    mentor_id = SelectField("Mentors", choices = [("", "Select your mentor")])
     security_code = StringField("Security Code", validators=[Optional()])
     password = PasswordField('Password', validators = [DataRequired()])
     confirmPassword = PasswordField('Confirm Password', validators=[DataRequired()])
     submit = SubmitField('Register')
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.organization_id.choices = [("", "Select your organization")] + [
+            (str(org["id"]), org["organization_name"]) for org in fetch_organizations()
+        ]
+        self.mentor_id.choices = [("", "Select your mentor")] + [
+            (str(mentor["id"]), f"{mentor['first_name']} {mentor['last_name']}") for mentor in fetch_mentors()
+        ]
 
 class LoginForm(FlaskForm):
     email = StringField('Email', validators = [DataRequired(), Email()])

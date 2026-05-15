@@ -78,3 +78,4 @@ class PendingUser(db.Model):
     is_mentor = db.Column(db.Boolean, nullable=False, default=False)
     is_student = db.Column(db.Boolean, nullable=False, default=False)
     is_present_view = db.Column(db.Boolean, nullable=False, default=False)
+    created_at = db.Column(db.DateTime, nullable=False, default=db.func.now())
