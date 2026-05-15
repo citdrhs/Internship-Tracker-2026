@@ -883,6 +883,8 @@ def admin():
                         (organization_name, Json(organization_details)),
                     )
             flash("Organization added.", "success")
+        except Exception as exc:
+            return f"Organization create failed: {type(exc).__name__}: {exc}"
         finally:
             conn.close()
 
