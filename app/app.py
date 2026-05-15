@@ -16,7 +16,7 @@ from flask_mail import Mail, Message
 from itsdangerous import URLSafeTimedSerializer
 
 # Manually defined classes that have information necessary to submit the respective forms
-from forms import LoginForm, RegisterForm, get_database_settings, get_db_connection, fetch_mentors, fetch_organizations
+from forms import LoginForm, RegisterForm, AddOrganizationForm, AdminStudentForm, get_database_settings, get_db_connection, fetch_mentors, fetch_organizations
 from models import PendingUser, Student, Mentor, Admin, db
 
 BASE_DIR = Path(__file__).resolve().parent
