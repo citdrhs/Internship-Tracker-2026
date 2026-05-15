@@ -18,7 +18,7 @@
                     <label for="student">Student Name</label>
                     <select name="student" id="student" required>
                         {% for s in students %}
-                        <option value="{{ s[0] }}" {% if s[0] == feedback[1] %}selected{% endif %}>{{ s[1] }}</option>
+                        <option value="{{ s[0] }}" {% if s[0] = feedback[1] %}selected{% endif %}>{{ s[1] }}</option>
                         {% endfor %}
                     </select>
                 </div>

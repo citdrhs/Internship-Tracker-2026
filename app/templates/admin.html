@@ -11,6 +11,10 @@
                 {% if session.get('is_present_view') %}Turn Off Presenter View{% else %}Presenter View{% endif %}
             </button>
         </form>
+
+        <!-- calendar  -->
+        <link href="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.15/index.global.min.css" rel="stylesheet">
+        <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.15/index.global.min.js"></script>
     </header>
 
     {% with messages = get_flashed_messages(with_categories=true) %}
@@ -92,11 +96,7 @@
                         <p>{{ selected_student[2] }}</p>
                     </div>
                     <div>
-                        <p class="profile-label">Grade</p>
-                        <p>{{ selected_student[3] or 'N/A' }}</p>
-                    </div>
-                    <div>
-                        <p class="profile-label">Organization</p>
+                        <p class="pro    file-label">Organization</p>
                         <p>{{ selected_student[4] or 'N/A' }}</p>
                     </div>
                     <div>
@@ -112,10 +112,68 @@
                         <p>{{ selected_student[7] }}</p>
                     </div>
                     <div>
-                        <p class="profile-label">Mentor Organization</p>
+                        <p class="profile-label">Organization</p>
                         <p>{{ selected_student[8] or 'N/A' }}</p>
                     </div>
                 </div>
+
+                <section class="student-calendar-section">
+                    <h3>Work Hours Calendar</h3>
+                    {% if selected_progress_events %}
+                        <div class="calendar-grid">
+                            <div id="student-calendar" data-events='{{ selected_progress_events_json|safe }}'></div>
+                            <aside class="calendar-sidebar">
+                                <div class="summary-card">
+                                    <h4>Weekly Totals</h4>
+                                    <ul>
+                                        {% for item in weekly_totals %}
+                                            <li><strong>{{ item.label }}</strong>: {{ item.hours }} hrs</li>
+                                        {% endfor %}
+                                    </ul>
+                                </div>
+                                <div class="summary-card">
+                                    <h4>Monthly Totals</h4>
+                                    <ul>
+                                        {% for item in monthly_totals %}
+                                            <li><strong>{{ item.label }}</strong>: {{ item.hours }} hrs</li>
+                                        {% endfor %}
+                                    </ul>
+                                </div>
+                            </aside>
+                        </div>
+                    {% else %}
+                        <div class="empty-state">
+                            <p>No work hours logged yet for calendar display.</p>
+                        </div>
+                    {% endif %}
+                    <script>
+                        document.addEventListener('DOMContentLoaded', function () {
+                            const calendarEl = document.getElementById('student-calendar');
+                            if (!calendarEl) return;
+                            const eventsJson = calendarEl.dataset.events || '[]';
+                            const events = JSON.parse(eventsJson)
+                            
+
+                            const calendar = new FullCalendar.Calendar(calendarEl, {
+                                initialView: 'dayGridMonth',
+                                headerToolbar: {
+                                    left: 'prev,next today',
+                                    center: 'title',
+                                    right: 'dayGridMonth'
+                                },
+                                events: events,
+                                dayMaxEvents: true,
+                                height: 'auto',
+                                editable: false,
+                                eventDisplay: 'block',
+                                eventColor: '#6c63ff',
+                                eventTextColor: '#ffffff',
+                            });
+
+                            calendar.render();
+                        });
+                    </script>
+                </section>
 
                 <section class="student-feedback-section">
                     <h3>Weekly Feedback</h3>

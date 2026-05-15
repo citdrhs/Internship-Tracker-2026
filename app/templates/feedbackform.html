@@ -27,21 +27,38 @@
 
                 <div class="form-group">
                     <label for="week">Week Number</label>
-                    <input type="number" name="week" id="week" min="1" max="52" required>
+                    <select name="week" id="week" required>
+                        <option value="" disabled selected>Select week</option>
+                        <option value="1">1</option>
+                        <option value="2">2</option>
+                        <option value="3">3</option>
+                        <option value="4">4</option>
+                        <option value="5">5</option>
+                        <option value="6">6</option>
+                        <option value="7">7</option>
+                        <option value="8">8</option>
+                        <option value="9">9</option>
+                        <option value="10">10</option>
+                        <option value="11">11</option>
+                        <option value="12">12</option>
+                        <option value="13">13</option>
+                        <option value="14">14</option>
+                        <option value="15">15</option>
+                    </select>
                 </div>
 
                 <div class="form-group form-span-2">
-                    <label for="description">Qualitative feedback</label>
+                    <label for="description">Qualitative feedback for the student</label>
                     <textarea class="textarea-lg" name="description" id="description" placeholder="Write your feedback here..." required></textarea>
                 </div>
 
                 <div class="form-group form-span-2">
-                    <label for="action_items">Action Items (specific, concrete next steps)</label>
+                    <label for="action_items">Action items for students to take</label>
                     <textarea name="action_items" id="action_items" placeholder="Example: Add docstrings to all public functions; write 3 unit tests for the parsing module; refactor the login route into smaller helpers."></textarea>
                 </div>
 
                 <div class="form-group form-span-2">
-                    <label for="focus_areas">Mentor focus areas (what to improve)</label>
+                    <label for="focus_areas">Areas for the student focus on</label>
                     <textarea name="focus_areas" id="focus_areas" placeholder="Example: Commenting on code must be done more thoroughly; commit messages should explain the why; break down large PRs into smaller chunks."></textarea>
                 </div>
 
@@ -73,11 +90,18 @@
                     <div class="range-labels"><span>1</span><span id="initiativeDisplay">3</span><span>5</span></div>
                 </div>
 
-                <div class="form-group form-span-2">
+                <div class="form-group">
                     <label for="Soft_Skills">Soft Skills</label>
                     <input type="range" name="Soft_Skills" id="Soft_Skills" min="1" max="5" value="3"
                            oninput="document.getElementById('softSkillsDisplay').textContent = this.value">
                     <div class="range-labels"><span>1</span><span id="softSkillsDisplay">3</span><span>5</span></div>
+                </div>
+
+                <div class="form-group">
+                    <label for="overall_rating">Overall Rating</label>
+                    <input type="range" name="overall_rating" id="overall_rating" min="1" max="5" value="3"
+                           oninput="document.getElementById('overallDisplay').textContent = this.value">
+                    <div class="range-labels"><span>1</span><span id="overallDisplay">3</span><span>5</span></div>
                 </div>
 
                 <div class="form-group form-span-2 btn-row">
