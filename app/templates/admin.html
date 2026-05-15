@@ -124,7 +124,7 @@
                     <h3>Work Hours Calendar</h3>
                     {% if selected_progress_events %}
                         <div class="calendar-grid">
-                            <div id="student-calendar" data-events='{{ selected_progress_events|tojson|safe }}'></div>
+                            <div id="student-calendar" data-events='{{ selected_progress_events_json|safe }}'></div>
                             <aside class="calendar-sidebar">
                                 <div class="summary-card">
                                     <h4>Weekly Totals</h4>
@@ -154,7 +154,8 @@
                             const calendarEl = document.getElementById('student-calendar');
                             if (!calendarEl) return;
                             const eventsJson = calendarEl.dataset.events || '[]';
-                            const events = JSON.parse(eventsJson);
+                            const events = JSON.parse(eventsJson)
+                            
 
                             const calendar = new FullCalendar.Calendar(calendarEl, {
                                 initialView: 'dayGridMonth',

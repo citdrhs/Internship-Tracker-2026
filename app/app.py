@@ -1,3 +1,4 @@
+import json
 import os
 from pathlib import Path
 from urllib.parse import quote_plus
@@ -753,6 +754,7 @@ def admin():
         selected_student=selected_student,
         selected_feedback=selected_feedback,
         selected_progress_events=selected_progress_events,
+        selected_progress_events_json=json.dumps(selected_progress_events),
         weekly_totals=weekly_totals,
         monthly_totals=monthly_totals,
         organizations=organizations,
