@@ -206,7 +206,7 @@ def reset_database():
         with conn, conn.cursor() as cur:
             cur.execute(
                 "DROP TABLE IF EXISTS feedback, progress_checks, students, mentors, "
-                "admins, pending_users, mentor_assignments, users, organizations CASCADE"
+                "admins, pending_users, mentor_assignments, users CASCADE"
             )
         with app.app_context():
             db.create_all()
