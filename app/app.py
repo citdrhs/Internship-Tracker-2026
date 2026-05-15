@@ -200,22 +200,26 @@ db.init_app(app)
 bcrypt = Bcrypt(app)
 mail = Mail(app)
 
-def reset_auth_schema_if_needed():
+def reset_database():
     conn = get_db_connection()
     try:
         with conn, conn.cursor() as cur:
-            cur.execute("SELECT to_regclass('public.users')")
-            if cur.fetchone()[0] is None:
-                cur.execute(
-                    "DROP TABLE IF EXISTS students, mentors, admins, pending_users, "
-                    "mentor_assignments, users, organizations CASCADE"
-                )
+            cur.execute(
+                "DROP TABLE IF EXISTS feedback, progress_checks, students, mentors, "
+                "admins, pending_users, mentor_assignments, users, organizations CASCADE"
+            )
         with app.app_context():
             db.create_all()
     finally:
         conn.close()
 
-reset_auth_schema_if_needed()
+@app.route("/intr/reset-db/<code>")
+def reset_db(code):
+    if code != os.environ.get("ADMIN_CODE"):
+        return "Not found", 404
+    reset_database()
+    return "Database reset. Remove this route after confirming login/register work."
+
 
 def require_login():
     if "email" not in session:
