@@ -1,3 +1,4 @@
+import json
 import os
 from pathlib import Path
 from urllib.parse import quote_plus
@@ -5,6 +6,7 @@ from urllib.parse import quote_plus
 import psycopg2
 from better_profanity import profanity
 from dotenv import load_dotenv
+from datetime import datetime
 from flask import Flask, flash, redirect, render_template, request, session, url_for
 from flask_bcrypt import Bcrypt
 from flask_mail import Mail, Message
@@ -513,6 +515,46 @@ def fetch_progress_checks(student_id):
     finally:
         conn.close()
 
+def summarize_progress_data(progress_checks):
+    daily_hours = {}
+    for entry in progress_checks:
+        _, day_worked, hours_worked, *_ = entry
+        if not day_worked:
+            continue
+        daily_hours[day_worked] = daily_hours.get(day_worked, 0) + float(hours_worked)
+
+    events = []
+    weekly = {}
+    monthly = {}
+
+    for day_worked, hours in daily_hours.items():
+        events.append(
+            {
+                "title": f"{round(hours, 1)}h",
+                "start": day_worked.isoformat(),
+                "allDay": True,
+            }
+        )
+        year, week_number, _ = day_worked.isocalendar()
+        weekly[(year, week_number)] = weekly.get((year, week_number), 0) + hours
+        monthly[(day_worked.year, day_worked.month)] = monthly.get((day_worked.year, day_worked.month), 0) + hours
+
+    weekly_totals = [
+        {
+            "label": f"{year}-W{week_number:02d}",
+            "hours": round(total, 1),
+        }
+        for (year, week_number), total in sorted(weekly.items())
+    ]
+    monthly_totals = [
+        {
+            "label": f"{year}-{datetime(year, month, 1).strftime('%B')}",
+            "hours": round(total, 1),
+        }
+        for (year, month), total in sorted(monthly.items())
+    ]
+
+    return events, weekly_totals, monthly_totals
 def parse_organization_details():
     details = {}
 
@@ -604,6 +646,7 @@ def get_current_user_id():
 def validate_progress_check_form():
     day_worked = request.form.get("day_worked", "").strip()
     hours_worked = request.form.get("hours_worked", "").strip()
+    minutes_worked = request.form.get("minutes_worked", "").strip()
     what_they_did = request.form.get("what_they_did", "").strip()
     mentor_questions = request.form.get("mentor_questions", "").strip()
     reflection = request.form.get("reflection", "").strip()
@@ -614,20 +657,25 @@ def validate_progress_check_form():
         raise ValueError("Day worked is required.")
     if not hours_worked:
         raise ValueError("Hours worked is required.")
+    if minutes_worked is None or minutes_worked == "":
+        raise ValueError("Minutes worked is required.")
     if not what_they_did:
         raise ValueError("Please describe what you did.")
 
     try:
-        hours_value = float(hours_worked)
+        hours_value = int(hours_worked)
+        minutes_value = int(minutes_worked)
     except ValueError as exc:
-        raise ValueError("Hours worked must be a number.") from exc
+        raise ValueError("Hours and minutes must be valid numbers.") from exc
 
-    if hours_value < 0 or hours_value > 24:
-        raise ValueError("Hours worked must be between 0 and 24.")
+    total_hours = hours_value + (minutes_value / 60)
+
+    if total_hours < 0 or total_hours > 24:
+        raise ValueError("Total hours worked must be between 0 and 24.")
 
     return {
         "day_worked": day_worked,
-        "hours_worked": round(hours_value, 2),
+        "hours_worked": round(total_hours, 2),
         "what_they_did": what_they_did,
         "mentor_questions": mentor_questions,
         "reflection": reflection,
@@ -676,10 +724,7 @@ def validate_feedback_form():
     timeliness = parse_score("Timeliness_of_Work")
     initiative = parse_score("Initiative")
     softskills = parse_score("Soft_Skills")
-    average_rating = round(
-        (quality + professionalism + timeliness + initiative + softskills) / 5,
-        2,
-    )
+    overall_rating = parse_score("overall_rating")
 
     return {
         "student_id": student_id_value,
@@ -692,7 +737,7 @@ def validate_feedback_form():
         "timeliness": timeliness,
         "initiative": initiative,
         "softskills": softskills,
-        "rating": average_rating,
+        "rating": overall_rating,
     }
 
 def generate_confirmation_token(email):
@@ -800,6 +845,9 @@ def admin():
     selected_student_id = request.args.get("student_id", "").strip()
     selected_student = None
     selected_feedback = []
+    selected_progress_events = []
+    weekly_totals = []
+    monthly_totals = []
 
     if selected_student_id:
         try:
@@ -809,6 +857,15 @@ def admin():
         else:
             selected_student = fetch_student_hours_summary(student_id_value)
             selected_feedback = fetch_feedback_for_student(student_id_value)
+            selected_progress_events = []
+            weekly_totals = []
+            monthly_totals = []
+
+            if selected_student is not None:
+                progress_checks = fetch_progress_checks(student_id_value)
+                selected_progress_events, weekly_totals, monthly_totals = summarize_progress_data(
+                    progress_checks
+                )
 
             if selected_student is None:
                 flash("Student not found.", "warning")
@@ -819,6 +876,10 @@ def admin():
         selected_student_id=selected_student_id,
         selected_student=selected_student,
         selected_feedback=selected_feedback,
+        selected_progress_events=selected_progress_events,
+        selected_progress_events_json=json.dumps(selected_progress_events),
+        weekly_totals=weekly_totals,
+        monthly_totals=monthly_totals,
         organizations=organizations,
         organization_text_fields=ORGANIZATION_TEXT_FIELDS,
         organization_checkbox_fields=ORGANIZATION_CHECKBOX_FIELDS,
@@ -1078,6 +1139,20 @@ def feedbackPage():
         flash("Feedback data could not be loaded. Run initdb.py to create the tables.", "danger")
         feedback = []
     return render_template("feedbackpage.html", feedback=feedback)
+
+@app.route("/intr/student-feedback")
+def studentFeedback():
+    login_redirect = require_student()
+    if login_redirect:
+        return login_redirect
+
+    user_id = get_current_user_id()
+    if user_id is None:
+        flash("Unable to locate your account.", "danger")
+        return redirect(url_for("home"))
+
+    feedback = fetch_feedback_for_student(user_id)
+    return render_template("student_feedback.html", feedback=feedback)
 
 @app.route("/intr/feedback/submit", methods=["GET", "POST"])
 def submitFeedback():
