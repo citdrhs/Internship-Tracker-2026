@@ -200,6 +200,80 @@ db.init_app(app)
 bcrypt = Bcrypt(app)
 mail = Mail(app)
 
+def repair_database_schema():
+    conn = get_db_connection()
+    try:
+        with conn, conn.cursor() as cur:
+            cur.execute(
+                """
+                DROP TABLE IF EXISTS feedback, progress_checks, mentor_assignments, pending_users CASCADE;
+                CREATE TABLE pending_users (
+                    id BIGSERIAL PRIMARY KEY,
+                    email VARCHAR(200) UNIQUE NOT NULL,
+                    first_name VARCHAR(200) NOT NULL,
+                    last_name VARCHAR(200) NOT NULL,
+                    password VARCHAR(500) NOT NULL,
+                    organization VARCHAR(200),
+                    organization_id BIGINT REFERENCES organizations(id) ON DELETE SET NULL,
+                    role VARCHAR(20) NOT NULL DEFAULT 'student',
+                    requested_mentor_id BIGINT,
+                    is_admin BOOLEAN NOT NULL DEFAULT FALSE,
+                    is_mentor BOOLEAN NOT NULL DEFAULT FALSE,
+                    is_teacher BOOLEAN NOT NULL DEFAULT FALSE,
+                    is_present_view BOOLEAN NOT NULL DEFAULT FALSE,
+                    grade VARCHAR(3)
+                );
+                CREATE TABLE mentor_assignments (
+                    id BIGSERIAL PRIMARY KEY,
+                    student_id BIGINT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+                    mentor_id BIGINT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+                    assigned_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+                    UNIQUE (student_id)
+                );
+                CREATE TABLE progress_checks (
+                    id BIGSERIAL PRIMARY KEY,
+                    student_id BIGINT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+                    day_worked DATE NOT NULL,
+                    hours_worked NUMERIC(5,2) NOT NULL CHECK (hours_worked >= 0 AND hours_worked <= 24),
+                    what_they_did TEXT NOT NULL,
+                    mentor_questions TEXT,
+                    reflection TEXT,
+                    next_steps TEXT,
+                    self_questions TEXT,
+                    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+                    UNIQUE (student_id, day_worked)
+                );
+                CREATE TABLE feedback (
+                    id BIGSERIAL PRIMARY KEY,
+                    student_id BIGINT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+                    mentor_id BIGINT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+                    week INTEGER NOT NULL CHECK (week BETWEEN 1 AND 52),
+                    description TEXT NOT NULL,
+                    action_items TEXT,
+                    focus_areas TEXT,
+                    quality SMALLINT NOT NULL CHECK (quality BETWEEN 1 AND 5),
+                    professionalism SMALLINT NOT NULL CHECK (professionalism BETWEEN 1 AND 5),
+                    timeliness SMALLINT NOT NULL CHECK (timeliness BETWEEN 1 AND 5),
+                    initiative SMALLINT NOT NULL CHECK (initiative BETWEEN 1 AND 5),
+                    softskills SMALLINT NOT NULL CHECK (softskills BETWEEN 1 AND 5),
+                    rating NUMERIC(4,2) NOT NULL CHECK (rating BETWEEN 1 AND 5),
+                    submitted_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+                );
+                """
+            )
+    finally:
+        conn.close()
+
+@app.route("/intr/repair-db/<code>")
+def repair_db(code):
+    if code != "1111":
+        return "Not found", 404
+    try:
+        repair_database_schema()
+    except Exception as exc:
+        return f"Database repair failed: {type(exc).__name__}: {exc}"
+    return "Database repair complete. Remove this route after testing."
+
 def require_login():
     if "email" not in session:
         return redirect(url_for("login"))
