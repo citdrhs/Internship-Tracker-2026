@@ -3,7 +3,6 @@ from pathlib import Path
 from urllib.parse import quote_plus
 
 import psycopg2
-from psycopg2.extras import Json
 from better_profanity import profanity
 from dotenv import load_dotenv
 from flask import Flask, flash, redirect, render_template, request, session, url_for
@@ -112,6 +111,12 @@ ORGANIZATION_CHECKBOX_FIELDS = [
     },
 ]
 
+ORGANIZATION_DETAIL_COLUMN_TYPES = {
+    **{field["name"]: "TEXT" for field in ORGANIZATION_TEXT_FIELDS},
+    **{field["name"]: "BOOLEAN NOT NULL DEFAULT FALSE" for field in ORGANIZATION_CHECKBOX_FIELDS},
+    "signature": "TEXT",
+}
+
 
 def get_database_settings():
     db_name = os.environ.get("DB")
@@ -204,6 +209,8 @@ def repair_database_schema():
     conn = get_db_connection()
     try:
         with conn, conn.cursor() as cur:
+            for column_name, column_type in ORGANIZATION_DETAIL_COLUMN_TYPES.items():
+                cur.execute(f"ALTER TABLE organizations ADD COLUMN IF NOT EXISTS {column_name} {column_type}")
             cur.execute(
                 """
                 DROP TABLE IF EXISTS feedback, progress_checks, mentor_assignments, pending_users CASCADE;
@@ -582,40 +589,6 @@ def fetch_progress_checks(student_id):
     finally:
         conn.close()
 
-def ensure_organization_details_column(conn):
-    with conn.cursor() as cur:
-        try:
-            cur.execute(
-                "ALTER TABLE organizations ADD COLUMN IF NOT EXISTS details JSONB NOT NULL DEFAULT '{}'::jsonb"
-            )
-        except psycopg2.errors.InsufficientPrivilege:
-            conn.rollback()
-            return
-        cur.execute(
-            """
-            SELECT column_name
-            FROM information_schema.columns
-            WHERE table_name = 'organizations'
-              AND column_name = ANY(%s)
-            """,
-            (
-                [
-                    "address",
-                    "email",
-                    "phone_number",
-                    "state",
-                    "city",
-                    "zip",
-                    "website_url",
-                ],
-            ),
-        )
-        for column_name, in cur.fetchall():
-            cur.execute(f"ALTER TABLE organizations ALTER COLUMN {column_name} DROP NOT NULL")
-        cur.execute(
-            "CREATE UNIQUE INDEX IF NOT EXISTS organizations_name_unique_idx ON organizations (name)"
-        )
-
 def parse_organization_details():
     details = {}
 
@@ -627,6 +600,17 @@ def parse_organization_details():
 
     details["signature"] = request.form.get("signature", "").strip()
     return details
+
+def ensure_organization_detail_columns(conn):
+    with conn.cursor() as cur:
+        for column_name, column_type in ORGANIZATION_DETAIL_COLUMN_TYPES.items():
+            cur.execute(f"ALTER TABLE organizations ADD COLUMN IF NOT EXISTS {column_name} {column_type}")
+
+def organization_details_from_row(row):
+    return {
+        column_name: row[index + 2]
+        for index, column_name in enumerate(ORGANIZATION_DETAIL_COLUMN_TYPES)
+    }
 
 def fetch_organizations():
     conn = get_db_connection()
@@ -647,17 +631,17 @@ def fetch_organization_entry(organization_id):
     conn = get_db_connection()
     try:
         with conn:
-            ensure_organization_details_column(conn)
+            ensure_organization_detail_columns(conn)
         with conn.cursor() as cur:
+            detail_columns = ", ".join(ORGANIZATION_DETAIL_COLUMN_TYPES)
             cur.execute(
-                """
-                SELECT id, name, details
-                FROM organizations
-                WHERE id = %s
-                """,
+                f"SELECT id, name, {detail_columns} FROM organizations WHERE id = %s",
                 (organization_id,),
             )
-            return cur.fetchone()
+            organization = cur.fetchone()
+            if organization is None:
+                return None
+            return organization[0], organization[1], organization_details_from_row(organization)
     finally:
         conn.close()
 
@@ -872,15 +856,14 @@ def admin():
         conn = get_db_connection()
         try:
             with conn:
-                ensure_organization_details_column(conn)
+                ensure_organization_detail_columns(conn)
                 with conn.cursor() as cur:
+                    detail_columns = list(ORGANIZATION_DETAIL_COLUMN_TYPES)
+                    columns = ", ".join(["name", *detail_columns])
+                    placeholders = ", ".join(["%s"] * (len(detail_columns) + 1))
                     cur.execute(
-                        """
-                        INSERT INTO organizations (name, details)
-                        VALUES (%s, %s)
-                        ON CONFLICT (name) DO NOTHING
-                        """,
-                        (organization_name, Json(organization_details)),
+                        f"INSERT INTO organizations ({columns}) VALUES ({placeholders}) ON CONFLICT (name) DO NOTHING",
+                        (organization_name, *[organization_details[column] for column in detail_columns]),
                     )
             flash("Organization added.", "success")
         except Exception as exc:
@@ -962,11 +945,17 @@ def editOrganization(id):
         conn = get_db_connection()
         try:
             with conn:
-                ensure_organization_details_column(conn)
+                ensure_organization_detail_columns(conn)
                 with conn.cursor() as cur:
+                    detail_columns = list(ORGANIZATION_DETAIL_COLUMN_TYPES)
+                    detail_updates = ", ".join(f"{column} = %s" for column in detail_columns)
                     cur.execute(
-                        "UPDATE organizations SET name = %s, details = %s WHERE id = %s",
-                        (organization_name, Json(organization_details), id),
+                        f"UPDATE organizations SET name = %s, {detail_updates} WHERE id = %s",
+                        (
+                            organization_name,
+                            *[organization_details[column] for column in detail_columns],
+                            id,
+                        ),
                     )
                     cur.execute(
                         "UPDATE users SET organization = %s WHERE organization = %s",
