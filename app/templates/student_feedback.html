@@ -1,0 +1,52 @@
+{% extends 'base.html' %}
+{% block title %}My Feedback{% endblock %}
+{% block content %}
+<h1>My Feedback</h1>
+<p><a href="{{ url_for('home') }}">Return home</a>.</p>
+<div class="tableBox">
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+            {% for category, message in messages %}
+                <div class="alert alert-{{ category }}">{{ message }}</div>
+            {% endfor %}
+        {% endif %}
+    {% endwith %}
+
+    {% if feedback %}
+    <table>
+        <tr>
+            <th>Week</th>
+            <th>Feedback</th>
+            <th>Action Items</th>
+            <th>Focus Areas</th>
+            <th>Quality</th>
+            <th>Professionalism</th>
+            <th>Timeliness</th>
+            <th>Initiative</th>
+            <th>Soft Skills</th>
+            <th>Overall Rating</th>
+        </tr>
+        {% for f in feedback %}
+        <tr>
+            <td>{{ f[2] }}</td>
+            <td>{{ f[3] }}</td>
+            <td>{{ f[4] or '' }}</td>
+            <td>{{ f[5] or '' }}</td>
+            <td>{{ f[7] }}</td>
+            <td>{{ f[8] }}</td>
+            <td>{{ f[9] }}</td>
+            <td>{{ f[10] }}</td>
+            <td>{{ f[11] }}</td>
+            <td>
+                <div class="rating-badge">{{ f[6] }}<span>/5</span></div>
+            </td>
+        </tr>
+        {% endfor %}
+    </table>
+    {% else %}
+    <div class="empty-state">
+        <p>No feedback has been submitted for your account yet.</p>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

@@ -987,6 +987,20 @@ def feedbackPage():
         feedback = []
     return render_template("feedbackpage.html", feedback=feedback)
 
+@app.route("/intr/student-feedback")
+def studentFeedback():
+    login_redirect = require_student()
+    if login_redirect:
+        return login_redirect
+
+    user_id = get_current_user_id()
+    if user_id is None:
+        flash("Unable to locate your account.", "danger")
+        return redirect(url_for("home"))
+
+    feedback = fetch_feedback_for_student(user_id)
+    return render_template("student_feedback.html", feedback=feedback)
+
 @app.route("/intr/feedback/submit", methods=["GET", "POST"])
 def submitFeedback():
     login_redirect = require_login()
