@@ -200,6 +200,23 @@ db.init_app(app)
 bcrypt = Bcrypt(app)
 mail = Mail(app)
 
+def reset_auth_schema_if_needed():
+    conn = get_db_connection()
+    try:
+        with conn, conn.cursor() as cur:
+            cur.execute("SELECT to_regclass('public.users')")
+            if cur.fetchone()[0] is None:
+                cur.execute(
+                    "DROP TABLE IF EXISTS students, mentors, admins, pending_users, "
+                    "mentor_assignments, users, organizations CASCADE"
+                )
+        with app.app_context():
+            db.create_all()
+    finally:
+        conn.close()
+
+reset_auth_schema_if_needed()
+
 def require_login():
     if "email" not in session:
         return redirect(url_for("login"))
