@@ -584,9 +584,13 @@ def fetch_progress_checks(student_id):
 
 def ensure_organization_details_column(conn):
     with conn.cursor() as cur:
-        cur.execute(
-            "ALTER TABLE organizations ADD COLUMN IF NOT EXISTS details JSONB NOT NULL DEFAULT '{}'::jsonb"
-        )
+        try:
+            cur.execute(
+                "ALTER TABLE organizations ADD COLUMN IF NOT EXISTS details JSONB NOT NULL DEFAULT '{}'::jsonb"
+            )
+        except psycopg2.errors.InsufficientPrivilege:
+            conn.rollback()
+            return
         cur.execute(
             """
             SELECT column_name
