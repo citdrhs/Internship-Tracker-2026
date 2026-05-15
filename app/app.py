@@ -601,10 +601,7 @@ def validate_feedback_form():
     timeliness = parse_score("Timeliness_of_Work")
     initiative = parse_score("Initiative")
     softskills = parse_score("Soft_Skills")
-    average_rating = round(
-        (quality + professionalism + timeliness + initiative + softskills) / 5,
-        2,
-    )
+    overall_rating = parse_score("overall_rating")
 
     return {
         "student_id": student_id_value,
@@ -617,7 +614,7 @@ def validate_feedback_form():
         "timeliness": timeliness,
         "initiative": initiative,
         "softskills": softskills,
-        "rating": average_rating,
+        "rating": overall_rating,
     }
 
 def generate_confirmation_token(email):
