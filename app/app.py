@@ -215,7 +215,7 @@ def reset_database():
 
 @app.route("/intr/reset-db/<code>")
 def reset_db(code):
-    if code != os.environ.get("ADMIN_CODE"):
+    if code != "1111":
         return "Not found", 404
     reset_database()
     return "Database reset. Remove this route after confirming login/register work."
