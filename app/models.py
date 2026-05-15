@@ -35,6 +35,9 @@ class Organization(db.Model):
     details = db.Column(db.JSON, nullable=False, default=dict)
     created_at = db.Column(db.DateTime, nullable=False, default=db.func.now())
 
+    def __init__(self, **kwargs):
+        super(Organization, self).__init__(**kwargs)
+
 class Student(db.Model):
     __tablename__ = 'students'
     id = db.Column(db.Integer, primary_key=True)
@@ -44,6 +47,9 @@ class Student(db.Model):
     password = db.Column(db.String(128), nullable=False)
     mentor_id = db.Column(db.Integer, db.ForeignKey('mentors.id', ondelete='CASCADE'), nullable = False)
     created_at = db.Column(db.DateTime, nullable=False, default=db.func.now())
+
+    def __init__(self, **kwargs):
+        super(Student, self).__init__(**kwargs)
 
 class Mentor(db.Model):
     __tablename__ = 'mentors'
@@ -55,6 +61,9 @@ class Mentor(db.Model):
     organization_id = db.Column(db.Integer, db.ForeignKey('organizations.id', ondelete='CASCADE'), nullable=False)
     created_at = db.Column(db.DateTime, nullable=False, default=db.func.now())
 
+    def __init__(self, **kwargs):
+        super(Mentor, self).__init__(**kwargs)
+
 class Admin(db.Model):
     __tablename__ = 'admins'
     id = db.Column(db.Integer, primary_key=True)
@@ -64,6 +73,9 @@ class Admin(db.Model):
     password = db.Column(db.String(128), nullable=False)
     is_present_view = db.Column(db.Boolean, nullable = False, default = False)
     created_at = db.Column(db.DateTime, nullable=False, default=db.func.now())
+
+    def __init__(self, **kwargs):
+        super(Admin, self).__init__(**kwargs)
 
 class PendingUser(db.Model):
     __tablename__ = 'pending_users'
@@ -78,3 +90,6 @@ class PendingUser(db.Model):
     is_mentor = db.Column(db.Boolean, nullable=False, default=False)
     is_student = db.Column(db.Boolean, nullable=False, default=False)
     is_present_view = db.Column(db.Boolean, nullable=False, default=False)
+
+    def __init__(self, **kwargs):
+        super(PendingUser, self).__init__(**kwargs)

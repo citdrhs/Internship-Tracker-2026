@@ -20,19 +20,67 @@
             {% endfor %}
         {% endif %}
     {% endwith %}
-    <section class="admin-panel admin-organizations">
-        <h2>Manage Organizations</h2>
+    <h2>Add Organizations</h2>
+    <form method="POST" action="{{ url_for('admin') }}" enctype="multipart/form-data">
+        {{ orgform.hidden_tag() }}
 
-        <details class="admin-org-details">
-            <summary>Add Organization</summary>
+        <div class="form-group">
+            {{ orgform.organization_name.label }}
+            {{ orgform.organization_name(class = 'form-control')}}
+        </div>
 
-            <form method="POST" action="{{ url_for('admin') }}" class="admin-org-form">
-                {% set organization_name = '' %}
-                {% set organization_details = {} %}
-                {% include '_organization_form_fields.html' %}
-                <button type="submit">Submit</button>
-            </form>
-        </details>
+        <div class="form-group">
+            {{ orgform.email.label }}
+            {{ orgform.email(class = 'form-control')}}
+        </div>
+
+        <div class="form-group">
+            {{ orgform.phone_number.label }}
+            {{ orgform.phone_number(class = 'form-control')}}
+        </div>
+
+        <div class="form-group">
+            {{ orgform.address.label }}
+            {{ orgform.address(class = 'form-control')}}
+        </div>
+
+        <div class="form-group">
+            {{ orgform.city.label }}
+            {{ orgform.city(class = 'form-control')}}
+        </div>
+
+        <div class="form-group">
+            {{ orgform.state.label }}
+            {{ orgform.state(class = 'form-control')}}
+        </div>
+
+        <div class="form-group">
+            {{ orgform.zip_code.label }}
+            {{ orgform.zip_code(class = 'form-control')}}
+        </div>
+
+        <div class="form-group">
+            {{ orgform.website.label }}
+            {{ orgform.website(class = 'form-control')}}
+        </div>
+
+        <div class="form-group">
+            {{ orgform.type_of_screening.label }}
+            {{ orgform.type_of_screening(class = 'form-control')}}
+        </div>
+
+        <div class="form-group">
+            {{ orgform.wbl_checklist.label }}
+            {{ orgform.wbl_checklist(class = 'form-control')}}
+        </div>
+
+        <div class="form-group">
+            {{ orgform.training_agreement_form.label }}
+            {{ orgform.training_agreement_form(class = 'form-control')}}
+        </div>
+
+        {{ orgform.submit(class = 'form-control') }}
+    </form>
 
         <h3>Existing Organizations</h3>
 
@@ -44,11 +92,11 @@
                 </tr>
                 {% for organization in organizations %}
                     <tr>
-                        <td>{{ organization[1] }}</td>
+                        <td>{{ organization['organization_name'] }}</td>
                         <td>
                             <div class="action-btns">
-                                <a href="{{ url_for('editOrganization', id=organization[0]) }}" class="btn-edit">Edit</a>
-                                <form method="post" action="{{ url_for('deleteOrganization', id=organization[0]) }}">
+                                <a href="{{ url_for('editOrganization', id=organization['id']) }}" class="btn-edit">Edit</a>
+                                <form method="post" action="{{ url_for('deleteOrganization', id=organization['id']) }}">
                                     <button type="submit" class="btn-delete" onclick="return confirm('Delete this organization?')">Delete</button>
                                 </form>
                             </div>
@@ -65,17 +113,10 @@
     <section class="admin-panel">
         <h2>Student Information</h2>
         <form method="GET" action="{{ url_for('admin') }}" class="admin-student-select">
-            <label for="student_id">Student</label>
-            <div class="admin-select-row">
-                <select id="student_id" name="student_id" class="form-control" required>
-                    <option value="">Select a student</option>
-                    {% for student in students %}
-                        <option value="{{ student[0] }}" {% if selected_student_id == student[0]|string %}selected{% endif %}>
-                            {{ student[1] }}
-                        </option>
-                    {% endfor %}
-                </select>
-                <button type="submit">View Student</button>
+            <div class="form-group">
+                {{ student_form.selected_student_id.label}}
+                {{ student_form.selected_student_id(class = 'form-control')}}
+                {{ student_form.submit(class = 'form-control') }}
             </div>
         </form>
 
@@ -85,19 +126,11 @@
                 <div class="profile-grid">
                     <div>
                         <p class="profile-label">Name</p>
-                        <p>{{ selected_student[1] }}</p>
+                        <p>{{ selected_student['student_name']}}</p>
                     </div>
                     <div>
                         <p class="profile-label">Email</p>
-                        <p>{{ selected_student[2] }}</p>
-                    </div>
-                    <div>
-                        <p class="profile-label">Grade</p>
-                        <p>{{ selected_student[3] or 'N/A' }}</p>
-                    </div>
-                    <div>
-                        <p class="profile-label">Organization</p>
-                        <p>{{ selected_student[4] or 'N/A' }}</p>
+                        <p>{{ selected_student['email'] }}</p>
                     </div>
                     <div>
                         <p class="profile-label">Total Hours</p>

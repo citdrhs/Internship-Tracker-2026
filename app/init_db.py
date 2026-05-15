@@ -39,9 +39,9 @@ CREATE TABLE organizations (
     state VARCHAR(128) NOT NULL,
     zip_code VARCHAR(16) NOT NULL,
     website VARCHAR(512) NOT NULL,
-    type_of_screening VARCHAR(128),
+    type_of_screening VARCHAR(128) NOT NULL,
     WBL_checklist BYTEA,
-    Training_agreement_form BYTEA,
+    training_agreement_form BYTEA,
     confirmed_by_admin_id BIGINT NOT NULL REFERENCES admins(id) ON DELETE CASCADE,
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );

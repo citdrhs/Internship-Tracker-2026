@@ -364,36 +364,6 @@ def fetch_progress_checks(student_id):
     finally:
         conn.close()
 
-def ensure_organization_details_column(conn):
-    with conn.cursor(cursor_factory= DictCursor) as cur:
-        cur.execute(
-            "ALTER TABLE organizations ADD COLUMN IF NOT EXISTS details JSONB NOT NULL DEFAULT '{}'::jsonb"
-        )
-        cur.execute(
-            """
-            SELECT column_name
-            FROM information_schema.columns
-            WHERE table_name = 'organizations'
-              AND column_name = ANY(%s)
-            """,
-            (
-                [
-                    "address",
-                    "email",
-                    "phone_number",
-                    "state",
-                    "city",
-                    "zip",
-                    "website_url",
-                ],
-            ),
-        )
-        for column_name, in cur.fetchall():
-            cur.execute(f"ALTER TABLE organizations ALTER COLUMN {column_name} DROP NOT NULL")
-        cur.execute(
-            "CREATE UNIQUE INDEX IF NOT EXISTS organizations_name_unique_idx ON organizations (name)"
-        )
-
 def fetch_organization_entry(organization_id):
     conn = get_db_connection()
     try:
@@ -578,9 +548,19 @@ def login():
 
             session["email"] = user['email']
             if email_in_tables[1]:
+                result = fetch_entry('mentors', 'email', email, ['id'])
+                if type(result) is DictRow:
+                    session['id'] = result['id']
                 session['organization_id'] = user['organization_id']
             if email_in_tables[2]:
+                result = fetch_entry('students', 'email', email, ['id'])
+                if type(result) is DictRow:
+                    session['id'] = result['id']
                 session['mentor_id'] = user['mentor_id']
+            else:
+                result = fetch_entry('admins', 'email', email, ['id'])
+                if type(result) is DictRow:
+                    session['id'] = result['id']
             session['is_admin'] = email_in_tables[0]
             session['is_mentor'] = email_in_tables[1]
             session['is_student'] = email_in_tables[2]
@@ -614,36 +594,57 @@ def admin():
 
     if not session.get("is_admin") and not session.get("is_present_view"):
         return redirect(url_for("home"))
+    
+    orgform = AddOrganizationForm()
+    student_form = AdminStudentForm()
+
+    print('test')
 
     if request.method == "POST":
-        organization_name = request.form.get("organization_name", "").strip()
-        organization_details = parse_organization_details()
+        print('test')
+        if orgform.validate_on_submit():
+            organization_name = request.form.get("organization_name", "").strip()
+            email = request.form.get("email", "").strip()
+            phone_number = request.form.get("phone_number", "").strip()
+            address = request.form.get("address", "").strip()
+            city = request.form.get("city", "").strip()
+            state = request.form.get("state", "").strip()
+            zip_code = request.form.get("zip_code", "").strip()
+            website = request.form.get("website", "").strip()
+            type_of_screening = request.form.get("type_of_screening", "").strip()
+            wbl_checklist = request.files.get("wbl_checklist")
+            training_agreement_form = request.files.get("training_agreement_form")
 
-        if not organization_name:
-            flash("Organization name is required.", "danger")
-            return redirect(url_for("admin"))
+            wbl_data = wbl_checklist.read() if wbl_checklist else None
+            training_data = training_agreement_form.read() if training_agreement_form else None
+            
+            print('test')
+            
+            if not organization_name:
+                flash("Organization name is required.", "danger")
+                return redirect(url_for("admin"))
+            
+            print('test')
 
-        conn = get_db_connection()
-        try:
-            with conn:
-                ensure_organization_details_column(conn)
+            with get_db_connection() as conn:
                 with conn.cursor() as cur:
+                    print('test1')
                     cur.execute(
                         """
-                        INSERT INTO organizations (name, details)
-                        VALUES (%s, %s)
-                        ON CONFLICT (name) DO NOTHING
+                        INSERT INTO organizations (organization_name, email, phone_number, address, city, state, zip_code, website, type_of_screening, WBL_checklist, training_agreement_form, confirmed_by_admin_id)
+                        VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, CAST(%s as BIGINT));
                         """,
-                        (organization_name, Json(organization_details)),
+                        (organization_name, email, phone_number, address, city, state, zip_code, website, type_of_screening, psycopg2.Binary(wbl_data), psycopg2.Binary(training_data), session['id'])
                     )
             flash("Organization added.", "success")
-        finally:
-            conn.close()
+            
+            print('test')
 
-        return redirect(url_for("admin"))
+            return redirect(url_for("admin"))
+        print(orgform.errors) # THIS WILL TELL YOU WHY IT IS FAILING
 
-    students = fetch_students()
-    organizations = fetch_organizations()
+    students = fetch_entry('students')
+    organizations = fetch_entry('organizations')
     selected_student_id = request.args.get("student_id", "").strip()
     selected_student = None
     selected_feedback = []
@@ -662,13 +663,12 @@ def admin():
 
     return render_template(
         "admin.html",
-        students=students,
         selected_student_id=selected_student_id,
+        orgform = orgform,
+        student_form = student_form,
         selected_student=selected_student,
         selected_feedback=selected_feedback,
         organizations=organizations,
-        organization_text_fields=ORGANIZATION_TEXT_FIELDS,
-        organization_checkbox_fields=ORGANIZATION_CHECKBOX_FIELDS,
     )
 
 @app.route("/intr/admin/present-view", methods=["POST"])
@@ -809,7 +809,7 @@ def fetch_entry(table_name: str, target_column: str = "N/A", target_val: str = "
             else: 
                 result = cur.fetchone()
             
-            return result if result is not None else {}
+            return result if result is not None else DictRow(cur)
 
 def fetch_exists(table_name: str, column_name: str, value: str):
     if column_name != "id":
