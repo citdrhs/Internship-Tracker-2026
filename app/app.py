@@ -220,7 +220,7 @@ def reset_db(code):
     try:
         reset_database()
     except Exception as exc:
-        return f"Database reset failed: {type(exc).__name__}: {exc}", 500
+        return f"Database reset failed: {type(exc).__name__}: {exc}"
     return "Database reset. Remove this route after confirming login/register work."
 
 
