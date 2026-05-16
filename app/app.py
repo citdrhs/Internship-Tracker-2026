@@ -763,7 +763,7 @@ def send_confirmation_email(user_email):
     msg.html = html
     mail.send(msg)
 
-@app.route("/intr/", methods=["GET", "POST"])
+@app.route("/internships/", methods=["GET", "POST"])
 def login():
     form = LoginForm()
 
@@ -794,18 +794,18 @@ def logout():
     session.clear()
     return redirect(url_for("login"))
 
-@app.route("/intr/home")
+@app.route("/internships/home")
 def home():
     login_redirect = require_login()
     if login_redirect:
         return login_redirect
     return render_template("home.html")
 
-@app.route("/intr/about")
+@app.route("/internships/about")
 def about():
     return render_template("about.html")
 
-@app.route("/intr/admin", methods=["GET", "POST"])
+@app.route("/internships/admin", methods=["GET", "POST"])
 def admin():
     login_redirect = require_login()
     if login_redirect:
@@ -885,7 +885,7 @@ def admin():
         organization_checkbox_fields=ORGANIZATION_CHECKBOX_FIELDS,
     )
 
-@app.route("/intr/admin/present-view", methods=["POST"])
+@app.route("/internships/admin/present-view", methods=["POST"])
 def toggle_present_view():
     login_redirect = require_login()
     if login_redirect:
@@ -897,7 +897,7 @@ def toggle_present_view():
     session["is_present_view"] = not session.get("is_present_view", False)
     return redirect(url_for("admin" if session.get("is_admin") or session.get("is_present_view") else "home"))
 
-@app.route("/intr/admin/organizations/<int:id>/edit", methods=["GET", "POST"])
+@app.route("/internships/admin/organizations/<int:id>/edit", methods=["GET", "POST"])
 def editOrganization(id):
     login_redirect = require_login()
     if login_redirect:
@@ -971,7 +971,7 @@ def editOrganization(id):
         organization_checkbox_fields=ORGANIZATION_CHECKBOX_FIELDS,
     )
 
-@app.route("/intr/admin/organizations/<int:id>/delete", methods=["POST"])
+@app.route("/internships/admin/organizations/<int:id>/delete", methods=["POST"])
 def deleteOrganization(id):
     login_redirect = require_login()
     if login_redirect:
@@ -1006,14 +1006,14 @@ def deleteOrganization(id):
     return redirect(url_for("admin"))
 
 
-@app.route("/intr/registration-pending")
+@app.route("/internships/registration-pending")
 def registration_pending():
     return render_template("confirm_email.html", confirm_url="#")
 
 
 
 
-@app.route("/intr/register", methods=["GET", "POST"])
+@app.route("/internships/register", methods=["GET", "POST"])
 def register():
     form = RegisterForm()
     organizations = fetch_organizations()
@@ -1119,7 +1119,7 @@ def register():
         mentors=mentors,
     )
 
-@app.route("/intr/feedback")
+@app.route("/internships/feedback")
 def feedbackPage():
     login_redirect = require_login()
     if login_redirect:
@@ -1140,7 +1140,7 @@ def feedbackPage():
         feedback = []
     return render_template("feedbackpage.html", feedback=feedback)
 
-@app.route("/intr/student-feedback")
+@app.route("/internships/student-feedback")
 def studentFeedback():
     login_redirect = require_student()
     if login_redirect:
@@ -1154,7 +1154,7 @@ def studentFeedback():
     feedback = fetch_feedback_for_student(user_id)
     return render_template("student_feedback.html", feedback=feedback)
 
-@app.route("/intr/feedback/submit", methods=["GET", "POST"])
+@app.route("/internships/feedback/submit", methods=["GET", "POST"])
 def submitFeedback():
     login_redirect = require_login()
     if login_redirect:
@@ -1232,7 +1232,7 @@ def submitFeedback():
 
     return render_template("feedbackform.html", students=students)
 
-@app.route("/intr/progress-check", methods=["GET", "POST"])
+@app.route("/internships/progress-check", methods=["GET", "POST"])
 def progressCheck():
     student_redirect = require_student()
     if student_redirect:
@@ -1299,7 +1299,7 @@ def progressCheck():
     entries = fetch_progress_checks(student_id)
     return render_template("progresscheck.html", entries=entries)
 
-@app.route("/intr/feedback/<int:id>/edit", methods=["GET", "POST"])
+@app.route("/internships/feedback/<int:id>/edit", methods=["GET", "POST"])
 def editFeedback(id):
     login_redirect = require_login()
     if login_redirect:
@@ -1379,7 +1379,7 @@ def editFeedback(id):
 
     return render_template("editform.html", students=students, feedback=feedback)
 
-@app.route("/intr/feedback/<int:id>/delete", methods=["POST"])
+@app.route("/internships/feedback/<int:id>/delete", methods=["POST"])
 def deleteFeedback(id):
     login_redirect = require_login()
     if login_redirect:
@@ -1413,7 +1413,7 @@ def deleteFeedback(id):
         flash("Feedback entry not found.", "warning")
     return redirect(url_for("feedbackPage"))
 
-@app.route("/intr/confirm/<token>/")
+@app.route("/internships/confirm/<token>/")
 def confirm_email(token):
     email = confirm_token(token)
     if not email:
