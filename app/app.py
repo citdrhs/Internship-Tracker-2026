@@ -789,7 +789,7 @@ def login():
 
     return render_template("login.html", form=form)
 
-@app.route("/logout")
+@app.route("/intr/logout")
 def logout():
     session.clear()
     return redirect(url_for("login"))
