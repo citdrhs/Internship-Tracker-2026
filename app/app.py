@@ -872,8 +872,18 @@ def admin():
                     columns = ", ".join(["name", *detail_columns])
                     placeholders = ", ".join(["%s"] * (len(detail_columns) + 1))
                     cur.execute(
-                        f"INSERT INTO organizations ({columns}) VALUES ({placeholders}) ON CONFLICT (name) DO NOTHING",
-                        (organization_name, *[organization_details[column] for column in detail_columns]),
+                        f"""
+                        INSERT INTO organizations ({columns})
+                        SELECT {placeholders}
+                        WHERE NOT EXISTS (
+                            SELECT 1 FROM organizations WHERE name = %s
+                        )
+                        """,
+                        (
+                            organization_name,
+                            *[organization_details[column] for column in detail_columns],
+                            organization_name,
+                        ),
                     )
             flash("Organization added.", "success")
         finally:
