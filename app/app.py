@@ -587,7 +587,7 @@ def ensure_organization_detail_columns(conn):
     with conn.cursor() as cur:
         for column_name, column_type in ORGANIZATION_DETAIL_COLUMN_TYPES.items():
             cur.execute(f"ALTER TABLE organizations ADD COLUMN IF NOT EXISTS {column_name} {column_type}")
-        for legacy_column in ("address", "number", "city", "state", "zip", "website", "web", "screening"):
+        for legacy_column in ("address", "number", "city", "state", "zip", "website", "web", "email", "screening"):
             cur.execute(
                 """
                 SELECT 1

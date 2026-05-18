@@ -46,6 +46,7 @@ BEGIN
         'zip',
         'website',
         'web',
+        'email',
         'screening'
     ]
     LOOP
