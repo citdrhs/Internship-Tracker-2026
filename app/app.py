@@ -1,4 +1,5 @@
 import json
+import logging
 import os
 from pathlib import Path
 from urllib.parse import quote_plus
@@ -14,6 +15,7 @@ from app.forms import LoginForm, RegisterForm
 from app.init_db import initialize_database
 from itsdangerous import URLSafeTimedSerializer
 from app.models import Admin, Mentor, PendingUser, Student, MentorAssignment, db
+from werkzeug.exceptions import HTTPException
 
 BASE_DIR = Path(__file__).resolve().parent
 TEMPLATES_DIR = BASE_DIR / "templates"
@@ -206,6 +208,20 @@ app.config["MAIL_PASSWORD"] = os.environ.get("EMAIL_PASSWORD")
 db.init_app(app)
 bcrypt = Bcrypt(app)
 mail = Mail(app)
+logging.basicConfig(level=logging.INFO)
+app.logger.setLevel(logging.INFO)
+
+@app.errorhandler(Exception)
+def log_unhandled_exception(error):
+    if isinstance(error, HTTPException):
+        return error
+
+    app.logger.exception("Unhandled exception on %s %s", request.method, request.path)
+    try:
+        db.session.rollback()
+    except Exception:
+        app.logger.exception("Failed to roll back database session after exception.")
+    return "Internal Server Error", 500
 
 def require_login():
     if "email" not in session:
@@ -1041,6 +1057,7 @@ def register():
         organizations = fetch_organizations()
         mentors = fetch_all_mentors()
     except psycopg2.Error:
+        app.logger.exception("Register page failed to load organization/mentor data. Retrying after schema initialization.")
         initialize_database()
         organizations = fetch_organizations()
         mentors = fetch_all_mentors()
