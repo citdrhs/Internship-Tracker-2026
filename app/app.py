@@ -129,6 +129,8 @@ def get_database_settings():
     db_password = os.environ.get("DB_PW")
     db_host = os.environ.get("DB_HOST", "drhscit.org")
     db_port = int(os.environ.get("DB_PORT", "5434"))
+    if db_host == "drhscit.org" and db_port == 5432:
+        db_port = 5434
 
     if db_name and db_user and db_password:
         return {
@@ -141,6 +143,7 @@ def get_database_settings():
 
     database_uri = os.environ.get("DATABASE_URI")
     if database_uri:
+        database_uri = database_uri.replace("drhscit.org:5432", "drhscit.org:5434")
         return {"database_uri": database_uri}
 
     raise ValueError("Database configuration is missing. Set DB, DB_UN, and DB_PW in env.")

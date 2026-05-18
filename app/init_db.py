@@ -300,6 +300,7 @@ def get_connection():
 
     database_uri = os.getenv("DATABASE_URI")
     if database_uri:
+        database_uri = database_uri.replace("drhscit.org:5432", "drhscit.org:5434")
         return psycopg2.connect(database_uri)
 
     db_name = os.getenv("DB")
@@ -307,6 +308,8 @@ def get_connection():
     db_password = os.getenv("DB_PW")
     db_host = os.getenv("DB_HOST", "drhscit.org")
     db_port = int(os.getenv("DB_PORT", "5434"))
+    if db_host == "drhscit.org" and db_port == 5432:
+        db_port = 5434
 
     missing = [
         key
