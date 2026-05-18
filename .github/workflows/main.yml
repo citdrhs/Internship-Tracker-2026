@@ -19,10 +19,17 @@ jobs:
           username: internships
           key: ${{ secrets.SSH_KEY }}
           script: |
+            set -e
+            trap 'echo "Deploy failed. Service status:"; sudo systemctl status internships --no-pager || true; echo "Recent service logs:"; sudo journalctl -u internships -n 120 --no-pager || true; echo "App log:"; tail -n 120 /home/internships/www/logs/internship_tracker.log || true' ERR
             cd /home/internships/www
             git pull origin main
+            git rev-parse --short HEAD
             source venv/bin/activate
             pip install -r requirements.txt
             python -m app.init_db
             deactivate
             sudo systemctl restart internships
+            sleep 5
+            curl -fsS https://drhscit.org/internships/intr/ >/dev/null
+            curl -fsS https://drhscit.org/internships/intr/register >/dev/null
+            echo "Deploy smoke tests passed."

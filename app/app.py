@@ -1064,14 +1064,8 @@ def registration_pending():
 @app.route("/intr/register", methods=["GET", "POST"])
 def register():
     form = RegisterForm()
-    try:
-        organizations = fetch_organizations()
-        mentors = fetch_all_mentors()
-    except psycopg2.Error:
-        app.logger.exception("Register page failed to load organization/mentor data. Retrying after schema initialization.")
-        initialize_database()
-        organizations = fetch_organizations()
-        mentors = fetch_all_mentors()
+    organizations = fetch_organizations()
+    mentors = fetch_all_mentors()
 
     if request.method == "POST" and form.validate_on_submit():
         selected_role = request.form.get("role", "").strip()
