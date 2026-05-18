@@ -22,9 +22,9 @@ profanity.load_censor_words()
 ORGANIZATION_TEXT_FIELDS = [
     {
         "name": "organization_number",
-        "label": "Organization Number",
+        "label": "Organization Phone Number",
         "type": "number",
-        "placeholder": "Enter organization number",
+        "placeholder": "Enter organization phone number",
     },
     {
         "name": "organization_address",
