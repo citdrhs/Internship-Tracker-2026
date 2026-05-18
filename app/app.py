@@ -210,6 +210,14 @@ bcrypt = Bcrypt(app)
 mail = Mail(app)
 logging.basicConfig(level=logging.INFO)
 app.logger.setLevel(logging.INFO)
+LOG_DIR = BASE_DIR.parent / "logs"
+LOG_DIR.mkdir(exist_ok=True)
+file_handler = logging.FileHandler(LOG_DIR / "internship_tracker.log")
+file_handler.setLevel(logging.INFO)
+file_handler.setFormatter(
+    logging.Formatter("%(asctime)s %(levelname)s [%(name)s] %(message)s")
+)
+app.logger.addHandler(file_handler)
 
 @app.errorhandler(Exception)
 def log_unhandled_exception(error):
@@ -221,7 +229,7 @@ def log_unhandled_exception(error):
         db.session.rollback()
     except Exception:
         app.logger.exception("Failed to roll back database session after exception.")
-    return "Internal Server Error", 500
+    return f"Internal Server Error: {type(error).__name__}: {error}", 500
 
 def require_login():
     if "email" not in session:
