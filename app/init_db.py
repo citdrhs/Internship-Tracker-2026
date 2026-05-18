@@ -38,27 +38,15 @@ DO $$
 DECLARE
     legacy_column TEXT;
 BEGIN
-    FOREACH legacy_column IN ARRAY ARRAY[
-        'address',
-        'number',
-        'city',
-        'state',
-        'zip',
-        'website',
-        'web',
-        'email',
-        'screening'
-    ]
+    FOR legacy_column IN
+        SELECT column_name
+        FROM information_schema.columns
+        WHERE table_schema = 'public'
+          AND table_name = 'organizations'
+          AND is_nullable = 'NO'
+          AND column_name NOT IN ('id', 'name')
     LOOP
-        IF EXISTS (
-            SELECT 1
-            FROM information_schema.columns
-            WHERE table_schema = 'public'
-              AND table_name = 'organizations'
-              AND column_name = legacy_column
-        ) THEN
-            EXECUTE format('ALTER TABLE organizations ALTER COLUMN %I DROP NOT NULL', legacy_column);
-        END IF;
+        EXECUTE format('ALTER TABLE organizations ALTER COLUMN %I DROP NOT NULL', legacy_column);
     END LOOP;
 END $$;
 

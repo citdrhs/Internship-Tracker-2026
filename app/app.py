@@ -5,6 +5,7 @@ from pathlib import Path
 from urllib.parse import quote_plus
 
 import psycopg2
+from psycopg2 import sql
 from better_profanity import profanity
 from dotenv import load_dotenv
 from datetime import datetime
@@ -587,19 +588,22 @@ def ensure_organization_detail_columns(conn):
     with conn.cursor() as cur:
         for column_name, column_type in ORGANIZATION_DETAIL_COLUMN_TYPES.items():
             cur.execute(f"ALTER TABLE organizations ADD COLUMN IF NOT EXISTS {column_name} {column_type}")
-        for legacy_column in ("address", "number", "city", "state", "zip", "website", "web", "email", "screening"):
+        cur.execute(
+            """
+            SELECT column_name
+            FROM information_schema.columns
+            WHERE table_schema = 'public'
+              AND table_name = 'organizations'
+              AND is_nullable = 'NO'
+              AND column_name NOT IN ('id', 'name')
+            """
+        )
+        for (column_name,) in cur.fetchall():
             cur.execute(
-                """
-                SELECT 1
-                FROM information_schema.columns
-                WHERE table_schema = 'public'
-                  AND table_name = 'organizations'
-                  AND column_name = %s
-                """,
-                (legacy_column,),
+                sql.SQL("ALTER TABLE organizations ALTER COLUMN {} DROP NOT NULL").format(
+                    sql.Identifier(column_name)
+                )
             )
-            if cur.fetchone():
-                cur.execute(f"ALTER TABLE organizations ALTER COLUMN {legacy_column} DROP NOT NULL")
 
 def organization_details_from_row(row):
     return {
