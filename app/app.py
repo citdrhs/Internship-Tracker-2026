@@ -11,6 +11,7 @@ from flask import Flask, flash, redirect, render_template, request, session, url
 from flask_bcrypt import Bcrypt
 from flask_mail import Mail, Message
 from app.forms import LoginForm, RegisterForm
+from app.init_db import initialize_database
 from itsdangerous import URLSafeTimedSerializer
 from app.models import Admin, Mentor, PendingUser, Student, MentorAssignment, db
 
@@ -1036,8 +1037,13 @@ def registration_pending():
 @app.route("/intr/register", methods=["GET", "POST"])
 def register():
     form = RegisterForm()
-    organizations = fetch_organizations()
-    mentors = fetch_all_mentors()
+    try:
+        organizations = fetch_organizations()
+        mentors = fetch_all_mentors()
+    except psycopg2.Error:
+        initialize_database()
+        organizations = fetch_organizations()
+        mentors = fetch_all_mentors()
 
     if request.method == "POST" and form.validate_on_submit():
         selected_role = request.form.get("role", "").strip()
