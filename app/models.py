@@ -11,7 +11,7 @@ from flask_sqlalchemy import SQLAlchemy
 #------------------------------------------------------------------------------------------------------------------------------------------------------------------#
 #@brief Has User table(flask) for Login and Register forms                                                                                                         #
 #                                                                                                                                                                  #
-#@author Omkar Deshmukh | (hcps-deshmukop@henricostudents.org)                                                                                                     #                                                 
+#@author Omkar Deshmukh | (hcps-deshmukop@henricostudents.org)                                                                                                      #
 #                                                                                                                                                                  #
 #@version 1.0                                                                                                                                                      #
 #                                                                                                                                                                  #
@@ -21,7 +21,8 @@ from flask_sqlalchemy import SQLAlchemy
 #
 # @editor Shlok Joshi | (hcps-joshis@henricostudents.org)
 #
-# date Last_Modification 2/24/26                                                                                                                                   #
+# date Last_Modification 5/16/26 
+# 5/16/26 -- # 5/16/26 -- Split users into students, mentors, and admins; make DB init non-destructive                                                                                                                               #
 #==================================================================================================================================================================#
 
 
@@ -53,8 +54,22 @@ class Organization(db.Model):
     signature = db.Column(db.String(200), nullable=True)
     created_at = db.Column(db.DateTime, nullable=False, default=db.func.now())
 
-class User(db.Model):
-    __tablename__ = 'users'
+
+class Student(db.Model):
+    __tablename__ = 'students'
+    id = db.Column(db.Integer, primary_key=True)
+    email = db.Column(db.String(200), unique=True, nullable=False)
+    first_name = db.Column(db.String(200), nullable=False)
+    last_name = db.Column(db.String(200), nullable=False)
+    password = db.Column(db.String(500), nullable=False)
+    grade = db.Column(db.String(3), nullable=True)
+    organization = db.Column(db.String(200), nullable=True)
+    organization_id = db.Column(db.Integer, db.ForeignKey('organizations.id', ondelete='SET NULL'), nullable=True)
+    created_at = db.Column(db.DateTime, nullable=False, default=db.func.now())
+
+
+class Mentor(db.Model):
+    __tablename__ = 'mentors'
     id = db.Column(db.Integer, primary_key=True)
     email = db.Column(db.String(200), unique=True, nullable=False)
     first_name = db.Column(db.String(200), nullable=False)
@@ -62,18 +77,27 @@ class User(db.Model):
     password = db.Column(db.String(500), nullable=False)
     organization = db.Column(db.String(200), nullable=True)
     organization_id = db.Column(db.Integer, db.ForeignKey('organizations.id', ondelete='SET NULL'), nullable=True)
-    is_admin = db.Column(db.Boolean, nullable = False, default = False)
-    is_mentor = db.Column(db.Boolean, nullable = False, default = False)
-    is_teacher = db.Column(db.Boolean, nullable = False, default = False)
+    created_at = db.Column(db.DateTime, nullable=False, default=db.func.now())
+
+
+class Admin(db.Model):
+    __tablename__ = 'admins'
+    id = db.Column(db.Integer, primary_key=True)
+    email = db.Column(db.String(200), unique=True, nullable=False)
+    first_name = db.Column(db.String(200), nullable=False)
+    last_name = db.Column(db.String(200), nullable=False)
+    password = db.Column(db.String(500), nullable=False)
+    organization = db.Column(db.String(200), nullable=True)
+    organization_id = db.Column(db.Integer, db.ForeignKey('organizations.id', ondelete='SET NULL'), nullable=True)
     is_present_view = db.Column(db.Boolean, nullable=False, default=False)
-    grade = db.Column(db.String(2), nullable=True)
+    created_at = db.Column(db.DateTime, nullable=False, default=db.func.now())
 
 
 class MentorAssignment(db.Model):
     __tablename__ = 'mentor_assignments'
     id = db.Column(db.Integer, primary_key=True)
-    student_id = db.Column(db.Integer, db.ForeignKey('users.id', ondelete='CASCADE'), nullable=False)
-    mentor_id = db.Column(db.Integer, db.ForeignKey('users.id', ondelete='CASCADE'), nullable=False)
+    student_id = db.Column(db.Integer, db.ForeignKey('students.id', ondelete='CASCADE'), nullable=False)
+    mentor_id = db.Column(db.Integer, db.ForeignKey('mentors.id', ondelete='CASCADE'), nullable=False)
     assigned_at = db.Column(db.DateTime, server_default=db.func.now())
     __table_args__ = (db.UniqueConstraint('student_id', name='_student_mentor_uc'),)
 
@@ -88,8 +112,5 @@ class PendingUser(db.Model):
     organization_id = db.Column(db.Integer, db.ForeignKey('organizations.id', ondelete='SET NULL'), nullable=True)
     role = db.Column(db.String(20), nullable=False, default="student")
     requested_mentor_id = db.Column(db.Integer, nullable=True)
-    is_admin = db.Column(db.Boolean, nullable=False, default=False)
-    is_mentor = db.Column(db.Boolean, nullable=False, default=False)
-    is_teacher = db.Column(db.Boolean, nullable=False, default=False)
     is_present_view = db.Column(db.Boolean, nullable=False, default=False)
     grade = db.Column(db.String(3), nullable=True)
