@@ -45,6 +45,7 @@ jobs:
             git rev-parse --short HEAD
             source venv/bin/activate
             pip install -r requirements.txt
+            python -c "from app.app import get_database_settings; s=get_database_settings(); print('App DB target:', s.get('host', 'DATABASE_URI'), s.get('port', ''), s.get('dbname', ''))"
             python -m app.init_db
             deactivate
             sudo systemctl restart internships

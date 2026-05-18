@@ -298,11 +298,6 @@ END $$;
 def get_connection():
     load_dotenv(ENV_FILE)
 
-    database_uri = os.getenv("DATABASE_URI")
-    if database_uri:
-        database_uri = database_uri.replace("drhscit.org:5432", "drhscit.org:5434")
-        return psycopg2.connect(database_uri)
-
     db_name = os.getenv("DB")
     db_user = os.getenv("DB_UN")
     db_password = os.getenv("DB_PW")
@@ -310,6 +305,20 @@ def get_connection():
     db_port = int(os.getenv("DB_PORT", "5434"))
     if db_host == "drhscit.org" and db_port == 5432:
         db_port = 5434
+
+    if db_name and db_user and db_password:
+        return psycopg2.connect(
+            dbname=db_name,
+            user=db_user,
+            password=db_password,
+            host=db_host,
+            port=db_port,
+        )
+
+    database_uri = os.getenv("DATABASE_URI")
+    if database_uri:
+        database_uri = database_uri.replace("drhscit.org:5432", "drhscit.org:5434")
+        return psycopg2.connect(database_uri)
 
     missing = [
         key
@@ -322,14 +331,6 @@ def get_connection():
     ]
     if missing:
         raise ValueError(f"Missing required env values: {', '.join(missing)}")
-
-    return psycopg2.connect(
-        dbname=db_name,
-        user=db_user,
-        password=db_password,
-        host=db_host,
-        port=db_port,
-    )
 
 
 def initialize_database() -> None:
