@@ -1,11 +1,9 @@
 import json
-import logging
 import os
 from pathlib import Path
 from urllib.parse import quote_plus
 
 import psycopg2
-from psycopg2 import sql
 from better_profanity import profanity
 from dotenv import load_dotenv
 from datetime import datetime
@@ -13,10 +11,8 @@ from flask import Flask, flash, redirect, render_template, request, session, url
 from flask_bcrypt import Bcrypt
 from flask_mail import Mail, Message
 from app.forms import LoginForm, RegisterForm
-from app.init_db import initialize_database
 from itsdangerous import URLSafeTimedSerializer
-from app.models import Admin, Mentor, PendingUser, Student, MentorAssignment, db
-from werkzeug.exceptions import HTTPException
+from app.models import PendingUser, User, MentorAssignment, db
 
 BASE_DIR = Path(__file__).resolve().parent
 TEMPLATES_DIR = BASE_DIR / "templates"
@@ -28,7 +24,7 @@ profanity.load_censor_words()
 ORGANIZATION_TEXT_FIELDS = [
     {
         "name": "organization_number",
-        "label": "Organization Number",
+        "label": "Organization Phone Number",
         "type": "number",
         "placeholder": "Enter organization number",
     },
@@ -130,8 +126,6 @@ def get_database_settings():
     db_password = os.environ.get("DB_PW")
     db_host = os.environ.get("DB_HOST", "drhscit.org")
     db_port = int(os.environ.get("DB_PORT", "5434"))
-    if db_host == "drhscit.org" and db_port == 5432:
-        db_port = 5434
 
     if db_name and db_user and db_password:
         return {
@@ -144,7 +138,6 @@ def get_database_settings():
 
     database_uri = os.environ.get("DATABASE_URI")
     if database_uri:
-        database_uri = database_uri.replace("drhscit.org:5432", "drhscit.org:5434")
         return {"database_uri": database_uri}
 
     raise ValueError("Database configuration is missing. Set DB, DB_UN, and DB_PW in env.")
@@ -182,12 +175,13 @@ def fetch_all_mentors():
             cur.execute(
                 """
                 SELECT
-                    m.id,
-                    CONCAT(m.first_name, ' ', m.last_name) AS mentor_name,
-                    COALESCE(o.name, m.organization) AS organization_name
-                FROM mentors m
-                LEFT JOIN organizations o ON m.organization_id = o.id
-                ORDER BY COALESCE(o.name, m.organization), m.first_name, m.last_name
+                    u.id,
+                    CONCAT(u.first_name, ' ', u.last_name) AS mentor_name,
+                    COALESCE(o.name, u.organization) AS organization_name
+                FROM users u
+                LEFT JOIN organizations o ON u.organization_id = o.id
+                WHERE COALESCE(u.is_mentor, FALSE) = TRUE
+                ORDER BY COALESCE(o.name, u.organization), u.first_name, u.last_name
                 """
             )
             return cur.fetchall()
@@ -212,28 +206,6 @@ app.config["MAIL_PASSWORD"] = os.environ.get("EMAIL_PASSWORD")
 db.init_app(app)
 bcrypt = Bcrypt(app)
 mail = Mail(app)
-logging.basicConfig(level=logging.INFO)
-app.logger.setLevel(logging.INFO)
-LOG_DIR = BASE_DIR.parent / "logs"
-LOG_DIR.mkdir(exist_ok=True)
-file_handler = logging.FileHandler(LOG_DIR / "internship_tracker.log")
-file_handler.setLevel(logging.INFO)
-file_handler.setFormatter(
-    logging.Formatter("%(asctime)s %(levelname)s [%(name)s] %(message)s")
-)
-app.logger.addHandler(file_handler)
-
-@app.errorhandler(Exception)
-def log_unhandled_exception(error):
-    if isinstance(error, HTTPException):
-        return error
-
-    app.logger.exception("Unhandled exception on %s %s", request.method, request.path)
-    try:
-        db.session.rollback()
-    except Exception:
-        app.logger.exception("Failed to roll back database session after exception.")
-    return f"Internal Server Error: {type(error).__name__}: {error}", 500
 
 def require_login():
     if "email" not in session:
@@ -271,11 +243,15 @@ def fetch_students(mentor_id=None):
             if mentor_id is not None:
                 cur.execute(
                     """
-                    SELECT s.id, CONCAT(s.first_name, ' ', s.last_name) AS full_name
-                    FROM students s
-                    JOIN mentor_assignments ma ON ma.student_id = s.id
+                    SELECT u.id, CONCAT(u.first_name, ' ', u.last_name) AS full_name
+                    FROM users u
+                    JOIN mentor_assignments ma ON ma.student_id = u.id
                     WHERE ma.mentor_id = %s
-                    ORDER BY s.first_name, s.last_name
+                      AND COALESCE(u.is_admin, FALSE) = FALSE
+                      AND COALESCE(u.is_teacher, FALSE) = FALSE
+                      AND COALESCE(u.is_mentor, FALSE) = FALSE
+                      AND COALESCE(u.is_present_view, FALSE) = FALSE
+                    ORDER BY u.first_name, u.last_name
                     """,
                     (mentor_id,),
                 )
@@ -283,7 +259,11 @@ def fetch_students(mentor_id=None):
                 cur.execute(
                     """
                     SELECT id, CONCAT(first_name, ' ', last_name) AS full_name
-                    FROM students
+                    FROM users
+                    WHERE COALESCE(is_admin, FALSE) = FALSE
+                      AND COALESCE(is_teacher, FALSE) = FALSE
+                      AND COALESCE(is_mentor, FALSE) = FALSE
+                      AND COALESCE(is_present_view, FALSE) = FALSE
                     ORDER BY first_name, last_name
                     """
                 )
@@ -339,7 +319,7 @@ def fetch_feedback(mentor_id=None):
                     """
                     SELECT
                         f.id,
-                        CONCAT(s.first_name, ' ', s.last_name) AS student_name,
+                        CONCAT(u.first_name, ' ', u.last_name) AS student_name,
                         f.week,
                         f.description,
                         f.action_items,
@@ -351,8 +331,8 @@ def fetch_feedback(mentor_id=None):
                         f.initiative,
                         f.softskills
                     FROM feedback f
-                    JOIN students s ON f.student_id = s.id
-                    JOIN mentor_assignments ma ON ma.student_id = s.id
+                    JOIN users u ON f.student_id = u.id
+                    JOIN mentor_assignments ma ON ma.student_id = u.id
                     WHERE ma.mentor_id = %s
                     ORDER BY f.week DESC, f.id DESC
                     """,
@@ -363,7 +343,7 @@ def fetch_feedback(mentor_id=None):
                     """
                     SELECT
                         f.id,
-                        CONCAT(s.first_name, ' ', s.last_name) AS student_name,
+                        CONCAT(u.first_name, ' ', u.last_name) AS student_name,
                         f.week,
                         f.description,
                         f.action_items,
@@ -375,7 +355,7 @@ def fetch_feedback(mentor_id=None):
                         f.initiative,
                         f.softskills
                     FROM feedback f
-                    JOIN students s ON f.student_id = s.id
+                    JOIN users u ON f.student_id = u.id
                     ORDER BY f.week DESC, f.id DESC
                     """
                 )
@@ -443,16 +423,16 @@ def fetch_student_hours_summary(student_id):
                         STRING_AGG(DISTINCT CONCAT(m.first_name, ' ', m.last_name), ', ') AS mentor_name,
                         STRING_AGG(DISTINCT COALESCE(o.name, m.organization), ', ') AS mentor_organization
                     FROM mentor_assignments ma
-                    JOIN mentors m ON ma.mentor_id = m.id
+                    JOIN users m ON ma.mentor_id = m.id
                     LEFT JOIN organizations o ON m.organization_id = o.id
                     GROUP BY ma.student_id
                 )
                 SELECT
-                    s.id,
-                    CONCAT(s.first_name, ' ', s.last_name) AS student_name,
-                    s.email,
-                    COALESCE(s.grade, '') AS grade,
-                    COALESCE(so.name, s.organization, '') AS organization,
+                    u.id,
+                    CONCAT(u.first_name, ' ', u.last_name) AS student_name,
+                    u.email,
+                    COALESCE(u.grade, '') AS grade,
+                    COALESCE(u.organization, '') AS organization,
                     COALESCE(pt.total_hours, 0) AS total_hours,
                     COALESCE(pt.days_logged, 0) AS days_logged,
                     COALESCE(mi.mentor_name, 'No mentor assigned') AS mentor_name,
@@ -463,12 +443,15 @@ def fetch_student_hours_summary(student_id):
                     fa.avg_initiative,
                     fa.avg_softskills,
                     fa.total_average_rating
-                FROM students s
-                LEFT JOIN organizations so ON s.organization_id = so.id
-                LEFT JOIN progress_totals pt ON pt.student_id = s.id
-                LEFT JOIN feedback_averages fa ON fa.student_id = s.id
-                LEFT JOIN mentor_info mi ON mi.student_id = s.id
-                WHERE s.id = %s
+                FROM users u
+                LEFT JOIN progress_totals pt ON pt.student_id = u.id
+                LEFT JOIN feedback_averages fa ON fa.student_id = u.id
+                LEFT JOIN mentor_info mi ON mi.student_id = u.id
+                WHERE u.id = %s
+                  AND COALESCE(u.is_admin, FALSE) = FALSE
+                  AND COALESCE(u.is_teacher, FALSE) = FALSE
+                  AND COALESCE(u.is_mentor, FALSE) = FALSE
+                  AND COALESCE(u.is_present_view, FALSE) = FALSE
                 """,
                 (student_id,),
             )
@@ -484,7 +467,7 @@ def fetch_feedback_for_student(student_id):
                 """
                 SELECT
                     f.id,
-                    CONCAT(s.first_name, ' ', s.last_name) AS student_name,
+                    CONCAT(u.first_name, ' ', u.last_name) AS student_name,
                     f.week,
                     f.description,
                     f.action_items,
@@ -496,7 +479,7 @@ def fetch_feedback_for_student(student_id):
                     f.initiative,
                     f.softskills
                 FROM feedback f
-                JOIN students s ON f.student_id = s.id
+                JOIN users u ON f.student_id = u.id
                 WHERE f.student_id = %s
                 ORDER BY f.week DESC, f.id DESC
                 """,
@@ -588,22 +571,6 @@ def ensure_organization_detail_columns(conn):
     with conn.cursor() as cur:
         for column_name, column_type in ORGANIZATION_DETAIL_COLUMN_TYPES.items():
             cur.execute(f"ALTER TABLE organizations ADD COLUMN IF NOT EXISTS {column_name} {column_type}")
-        cur.execute(
-            """
-            SELECT column_name
-            FROM information_schema.columns
-            WHERE table_schema = 'public'
-              AND table_name = 'organizations'
-              AND is_nullable = 'NO'
-              AND column_name NOT IN ('id', 'name')
-            """
-        )
-        for (column_name,) in cur.fetchall():
-            cur.execute(
-                sql.SQL("ALTER TABLE organizations ALTER COLUMN {} DROP NOT NULL").format(
-                    sql.Identifier(column_name)
-                )
-            )
 
 def organization_details_from_row(row):
     return {
@@ -658,8 +625,9 @@ def fetch_mentors_by_organization(organization_id):
             cur.execute(
                 """
                 SELECT id, CONCAT(first_name, ' ', last_name) AS full_name
-                FROM mentors
+                FROM users
                 WHERE organization_id = %s
+                  AND COALESCE(is_mentor, FALSE) = TRUE
                 ORDER BY first_name, last_name
                 """,
                 (organization_id,),
@@ -669,30 +637,11 @@ def fetch_mentors_by_organization(organization_id):
         conn.close()
 
 def get_current_user_id():
-    account_id = session.get("account_id")
-    if account_id is not None:
-        return account_id
-
     email = session.get("email")
     if not email:
         return None
-
-    account, _ = find_account_by_email(email)
-    if account:
-        session["account_id"] = account.id
-        return account.id
-    return None
-
-def find_account_by_email(email):
-    for model, role in ((Student, "student"), (Mentor, "mentor"), (Admin, "admin")):
-        account = model.query.filter_by(email=email).first()
-        if account:
-            return account, role
-    return None, None
-
-def email_exists(email):
-    account, _ = find_account_by_email(email)
-    return account is not None
+    user = User.query.filter_by(email=email).first()
+    return user.id if user else None
 
 def validate_progress_check_form():
     day_worked = request.form.get("day_worked", "").strip()
@@ -814,13 +763,12 @@ def send_confirmation_email(user_email):
     msg.html = html
     mail.send(msg)
 
-@app.route("/", methods=["GET", "POST"])
 @app.route("/intr/", methods=["GET", "POST"])
 def login():
     form = LoginForm()
 
     if request.method == "POST" and form.validate_on_submit():
-        user, role = find_account_by_email(form.email.data)
+        user = User.query.filter_by(email=form.email.data).first()
 
         if not user:
             flash("Email does not exist.", "danger")
@@ -830,26 +778,22 @@ def login():
             flash("Incorrect password.", "danger")
             return redirect(url_for("login"))
 
-        session["account_id"] = user.id
-        session["role"] = role
         session["email"] = user.email
         session["organization"] = fetch_organization_name(user.organization_id) or user.organization
-        session["is_admin"] = role == "admin"
-        session["is_teacher"] = False
-        session["is_mentor"] = role == "mentor"
-        session["is_present_view"] = bool(getattr(user, "is_present_view", False))
+        session["is_admin"] = bool(user.is_admin)
+        session["is_teacher"] = bool(user.is_teacher)
+        session["is_mentor"] = bool(user.is_mentor)
+        session["is_present_view"] = bool(user.is_present_view)
 
         return redirect(url_for("home"))
 
     return render_template("login.html", form=form)
 
 @app.route("/logout")
-@app.route("/intr/logout")
 def logout():
     session.clear()
     return redirect(url_for("login"))
 
-@app.route("/home")
 @app.route("/intr/home")
 def home():
     login_redirect = require_login()
@@ -857,12 +801,10 @@ def home():
         return login_redirect
     return render_template("home.html")
 
-@app.route("/about")
 @app.route("/intr/about")
 def about():
     return render_template("about.html")
 
-@app.route("/admin", methods=["GET", "POST"])
 @app.route("/intr/admin", methods=["GET", "POST"])
 def admin():
     login_redirect = require_login()
@@ -889,18 +831,8 @@ def admin():
                     columns = ", ".join(["name", *detail_columns])
                     placeholders = ", ".join(["%s"] * (len(detail_columns) + 1))
                     cur.execute(
-                        f"""
-                        INSERT INTO organizations ({columns})
-                        SELECT {placeholders}
-                        WHERE NOT EXISTS (
-                            SELECT 1 FROM organizations WHERE name = %s
-                        )
-                        """,
-                        (
-                            organization_name,
-                            *[organization_details[column] for column in detail_columns],
-                            organization_name,
-                        ),
+                        f"INSERT INTO organizations ({columns}) VALUES ({placeholders}) ON CONFLICT (name) DO NOTHING",
+                        (organization_name, *[organization_details[column] for column in detail_columns]),
                     )
             flash("Organization added.", "success")
         finally:
@@ -953,7 +885,6 @@ def admin():
         organization_checkbox_fields=ORGANIZATION_CHECKBOX_FIELDS,
     )
 
-@app.route("/admin/present-view", methods=["POST"])
 @app.route("/intr/admin/present-view", methods=["POST"])
 def toggle_present_view():
     login_redirect = require_login()
@@ -966,7 +897,6 @@ def toggle_present_view():
     session["is_present_view"] = not session.get("is_present_view", False)
     return redirect(url_for("admin" if session.get("is_admin") or session.get("is_present_view") else "home"))
 
-@app.route("/admin/organizations/<int:id>/edit", methods=["GET", "POST"])
 @app.route("/intr/admin/organizations/<int:id>/edit", methods=["GET", "POST"])
 def editOrganization(id):
     login_redirect = require_login()
@@ -1010,11 +940,10 @@ def editOrganization(id):
                             id,
                         ),
                     )
-                    for account_table in ("students", "mentors", "admins"):
-                        cur.execute(
-                            f"UPDATE {account_table} SET organization = %s WHERE organization = %s",
-                            (organization_name, organization[1]),
-                        )
+                    cur.execute(
+                        "UPDATE users SET organization = %s WHERE organization = %s",
+                        (organization_name, organization[1]),
+                    )
                     cur.execute(
                         "UPDATE pending_users SET organization = %s WHERE organization = %s",
                         (organization_name, organization[1]),
@@ -1042,7 +971,6 @@ def editOrganization(id):
         organization_checkbox_fields=ORGANIZATION_CHECKBOX_FIELDS,
     )
 
-@app.route("/admin/organizations/<int:id>/delete", methods=["POST"])
 @app.route("/intr/admin/organizations/<int:id>/delete", methods=["POST"])
 def deleteOrganization(id):
     login_redirect = require_login()
@@ -1058,11 +986,10 @@ def deleteOrganization(id):
             with conn.cursor() as cur:
                 organization = fetch_organization_entry(id)
                 if organization is not None:
-                    for account_table in ("students", "mentors", "admins"):
-                        cur.execute(
-                            f"UPDATE {account_table} SET organization = NULL, organization_id = NULL WHERE organization_id = %s OR organization = %s",
-                            (id, organization[1]),
-                        )
+                    cur.execute(
+                        "UPDATE users SET organization = NULL, organization_id = NULL WHERE organization_id = %s OR organization = %s",
+                        (id, organization[1]),
+                    )
                     cur.execute(
                         "UPDATE pending_users SET organization = NULL, organization_id = NULL WHERE organization_id = %s OR organization = %s",
                         (id, organization[1]),
@@ -1079,7 +1006,6 @@ def deleteOrganization(id):
     return redirect(url_for("admin"))
 
 
-@app.route("/registration-pending")
 @app.route("/intr/registration-pending")
 def registration_pending():
     return render_template("confirm_email.html", confirm_url="#")
@@ -1087,7 +1013,6 @@ def registration_pending():
 
 
 
-@app.route("/register", methods=["GET", "POST"])
 @app.route("/intr/register", methods=["GET", "POST"])
 def register():
     form = RegisterForm()
@@ -1104,6 +1029,9 @@ def register():
             flash("Please select Student, Mentor, or Admin.", "danger")
             return render_template("register.html", form=form, organizations=organizations, mentors=mentors)
 
+        is_admin = False
+        is_mentor = False
+        is_teacher = False
         organization_id_value = None
         selected_organization = None
 
@@ -1132,12 +1060,16 @@ def register():
                 flash("Invalid mentor security code.", "danger")
                 return render_template("register.html", form=form, organizations=organizations, mentors=mentors)
 
+            is_mentor = True
+
         elif selected_role == "admin":
             if security_code != os.environ.get("ADMIN_CODE"):
                 flash("Invalid admin security code.", "danger")
                 return render_template("register.html", form=form, organizations=organizations, mentors=mentors)
 
-        if email_exists(form.email.data):
+            is_admin = True
+
+        if User.query.filter_by(email=form.email.data).first():
             flash("Email already in use.", "danger")
             return redirect(url_for("register"))
 
@@ -1167,6 +1099,9 @@ def register():
             organization_id=organization_id_value,
             role=selected_role,
             requested_mentor_id=int(selected_mentor_id) if selected_role == "student" else None,
+            is_admin=is_admin,
+            is_mentor=is_mentor,
+            is_teacher=is_teacher,
             is_present_view=False,
         )
 
@@ -1184,7 +1119,6 @@ def register():
         mentors=mentors,
     )
 
-@app.route("/feedback")
 @app.route("/intr/feedback")
 def feedbackPage():
     login_redirect = require_login()
@@ -1206,7 +1140,6 @@ def feedbackPage():
         feedback = []
     return render_template("feedbackpage.html", feedback=feedback)
 
-@app.route("/student-feedback")
 @app.route("/intr/student-feedback")
 def studentFeedback():
     login_redirect = require_student()
@@ -1221,7 +1154,6 @@ def studentFeedback():
     feedback = fetch_feedback_for_student(user_id)
     return render_template("student_feedback.html", feedback=feedback)
 
-@app.route("/feedback/submit", methods=["GET", "POST"])
 @app.route("/intr/feedback/submit", methods=["GET", "POST"])
 def submitFeedback():
     login_redirect = require_login()
@@ -1300,7 +1232,6 @@ def submitFeedback():
 
     return render_template("feedbackform.html", students=students)
 
-@app.route("/progress-check", methods=["GET", "POST"])
 @app.route("/intr/progress-check", methods=["GET", "POST"])
 def progressCheck():
     student_redirect = require_student()
@@ -1368,7 +1299,6 @@ def progressCheck():
     entries = fetch_progress_checks(student_id)
     return render_template("progresscheck.html", entries=entries)
 
-@app.route("/feedback/<int:id>/edit", methods=["GET", "POST"])
 @app.route("/intr/feedback/<int:id>/edit", methods=["GET", "POST"])
 def editFeedback(id):
     login_redirect = require_login()
@@ -1449,7 +1379,6 @@ def editFeedback(id):
 
     return render_template("editform.html", students=students, feedback=feedback)
 
-@app.route("/feedback/<int:id>/delete", methods=["POST"])
 @app.route("/intr/feedback/<int:id>/delete", methods=["POST"])
 def deleteFeedback(id):
     login_redirect = require_login()
@@ -1484,7 +1413,6 @@ def deleteFeedback(id):
         flash("Feedback entry not found.", "warning")
     return redirect(url_for("feedbackPage"))
 
-@app.route("/confirm/<token>/")
 @app.route("/intr/confirm/<token>/")
 def confirm_email(token):
     email = confirm_token(token)
@@ -1497,39 +1425,31 @@ def confirm_email(token):
         flash("No matching pending registration.", "danger")
         return redirect(url_for("register"))
 
-    if email_exists(email):
+    if User.query.filter_by(email=email).first():
         db.session.delete(pending)
         db.session.commit()
         flash("Account already confirmed. Please log in.", "info")
         return redirect(url_for("login"))
 
-    account_args = {
-        "email": pending.email,
-        "first_name": pending.first_name,
-        "last_name": pending.last_name,
-        "password": pending.password,
-        "organization": pending.organization,
-        "organization_id": pending.organization_id,
-    }
-    if pending.role == "mentor":
-        new_account = Mentor(**account_args)
-    elif pending.role == "admin":
-        new_account = Admin(
-            **account_args,
-            is_present_view=pending.is_present_view,
-        )
-    else:
-        new_account = Student(
-            **account_args,
-            grade=pending.grade,
-        )
-
-    db.session.add(new_account)
+    new_user = User(
+        email=pending.email,
+        first_name=pending.first_name,
+        last_name=pending.last_name,
+        password=pending.password,
+        grade=pending.grade,
+        organization=pending.organization,
+        organization_id=pending.organization_id,
+        is_admin=pending.is_admin,
+        is_mentor=pending.is_mentor,
+        is_teacher=pending.is_teacher,
+        is_present_view=pending.is_present_view,
+    )
+    db.session.add(new_user)
     db.session.flush()
 
     if pending.role == "student" and pending.requested_mentor_id:
         assignment = MentorAssignment(
-            student_id=new_account.id,
+            student_id=new_user.id,
             mentor_id=pending.requested_mentor_id,
         )
         db.session.add(assignment)
@@ -1543,7 +1463,7 @@ def confirm_email(token):
 
 
 if __name__ == "__main__":
-    from app.init_db import initialize_database
+    with app.app_context():
+        db.create_all()
 
-    initialize_database()
     app.run(debug=True, port=5044)
