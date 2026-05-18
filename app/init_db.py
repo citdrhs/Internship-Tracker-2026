@@ -34,6 +34,33 @@ ALTER TABLE organizations ADD COLUMN IF NOT EXISTS hours BOOLEAN NOT NULL DEFAUL
 ALTER TABLE organizations ADD COLUMN IF NOT EXISTS signature VARCHAR(200);
 ALTER TABLE organizations ADD COLUMN IF NOT EXISTS created_at TIMESTAMPTZ NOT NULL DEFAULT NOW();
 
+DO $$
+DECLARE
+    legacy_column TEXT;
+BEGIN
+    FOREACH legacy_column IN ARRAY ARRAY[
+        'address',
+        'number',
+        'city',
+        'state',
+        'zip',
+        'website',
+        'web',
+        'screening'
+    ]
+    LOOP
+        IF EXISTS (
+            SELECT 1
+            FROM information_schema.columns
+            WHERE table_schema = 'public'
+              AND table_name = 'organizations'
+              AND column_name = legacy_column
+        ) THEN
+            EXECUTE format('ALTER TABLE organizations ALTER COLUMN %I DROP NOT NULL', legacy_column);
+        END IF;
+    END LOOP;
+END $$;
+
 CREATE TABLE IF NOT EXISTS students (
     id BIGSERIAL PRIMARY KEY,
     email TEXT UNIQUE NOT NULL,

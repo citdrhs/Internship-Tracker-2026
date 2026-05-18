@@ -587,6 +587,19 @@ def ensure_organization_detail_columns(conn):
     with conn.cursor() as cur:
         for column_name, column_type in ORGANIZATION_DETAIL_COLUMN_TYPES.items():
             cur.execute(f"ALTER TABLE organizations ADD COLUMN IF NOT EXISTS {column_name} {column_type}")
+        for legacy_column in ("address", "number", "city", "state", "zip", "website", "web", "screening"):
+            cur.execute(
+                """
+                SELECT 1
+                FROM information_schema.columns
+                WHERE table_schema = 'public'
+                  AND table_name = 'organizations'
+                  AND column_name = %s
+                """,
+                (legacy_column,),
+            )
+            if cur.fetchone():
+                cur.execute(f"ALTER TABLE organizations ALTER COLUMN {legacy_column} DROP NOT NULL")
 
 def organization_details_from_row(row):
     return {
