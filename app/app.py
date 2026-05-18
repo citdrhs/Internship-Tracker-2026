@@ -11,7 +11,6 @@ from flask import Flask, flash, redirect, render_template, request, session, url
 from flask_bcrypt import Bcrypt
 from flask_mail import Mail, Message
 from app.forms import LoginForm, RegisterForm
-from app.init_db import initialize_database
 from itsdangerous import URLSafeTimedSerializer
 from app.models import Admin, Mentor, PendingUser, Student, MentorAssignment, db
 
@@ -206,14 +205,6 @@ app.config["MAIL_PASSWORD"] = os.environ.get("EMAIL_PASSWORD")
 db.init_app(app)
 bcrypt = Bcrypt(app)
 mail = Mail(app)
-database_initialized = False
-
-@app.before_request
-def ensure_database_initialized():
-    global database_initialized
-    if not database_initialized:
-        initialize_database()
-        database_initialized = True
 
 def require_login():
     if "email" not in session:
@@ -1480,5 +1471,7 @@ def confirm_email(token):
 
 
 if __name__ == "__main__":
+    from app.init_db import initialize_database
+
     initialize_database()
     app.run(debug=True, port=5044)

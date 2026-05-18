@@ -23,5 +23,6 @@ jobs:
             git pull origin main
             source venv/bin/activate
             pip install -r requirements.txt
+            python -m app.init_db
             deactivate
             sudo systemctl restart internships
