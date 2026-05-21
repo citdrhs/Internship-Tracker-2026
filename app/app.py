@@ -260,22 +260,12 @@ def require_student():
         return redirect(url_for("home"))
     return None
 
-PRESENT_VIEW_BLOCKED_ENDPOINTS = {
-    "editOrganization",
-    "deleteOrganization",
-    "studentFeedback",
-    "submitFeedback",
-    "progressCheck",
-    "editFeedback",
-    "deleteFeedback",
-}
-
 @app.before_request
 def restrict_present_view_edits():
     if (
         session.get("is_present_view")
         and request.endpoint != "toggle_present_view"
-        and (request.method == "POST" or request.endpoint in PRESENT_VIEW_BLOCKED_ENDPOINTS)
+        and request.method == "POST"
     ):
         flash("Presenter view is read-only. Turn it off to make changes.", "warning")
         return redirect(url_for("admin"))
