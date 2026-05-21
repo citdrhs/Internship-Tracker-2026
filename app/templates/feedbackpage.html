@@ -2,7 +2,11 @@
 {% block title %}Feedback List{% endblock %}
 {% block content %}
 <h1>Student Feedback</h1>
-<p><a href="{{ url_for('submitFeedback') }}">Submit new feedback</a> or <a href="{{ url_for('home') }}">return home</a>.</p>
+{% if not session.get('is_present_view') %}
+    <p><a href="{{ url_for('submitFeedback') }}">Submit new feedback</a> or <a href="{{ url_for('home') }}">return home</a>.</p>
+{% else %}
+    <p><a href="{{ url_for('home') }}">Return home</a>.</p>
+{% endif %}
 <div class="tableBox">
     {% with messages = get_flashed_messages(with_categories=true) %}
         {% if messages %}
@@ -21,7 +25,9 @@
             <th>Action Items</th>
             <th>Focus Areas</th>
             <th>Average</th>
-            <th>Actions</th>
+            {% if not session.get('is_present_view') %}
+                <th>Actions</th>
+            {% endif %}
         </tr>
         {% for f in feedback %}
         <tr>
@@ -33,21 +39,25 @@
             <td>
                 <div class="rating-badge">{{ f[6] }}<span>/5</span></div>
             </td>
-            <td>
-                <div class="action-btns">
-                    <a href="{{ url_for('editFeedback', id=f[0]) }}" class="btn-edit">Edit</a>
-                    <form method="post" action="{{ url_for('deleteFeedback', id=f[0]) }}">
-                        <button type="submit" class="btn-delete" onclick="return confirm('Delete this feedback?')">Delete</button>
-                    </form>
-                </div>
-            </td>
+            {% if not session.get('is_present_view') %}
+                <td>
+                    <div class="action-btns">
+                        <a href="{{ url_for('editFeedback', id=f[0]) }}" class="btn-edit">Edit</a>
+                        <form method="post" action="{{ url_for('deleteFeedback', id=f[0]) }}">
+                            <button type="submit" class="btn-delete" onclick="return confirm('Delete this feedback?')">Delete</button>
+                        </form>
+                    </div>
+                </td>
+            {% endif %}
         </tr>
         {% endfor %}
     </table>
     {% else %}
     <div class="empty-state">
         <p>No feedback submitted yet.</p>
-        <a href="{{ url_for('submitFeedback') }}" class="btn-edit">Submit the first one -></a>
+        {% if not session.get('is_present_view') %}
+            <a href="{{ url_for('submitFeedback') }}" class="btn-edit">Submit the first one -></a>
+        {% endif %}
     </div>
     {% endif %}
 </div>
