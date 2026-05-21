@@ -21,6 +21,10 @@ STATIC_DIR = BASE_DIR / "static"
 load_dotenv()
 profanity.load_censor_words()
 
+DB_CONNECT_TIMEOUT = int(os.environ.get("DB_CONNECT_TIMEOUT", "10"))
+DB_POOL_RECYCLE_SECONDS = int(os.environ.get("DB_POOL_RECYCLE_SECONDS", "300"))
+DB_POOL_TIMEOUT_SECONDS = int(os.environ.get("DB_POOL_TIMEOUT_SECONDS", "30"))
+
 ORGANIZATION_TEXT_FIELDS = [
     {
         "name": "organization_number",
@@ -157,8 +161,16 @@ def build_sqlalchemy_uri():
 
 def get_db_connection():
     settings = get_database_settings()
+    connect_options = {
+        "connect_timeout": DB_CONNECT_TIMEOUT,
+        "keepalives": 1,
+        "keepalives_idle": 30,
+        "keepalives_interval": 10,
+        "keepalives_count": 5,
+    }
+
     if "database_uri" in settings:
-        return psycopg2.connect(settings["database_uri"])
+        return psycopg2.connect(settings["database_uri"], **connect_options)
 
     return psycopg2.connect(
         dbname=settings["dbname"],
@@ -166,6 +178,7 @@ def get_db_connection():
         password=settings["password"],
         host=settings["host"],
         port=settings["port"],
+        **connect_options,
     )
 
 def fetch_all_mentors():
@@ -195,6 +208,18 @@ app = Flask(
 )
 app.config["SECRET_KEY"] = os.environ.get("SECRET_KEY", "Internship 2026-OD")
 app.config["SQLALCHEMY_DATABASE_URI"] = build_sqlalchemy_uri()
+app.config["SQLALCHEMY_ENGINE_OPTIONS"] = {
+    "pool_pre_ping": True,
+    "pool_recycle": DB_POOL_RECYCLE_SECONDS,
+    "pool_timeout": DB_POOL_TIMEOUT_SECONDS,
+    "connect_args": {
+        "connect_timeout": DB_CONNECT_TIMEOUT,
+        "keepalives": 1,
+        "keepalives_idle": 30,
+        "keepalives_interval": 10,
+        "keepalives_count": 5,
+    },
+}
 app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
 app.config["MAIL_SERVER"] = "smtp.gmail.com"
 app.config["MAIL_PORT"] = 587
@@ -304,6 +329,8 @@ def can_access_student(student_id):
 def fetch_feedback(mentor_id=None):
     conn = get_db_connection()
     try:
+        with conn:
+            ensure_feedback_schema(conn)
         with conn.cursor() as cur:
             if mentor_id is not None:
                 cur.execute(
@@ -357,6 +384,8 @@ def fetch_feedback(mentor_id=None):
 def fetch_feedback_entry(feedback_id):
     conn = get_db_connection()
     try:
+        with conn:
+            ensure_feedback_schema(conn)
         with conn.cursor() as cur:
             cur.execute(
                 """
@@ -385,6 +414,8 @@ def fetch_feedback_entry(feedback_id):
 def fetch_student_hours_summary(student_id):
     conn = get_db_connection()
     try:
+        with conn:
+            ensure_feedback_schema(conn)
         with conn.cursor() as cur:
             cur.execute(
                 """
@@ -449,6 +480,8 @@ def fetch_student_hours_summary(student_id):
 def fetch_feedback_for_student(student_id):
     conn = get_db_connection()
     try:
+        with conn:
+            ensure_feedback_schema(conn)
         with conn.cursor() as cur:
             cur.execute(
                 """
@@ -558,6 +591,14 @@ def ensure_organization_detail_columns(conn):
     with conn.cursor() as cur:
         for column_name, column_type in ORGANIZATION_DETAIL_COLUMN_TYPES.items():
             cur.execute(f"ALTER TABLE organizations ADD COLUMN IF NOT EXISTS {column_name} {column_type}")
+
+def ensure_feedback_schema(conn):
+    with conn.cursor() as cur:
+        cur.execute("ALTER TABLE feedback ADD COLUMN IF NOT EXISTS mentor_id BIGINT")
+        cur.execute("ALTER TABLE feedback ALTER COLUMN mentor_id DROP NOT NULL")
+        cur.execute("ALTER TABLE feedback ADD COLUMN IF NOT EXISTS action_items TEXT")
+        cur.execute("ALTER TABLE feedback ADD COLUMN IF NOT EXISTS focus_areas TEXT")
+        cur.execute("ALTER TABLE feedback ADD COLUMN IF NOT EXISTS submitted_at TIMESTAMPTZ NOT NULL DEFAULT NOW()")
 
 def organization_details_from_row(row):
     return {
@@ -839,7 +880,11 @@ def admin():
                         f"INSERT INTO organizations ({columns}) VALUES ({placeholders}) ON CONFLICT (name) DO NOTHING",
                         (organization_name, *[organization_details[column] for column in detail_columns]),
                     )
-            flash("Organization added.", "success")
+                    inserted = cur.rowcount
+            if inserted:
+                flash("Organization added.", "success")
+            else:
+                flash("Organization already exists.", "warning")
         finally:
             conn.close()
 
@@ -1192,14 +1237,16 @@ def submitFeedback():
             flash("You can only submit feedback for assigned students.", "danger")
             return render_template("feedbackform.html", students=students)
 
-        mentor_id = get_current_user_id()
-        if mentor_id is None:
+        current_user_id = get_current_user_id()
+        if current_user_id is None:
             flash("You must be logged in as a valid user to submit feedback.", "danger")
             return redirect(url_for("login"))
 
+        mentor_id = current_user_id if session.get("is_mentor") else None
         conn = get_db_connection()
         try:
             with conn:
+                ensure_feedback_schema(conn)
                 with conn.cursor() as cur:
                     cur.execute(
                         """

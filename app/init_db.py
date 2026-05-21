@@ -160,7 +160,7 @@ CREATE TABLE IF NOT EXISTS progress_checks (
 CREATE TABLE IF NOT EXISTS feedback (
     id BIGSERIAL PRIMARY KEY,
     student_id BIGINT NOT NULL,
-    mentor_id BIGINT NOT NULL,
+    mentor_id BIGINT,
     week INTEGER NOT NULL CHECK (week BETWEEN 1 AND 52),
     description TEXT NOT NULL,
     action_items TEXT,
@@ -173,6 +173,18 @@ CREATE TABLE IF NOT EXISTS feedback (
     rating NUMERIC(4,2) NOT NULL CHECK (rating BETWEEN 1 AND 5),
     submitted_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
+
+ALTER TABLE feedback ADD COLUMN IF NOT EXISTS mentor_id BIGINT;
+ALTER TABLE feedback ALTER COLUMN mentor_id DROP NOT NULL;
+ALTER TABLE feedback ADD COLUMN IF NOT EXISTS action_items TEXT;
+ALTER TABLE feedback ADD COLUMN IF NOT EXISTS focus_areas TEXT;
+ALTER TABLE feedback ADD COLUMN IF NOT EXISTS quality SMALLINT;
+ALTER TABLE feedback ADD COLUMN IF NOT EXISTS professionalism SMALLINT;
+ALTER TABLE feedback ADD COLUMN IF NOT EXISTS timeliness SMALLINT;
+ALTER TABLE feedback ADD COLUMN IF NOT EXISTS initiative SMALLINT;
+ALTER TABLE feedback ADD COLUMN IF NOT EXISTS softskills SMALLINT;
+ALTER TABLE feedback ADD COLUMN IF NOT EXISTS rating NUMERIC(4,2);
+ALTER TABLE feedback ADD COLUMN IF NOT EXISTS submitted_at TIMESTAMPTZ NOT NULL DEFAULT NOW();
 
 CREATE UNIQUE INDEX IF NOT EXISTS mentor_assignments_student_id_idx ON mentor_assignments (student_id);
 CREATE UNIQUE INDEX IF NOT EXISTS progress_checks_student_day_idx ON progress_checks (student_id, day_worked);

@@ -52,7 +52,7 @@ class Organization(db.Model):
     virginia_5cs = db.Column(db.Boolean, nullable=False, default=False)
     hours = db.Column(db.Boolean, nullable=False, default=False)
     signature = db.Column(db.String(200), nullable=True)
-    created_at = db.Column(db.DateTime, nullable=False, default=db.func.now())
+    created_at = db.Column(db.DateTime, nullable=False, server_default=db.func.now())
 
 
 class Student(db.Model):
@@ -65,7 +65,7 @@ class Student(db.Model):
     grade = db.Column(db.String(3), nullable=True)
     organization = db.Column(db.String(200), nullable=True)
     organization_id = db.Column(db.Integer, db.ForeignKey('organizations.id', ondelete='SET NULL'), nullable=True)
-    created_at = db.Column(db.DateTime, nullable=False, default=db.func.now())
+    created_at = db.Column(db.DateTime, nullable=False, server_default=db.func.now())
 
 
 class Mentor(db.Model):
@@ -77,7 +77,7 @@ class Mentor(db.Model):
     password = db.Column(db.String(500), nullable=False)
     organization = db.Column(db.String(200), nullable=True)
     organization_id = db.Column(db.Integer, db.ForeignKey('organizations.id', ondelete='SET NULL'), nullable=True)
-    created_at = db.Column(db.DateTime, nullable=False, default=db.func.now())
+    created_at = db.Column(db.DateTime, nullable=False, server_default=db.func.now())
 
 
 class Admin(db.Model):
@@ -90,7 +90,7 @@ class Admin(db.Model):
     organization = db.Column(db.String(200), nullable=True)
     organization_id = db.Column(db.Integer, db.ForeignKey('organizations.id', ondelete='SET NULL'), nullable=True)
     is_present_view = db.Column(db.Boolean, nullable=False, default=False)
-    created_at = db.Column(db.DateTime, nullable=False, default=db.func.now())
+    created_at = db.Column(db.DateTime, nullable=False, server_default=db.func.now())
 
 
 class MentorAssignment(db.Model):
@@ -100,6 +100,52 @@ class MentorAssignment(db.Model):
     mentor_id = db.Column(db.Integer, db.ForeignKey('mentors.id', ondelete='CASCADE'), nullable=False)
     assigned_at = db.Column(db.DateTime, server_default=db.func.now())
     __table_args__ = (db.UniqueConstraint('student_id', name='_student_mentor_uc'),)
+
+
+class ProgressCheck(db.Model):
+    __tablename__ = 'progress_checks'
+    id = db.Column(db.Integer, primary_key=True)
+    student_id = db.Column(db.Integer, db.ForeignKey('students.id', ondelete='CASCADE'), nullable=False)
+    day_worked = db.Column(db.Date, nullable=False)
+    hours_worked = db.Column(db.Numeric(5, 2), nullable=False)
+    what_they_did = db.Column(db.Text, nullable=False)
+    mentor_questions = db.Column(db.Text, nullable=True)
+    reflection = db.Column(db.Text, nullable=True)
+    next_steps = db.Column(db.Text, nullable=True)
+    self_questions = db.Column(db.Text, nullable=True)
+    created_at = db.Column(db.DateTime, nullable=False, server_default=db.func.now())
+    __table_args__ = (
+        db.CheckConstraint("hours_worked >= 0 AND hours_worked <= 24", name="progress_checks_hours_range"),
+        db.UniqueConstraint("student_id", "day_worked", name="progress_checks_student_day_uc"),
+    )
+
+
+class Feedback(db.Model):
+    __tablename__ = 'feedback'
+    id = db.Column(db.Integer, primary_key=True)
+    student_id = db.Column(db.Integer, db.ForeignKey('students.id', ondelete='CASCADE'), nullable=False)
+    mentor_id = db.Column(db.Integer, db.ForeignKey('mentors.id', ondelete='CASCADE'), nullable=True)
+    week = db.Column(db.Integer, nullable=False)
+    description = db.Column(db.Text, nullable=False)
+    action_items = db.Column(db.Text, nullable=True)
+    focus_areas = db.Column(db.Text, nullable=True)
+    quality = db.Column(db.SmallInteger, nullable=False)
+    professionalism = db.Column(db.SmallInteger, nullable=False)
+    timeliness = db.Column(db.SmallInteger, nullable=False)
+    initiative = db.Column(db.SmallInteger, nullable=False)
+    softskills = db.Column(db.SmallInteger, nullable=False)
+    rating = db.Column(db.Numeric(4, 2), nullable=False)
+    submitted_at = db.Column(db.DateTime, nullable=False, server_default=db.func.now())
+    __table_args__ = (
+        db.CheckConstraint("week BETWEEN 1 AND 52", name="feedback_week_range"),
+        db.CheckConstraint("quality BETWEEN 1 AND 5", name="feedback_quality_range"),
+        db.CheckConstraint("professionalism BETWEEN 1 AND 5", name="feedback_professionalism_range"),
+        db.CheckConstraint("timeliness BETWEEN 1 AND 5", name="feedback_timeliness_range"),
+        db.CheckConstraint("initiative BETWEEN 1 AND 5", name="feedback_initiative_range"),
+        db.CheckConstraint("softskills BETWEEN 1 AND 5", name="feedback_softskills_range"),
+        db.CheckConstraint("rating BETWEEN 1 AND 5", name="feedback_rating_range"),
+    )
+
 
 class PendingUser(db.Model):
     __tablename__ = 'pending_users'
@@ -114,3 +160,4 @@ class PendingUser(db.Model):
     requested_mentor_id = db.Column(db.Integer, nullable=True)
     is_present_view = db.Column(db.Boolean, nullable=False, default=False)
     grade = db.Column(db.String(3), nullable=True)
+    created_at = db.Column(db.DateTime, nullable=False, server_default=db.func.now())
