@@ -876,11 +876,13 @@ def admin():
                     detail_columns = list(ORGANIZATION_DETAIL_COLUMN_TYPES)
                     columns = ", ".join(["name", *detail_columns])
                     placeholders = ", ".join(["%s"] * (len(detail_columns) + 1))
-                    cur.execute(
-                        f"INSERT INTO organizations ({columns}) VALUES ({placeholders}) ON CONFLICT (name) DO NOTHING",
-                        (organization_name, *[organization_details[column] for column in detail_columns]),
-                    )
-                    inserted = cur.rowcount
+                    cur.execute("SELECT 1 FROM organizations WHERE name = %s", (organization_name,))
+                    inserted = cur.fetchone() is None
+                    if inserted:
+                        cur.execute(
+                            f"INSERT INTO organizations ({columns}) VALUES ({placeholders})",
+                            (organization_name, *[organization_details[column] for column in detail_columns]),
+                        )
             if inserted:
                 flash("Organization added.", "success")
             else:

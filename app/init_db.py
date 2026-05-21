@@ -35,6 +35,18 @@ ALTER TABLE organizations ADD COLUMN IF NOT EXISTS signature VARCHAR(200);
 ALTER TABLE organizations ADD COLUMN IF NOT EXISTS created_at TIMESTAMPTZ NOT NULL DEFAULT NOW();
 
 DO $$
+BEGIN
+    IF NOT EXISTS (
+        SELECT 1
+        FROM organizations
+        GROUP BY name
+        HAVING COUNT(*) > 1
+    ) THEN
+        CREATE UNIQUE INDEX IF NOT EXISTS organizations_name_key ON organizations (name);
+    END IF;
+END $$;
+
+DO $$
 DECLARE
     legacy_column TEXT;
 BEGIN
