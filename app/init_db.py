@@ -13,6 +13,7 @@ CREATE TABLE IF NOT EXISTS organizations (
     name VARCHAR(200) UNIQUE NOT NULL
 );
 
+ALTER TABLE organizations ADD COLUMN IF NOT EXISTS name VARCHAR(200);
 ALTER TABLE organizations ADD COLUMN IF NOT EXISTS organization_number VARCHAR(200);
 ALTER TABLE organizations ADD COLUMN IF NOT EXISTS organization_address VARCHAR(200);
 ALTER TABLE organizations ADD COLUMN IF NOT EXISTS organization_city VARCHAR(200);
@@ -377,14 +378,9 @@ def get_connection():
 
 
 def initialize_database() -> None:
-    connection = get_connection()
-
-    try:
-        with connection:
-            with connection.cursor() as cursor:
-                cursor.execute(SCHEMA_SQL)
-    finally:
-        connection.close()
+    with get_connection() as conn:
+        with conn.cursor() as cur:
+            cur.execute(SCHEMA_SQL)
 
 
 def main() -> None:

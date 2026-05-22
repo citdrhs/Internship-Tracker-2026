@@ -993,7 +993,7 @@ def home():
                     "pending_hours": student_summary[6],   # pending_hours
                 }
     
-    return render_template("home.html", student_hours=student_hours)
+    return render_template("home.html", student_hours=student_hours, session = session)
 
 @app.route("/intr/about")
 def about():
