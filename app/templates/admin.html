@@ -85,7 +85,10 @@
 
         {% if selected_student %}
             <div class="profile-card">
-                <h2>Student Profile</h2>
+                <div class="profile-card-header">
+                    <h2>Student Profile</h2>
+                    <a href="{{ url_for('editStudent', id=selected_student[0]) }}" class="btn-edit">Edit Student</a>
+                </div>
                 <div class="profile-grid">
                     <div>
                         <p class="profile-label">Name</p>
@@ -100,20 +103,24 @@
                         <p>{{ selected_student[4] or 'N/A' }}</p>
                     </div>
                     <div>
-                        <p class="profile-label">Total Hours</p>
+                        <p class="profile-label">Total Hours (Approved)</p>
                         <p>{{ selected_student[5] | round(1) }}</p>
                     </div>
                     <div>
-                        <p class="profile-label">Days Logged</p>
-                        <p>{{ selected_student[6] }}</p>
+                        <p class="profile-label">Pending Hours</p>
+                        <p>{{ selected_student[6] | round(1) }}</p>
                     </div>
                     <div>
-                        <p class="profile-label">Mentor</p>
+                        <p class="profile-label">Days Logged</p>
                         <p>{{ selected_student[7] }}</p>
                     </div>
                     <div>
+                        <p class="profile-label">Mentor</p>
+                        <p>{{ selected_student[8] }}</p>
+                    </div>
+                    <div>
                         <p class="profile-label">Organization</p>
-                        <p>{{ selected_student[8] or 'N/A' }}</p>
+                        <p>{{ selected_student[9] or 'N/A' }}</p>
                     </div>
                 </div>
 
@@ -227,12 +234,12 @@
                             <th>Total Average Rating</th>
                         </tr>
                         <tr>
-                            <td>{{ selected_student[9] if selected_student[9] is not none else 'No ratings' }}</td>
                             <td>{{ selected_student[10] if selected_student[10] is not none else 'No ratings' }}</td>
                             <td>{{ selected_student[11] if selected_student[11] is not none else 'No ratings' }}</td>
                             <td>{{ selected_student[12] if selected_student[12] is not none else 'No ratings' }}</td>
                             <td>{{ selected_student[13] if selected_student[13] is not none else 'No ratings' }}</td>
                             <td>{{ selected_student[14] if selected_student[14] is not none else 'No ratings' }}</td>
+                            <td>{{ selected_student[15] if selected_student[15] is not none else 'No ratings' }}</td>
                         </tr>
                     </table>
                 </section>
@@ -242,6 +249,60 @@
         {% endif %}
     </section>
 
+    <section class="admin-panel">
+        <h2>Mentor Information</h2>
+        <form method="GET" action="{{ url_for('admin') }}" class="admin-student-select">
+            <label for="mentor_id">Mentor</label>
+            <div class="admin-select-row">
+                <select id="mentor_id" name="mentor_id" class="form-control" required>
+                    <option value="">Select a mentor</option>
+                    {% for mentor in mentors %}
+                        <option value="{{ mentor[0] }}" {% if selected_mentor_id == mentor[0]|string %}selected{% endif %}>
+                            {{ mentor[1] }}
+                        </option>
+                    {% endfor %}
+                </select>
+                <button type="submit">View Mentor</button>
+            </div>
+        </form>
+
+        {% if selected_mentor %}
+            <div class="profile-card">
+                <div class="profile-card-header">
+                    <h2>Mentor Profile</h2>
+                    <a href="{{ url_for('editMentor', id=selected_mentor.id) }}" class="btn-edit">Edit Mentor</a>
+                </div>
+                <div class="profile-grid">
+                    <div>
+                        <p class="profile-label">Name</p>
+                        <p>{{ selected_mentor.first_name }} {{ selected_mentor.last_name }}</p>
+                    </div>
+                    <div>
+                        <p class="profile-label">Email</p>
+                        <p>{{ selected_mentor.email }}</p>
+                    </div>
+                    <div>
+                        <p class="profile-label">Organization</p>
+                        <p>{{ selected_mentor.organization or 'N/A' }}</p>
+                    </div>
+                    <div>
+                        <p class="profile-label">Assigned Students</p>
+                        <p>
+                            {% if selected_mentor_students %}
+                                {% for student in selected_mentor_students %}
+                                    {{ student[1] }}{% if not loop.last %}, {% endif %}
+                                {% endfor %}
+                            {% else %}
+                                No students assigned.
+                            {% endif %}
+                        </p>
+                    </div>
+                </div>
+            </div>
+        {% else %}
+            <p>Select a mentor to view their profile and edit their information.</p>
+        {% endif %}
+    </section>
 
 </div>
 {% endblock %}

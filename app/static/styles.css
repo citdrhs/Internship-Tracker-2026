@@ -481,11 +481,32 @@ h1 {
     font-size: 22px;
 }
 
+.profile-card-header {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    align-items: center;
+    gap: 14px;
+    margin-bottom: 24px;
+}
+
 .profile-grid {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-    gap: 18px;
+    gap: 22px;
     margin-bottom: 24px;
+}
+
+.admin-mentor-assign {
+    margin-top: 18px;
+}
+
+.admin-mentor-assign .admin-select-row {
+    gap: 12px;
+}
+
+.admin-mentor-assign select {
+    min-width: 0;
 }
 
 .profile-card p {
@@ -1005,4 +1026,126 @@ footer a {
     text-decoration: none;
     color: rgb(22, 4, 77);
     margin: 0 25px;
+}
+
+/* Mentor approval styles */
+.mentor-approval-section {
+    margin-top: 24px;
+}
+
+.mentor-approval-section h3 {
+    margin-bottom: 16px;
+    color: rgb(22, 4, 77);
+}
+
+.status-badge {
+    display: inline-block;
+    padding: 6px 12px;
+    border-radius: 6px;
+    font-weight: 600;
+    font-size: 0.85rem;
+}
+
+.status-badge.approved {
+    background-color: #d4f1d4;
+    color: #2b6b2b;
+}
+
+.status-badge.pending {
+    background-color: #fff3cd;
+    color: #856404;
+}
+
+.btn-approve {
+    background-color: #28a745;
+    color: white;
+    border: none;
+    border-radius: 6px;
+    padding: 6px 12px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background-color 0.2s;
+    font-size: 1.2rem;
+}
+
+.btn-approve:hover {
+    background-color: #218838;
+}
+
+.btn-reject {
+    background-color: #dc3545;
+    color: white;
+    border: none;
+    border-radius: 6px;
+    padding: 6px 12px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background-color 0.2s;
+    font-size: 1.2rem;
+}
+
+.btn-reject:hover {
+    background-color: #c82333;
+}
+
+#mentor-container {
+    width: min(1120px, 100%);
+    margin: 0 auto;
+    display: block;
+    padding: 28px 20px 80px;
+}
+
+.mentor-header {
+    margin-bottom: 18px;
+}
+
+.mentor-header h1 {
+    margin: 0;
+    text-align: left;
+}
+
+/* Student hours summary */
+.student-summary {
+    width: min(1000px, 100%);
+    margin-top: 20px;
+    margin-bottom: 30px;
+}
+
+.student-summary h2 {
+    text-align: center;
+    margin: 18px 0 20px;
+    color: rgb(22, 4, 77);
+}
+
+.student-hours-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 16px;
+}
+
+.hours-card {
+    background: linear-gradient(135deg, #6c63ff 0%, #8b7fff 100%);
+    color: white;
+    border-radius: 12px;
+    padding: 24px;
+    text-align: center;
+    box-shadow: 0 4px 12px rgba(108, 99, 255, 0.25);
+}
+
+.hours-card h3 {
+    margin: 0 0 12px 0;
+    font-size: 1rem;
+    font-weight: 600;
+    opacity: 0.95;
+}
+
+.hours-value,
+.hours-value-pending {
+    margin: 0;
+    font-size: 2.5rem;
+    font-weight: 700;
+}
+
+.hours-value-pending {
+    color: #ffd700;
 }

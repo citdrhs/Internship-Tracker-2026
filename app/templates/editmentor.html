@@ -1,0 +1,55 @@
+{% extends 'base.html' %}
+
+{% block title %}Edit Mentor{% endblock %}
+
+{% block content %}
+<div class="container">
+    <header class="edit-header">
+        <h1>Edit Mentor</h1>
+    </header>
+
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+            {% for category, message in messages %}
+                <div class="alert alert-{{ category }}">{{ message }}</div>
+            {% endfor %}
+        {% endif %}
+    {% endwith %}
+
+    <form method="POST" action="{{ url_for('editMentor', id=mentor.id) }}" class="admin-edit-form">
+        <div class="form-row">
+            <label for="email">Email</label>
+            <input type="email" id="email" name="email" value="{{ mentor.email }}" required>
+        </div>
+        <div class="form-row">
+            <label for="first_name">First Name</label>
+            <input type="text" id="first_name" name="first_name" value="{{ mentor.first_name }}" required>
+        </div>
+        <div class="form-row">
+            <label for="last_name">Last Name</label>
+            <input type="text" id="last_name" name="last_name" value="{{ mentor.last_name }}" required>
+        </div>
+        <div class="form-row">
+            <label for="organization">Organization</label>
+            <input type="text" id="organization" name="organization" value="{{ mentor.organization or '' }}">
+        </div>
+
+        {% if assigned_students %}
+            <div class="form-row">
+                <label>Assigned Students</label>
+                <p>{{ assigned_students|length }} student(s)</p>
+                <ul>
+                    {% for student in assigned_students %}
+                        <li>{{ student[1] }}</li>
+                    {% endfor %}
+                </ul>
+            </div>
+        {% endif %}
+
+        <div class="form-actions">
+            <button type="submit">Save Changes</button>
+            <a class="btn-secondary" href="{{ url_for('admin', mentor_id=mentor.id) }}">Cancel</a>
+        </div>
+    </form>
+</div>
+{% endblock %}
