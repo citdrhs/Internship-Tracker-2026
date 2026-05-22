@@ -42,25 +42,65 @@
         <h3>Existing Organizations</h3>
 
         {% if organizations %}
+            {% set selected_organization_id = request.args.get('organization_id', '') %}
+            <form method="GET" action="{{ url_for('admin') }}" class="admin-student-select">
+                <label for="organization_id">Organization</label>
+                <div class="admin-select-row">
+                    <select id="organization_id" name="organization_id" class="form-control" required>
+                        <option value="">Select an organization</option>
+                        {% for organization in organizations %}
+                            <option value="{{ organization[0] }}" {% if selected_organization_id == organization[0]|string %}selected{% endif %}>
+                                {{ organization[1] }}
+                            </option>
+                        {% endfor %}
+                    </select>
+                    <button type="submit">View Organization</button>
+                </div>
+            </form>
+
+            {% for organization in organizations if selected_organization_id == organization[0]|string %}
+                {% set organization_details = organization[2] or {} %}
+                <div class="profile-card">
+                    <div class="profile-card-header">
+                        <h2>{{ organization[1] }}</h2>
+                        {% if not session.get('is_present_view') %}
+                            <div class="action-btns">
+                                <a href="{{ url_for('editOrganization', id=organization[0]) }}" class="btn-edit">Edit</a>
+                                <form method="post" action="{{ url_for('deleteOrganization', id=organization[0]) }}">
+                                    <button type="submit" class="btn-delete" onclick="return confirm('Delete this organization?')">Delete</button>
+                                </form>
+                            </div>
+                        {% endif %}
+                    </div>
+                    <div class="profile-grid">
+                        {% for field in organization_text_fields %}
+                            <div>
+                                <p class="profile-label">{{ field.label }}</p>
+                                <p>{{ organization_details.get(field.name) or 'N/A' }}</p>
+                            </div>
+                        {% endfor %}
+                        <div>
+                            <p class="profile-label">Signature</p>
+                            <p>{{ organization_details.get('signature') or 'N/A' }}</p>
+                        </div>
+                        {% for field in organization_checkbox_fields %}
+                            <div>
+                                <p class="profile-label">{{ field.label }}</p>
+                                <p>{% if organization_details.get(field.name) %}Yes{% else %}No{% endif %}</p>
+                            </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            {% endfor %}
+
             <table class="admin-table">
                 <tr>
                     <th>Organization</th>
-                    <th>Info</th>
                     <th>Actions</th>
                 </tr>
                 {% for organization in organizations %}
-                    {% set organization_details = organization[2] or {} %}
                     <tr>
                         <td>{{ organization[1] }}</td>
-                        <td>
-                            {% for field in organization_text_fields %}
-                                <strong>{{ field.label }}:</strong> {{ organization_details.get(field.name) or 'N/A' }}<br>
-                            {% endfor %}
-                            <strong>Signature:</strong> {{ organization_details.get('signature') or 'N/A' }}<br>
-                            {% for field in organization_checkbox_fields %}
-                                <strong>{{ field.label }}:</strong> {% if organization_details.get(field.name) %}Yes{% else %}No{% endif %}<br>
-                            {% endfor %}
-                        </td>
                         <td>
                             <div class="action-btns">
                                 {% if not session.get('is_present_view') %}
