@@ -1814,7 +1814,8 @@ def progressCheck():
                             reflection = EXCLUDED.reflection,
                             next_steps = EXCLUDED.next_steps,
                             self_questions = EXCLUDED.self_questions,
-                            created_at = NOW()
+                            created_at = NOW(),
+                            is_approved = FALSE
                         """,
                         (
                             student_id,
