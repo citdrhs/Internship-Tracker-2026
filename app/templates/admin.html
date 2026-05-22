@@ -298,20 +298,6 @@
                         </p>
                     </div>
                 </div>
-                <section class="mentor-assign-section">
-                    <h3>Assign Student to Mentor</h3>
-                    <form method="POST" action="{{ url_for('assignStudentToMentor', mentor_id=selected_mentor.id) }}" class="admin-mentor-assign">
-                        <div class="admin-select-row">
-                            <select name="student_id" class="form-control" required>
-                                <option value="">Select student to assign</option>
-                                {% for student in students %}
-                                    <option value="{{ student[0] }}">{{ student[1] }}</option>
-                                {% endfor %}
-                            </select>
-                            <button type="submit" class="btn-submit">Assign</button>
-                        </div>
-                    </form>
-                </section>
             </div>
         {% else %}
             <p>Select a mentor to view their profile and edit their information.</p>
