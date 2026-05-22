@@ -632,6 +632,113 @@ def fetch_organizations():
     finally:
         conn.close()
 
+
+def fetch_mentors():
+    conn = get_db_connection()
+    try:
+        with conn.cursor() as cur:
+            cur.execute(
+                """
+                SELECT id, CONCAT(first_name, ' ', last_name) AS full_name
+                FROM mentors
+                ORDER BY first_name, last_name
+                """
+            )
+            return cur.fetchall()
+    finally:
+        conn.close()
+
+
+def fetch_student_entry(student_id):
+    conn = get_db_connection()
+    try:
+        with conn.cursor() as cur:
+            cur.execute(
+                """
+                SELECT
+                    s.id,
+                    s.email,
+                    s.first_name,
+                    s.last_name,
+                    s.grade,
+                    s.organization,
+                    ma.mentor_id
+                FROM students s
+                LEFT JOIN mentor_assignments ma ON ma.student_id = s.id
+                WHERE s.id = %s
+                """,
+                (student_id,),
+            )
+            row = cur.fetchone()
+            if not row:
+                return None
+            return {
+                "id": row[0],
+                "email": row[1],
+                "first_name": row[2],
+                "last_name": row[3],
+                "grade": row[4],
+                "organization": row[5],
+                "mentor_id": row[6],
+            }
+    finally:
+        conn.close()
+
+
+def fetch_mentor_entry(mentor_id):
+    conn = get_db_connection()
+    try:
+        with conn.cursor() as cur:
+            cur.execute(
+                """
+                SELECT id, email, first_name, last_name, organization
+                FROM mentors
+                WHERE id = %s
+                """,
+                (mentor_id,),
+            )
+            row = cur.fetchone()
+            if not row:
+                return None
+            return {
+                "id": row[0],
+                "email": row[1],
+                "first_name": row[2],
+                "last_name": row[3],
+                "organization": row[4],
+            }
+    finally:
+        conn.close()
+
+
+def fetch_students_for_mentor(mentor_id):
+    conn = get_db_connection()
+    try:
+        with conn.cursor() as cur:
+            cur.execute(
+                """
+                SELECT s.id, CONCAT(s.first_name, ' ', s.last_name) AS full_name
+                FROM students s
+                JOIN mentor_assignments ma ON ma.student_id = s.id
+                WHERE ma.mentor_id = %s
+                ORDER BY s.first_name, s.last_name
+                """,
+                (mentor_id,),
+            )
+            return cur.fetchall()
+    finally:
+        conn.close()
+
+
+def is_email_available(email, current_role=None, current_id=None):
+    account, role = find_account_by_email(email)
+    if account is None:
+        return True
+    if role == current_role and account.id == current_id:
+        return True
+    return False
+
+
 def fetch_organization_entry(organization_id):
     conn = get_db_connection()
     try:
@@ -905,12 +1012,16 @@ def admin():
 
     students = fetch_students()
     organizations = fetch_organizations()
+    mentors = fetch_mentors()
     selected_student_id = request.args.get("student_id", "").strip()
+    selected_mentor_id = request.args.get("mentor_id", "").strip()
     selected_student = None
     selected_feedback = []
     selected_progress_events = []
     weekly_totals = []
     monthly_totals = []
+    selected_mentor = None
+    selected_mentor_students = []
 
     if selected_student_id:
         try:
@@ -933,9 +1044,22 @@ def admin():
             if selected_student is None:
                 flash("Student not found.", "warning")
 
+    if selected_mentor_id:
+        try:
+            mentor_id_value = int(selected_mentor_id)
+        except ValueError:
+            flash("Please select a valid mentor.", "danger")
+        else:
+            selected_mentor = fetch_mentor_entry(mentor_id_value)
+            if selected_mentor is None:
+                flash("Mentor not found.", "warning")
+            else:
+                selected_mentor_students = fetch_students_for_mentor(mentor_id_value)
+
     return render_template(
         "admin.html",
         students=students,
+        mentors=mentors,
         selected_student_id=selected_student_id,
         selected_student=selected_student,
         selected_feedback=selected_feedback,
@@ -943,6 +1067,9 @@ def admin():
         selected_progress_events_json=json.dumps(selected_progress_events),
         weekly_totals=weekly_totals,
         monthly_totals=monthly_totals,
+        selected_mentor_id=selected_mentor_id,
+        selected_mentor=selected_mentor,
+        selected_mentor_students=selected_mentor_students,
         organizations=organizations,
         organization_text_fields=ORGANIZATION_TEXT_FIELDS,
         organization_checkbox_fields=ORGANIZATION_CHECKBOX_FIELDS,
@@ -1040,6 +1167,147 @@ def editOrganization(id):
         organization_details=organization[2] or {},
         organization_text_fields=ORGANIZATION_TEXT_FIELDS,
         organization_checkbox_fields=ORGANIZATION_CHECKBOX_FIELDS,
+    )
+
+@app.route("/intr/admin/students/<int:id>/edit", methods=["GET", "POST"])
+def editStudent(id):
+    login_redirect = require_login()
+    if login_redirect:
+        return login_redirect
+
+    if not session.get("is_admin") and not session.get("is_present_view"):
+        return redirect(url_for("home"))
+
+    student = fetch_student_entry(id)
+    if student is None:
+        flash("Student not found.", "warning")
+        return redirect(url_for("admin"))
+
+    mentors = fetch_mentors()
+    selected_mentor_id = student["mentor_id"]
+
+    if request.method == "POST":
+        email = request.form.get("email", "").strip()
+        first_name = request.form.get("first_name", "").strip()
+        last_name = request.form.get("last_name", "").strip()
+        grade = request.form.get("grade", "").strip()
+        organization = request.form.get("organization", "").strip()
+        mentor_id_raw = request.form.get("mentor_id", "").strip()
+
+        if not email or not first_name or not last_name:
+            flash("Email, first name, and last name are required.", "danger")
+            return render_template(
+                "editstudent.html",
+                student=student,
+                mentors=mentors,
+                selected_mentor_id=selected_mentor_id,
+            )
+
+        if not is_email_available(email, current_role="student", current_id=id):
+            flash("That email is already in use.", "danger")
+            return render_template(
+                "editstudent.html",
+                student=student,
+                mentors=mentors,
+                selected_mentor_id=selected_mentor_id,
+            )
+
+        mentor_id = None
+        if mentor_id_raw:
+            try:
+                mentor_id = int(mentor_id_raw)
+            except ValueError:
+                flash("Please select a valid mentor.", "danger")
+                return render_template(
+                    "editstudent.html",
+                    student=student,
+                    mentors=mentors,
+                    selected_mentor_id=selected_mentor_id,
+                )
+
+        conn = get_db_connection()
+        try:
+            with conn:
+                with conn.cursor() as cur:
+                    cur.execute(
+                        "UPDATE students SET email = %s, first_name = %s, last_name = %s, grade = %s, organization = %s WHERE id = %s",
+                        (email, first_name, last_name, grade or None, organization or None, id),
+                    )
+                    if mentor_id is None:
+                        cur.execute("DELETE FROM mentor_assignments WHERE student_id = %s", (id,))
+                    else:
+                        cur.execute(
+                            "INSERT INTO mentor_assignments (student_id, mentor_id) VALUES (%s, %s) ON CONFLICT (student_id) DO UPDATE SET mentor_id = EXCLUDED.mentor_id",
+                            (id, mentor_id),
+                        )
+            flash("Student updated.", "success")
+            return redirect(url_for("admin", student_id=id))
+        finally:
+            conn.close()
+
+    return render_template(
+        "editstudent.html",
+        student=student,
+        mentors=mentors,
+        selected_mentor_id=selected_mentor_id,
+    )
+
+
+@app.route("/intr/admin/mentors/<int:id>/edit", methods=["GET", "POST"])
+def editMentor(id):
+    login_redirect = require_login()
+    if login_redirect:
+        return login_redirect
+
+    if not session.get("is_admin") and not session.get("is_present_view"):
+        return redirect(url_for("home"))
+
+    mentor = fetch_mentor_entry(id)
+    if mentor is None:
+        flash("Mentor not found.", "warning")
+        return redirect(url_for("admin"))
+
+    assigned_students = fetch_students_for_mentor(id)
+
+    if request.method == "POST":
+        email = request.form.get("email", "").strip()
+        first_name = request.form.get("first_name", "").strip()
+        last_name = request.form.get("last_name", "").strip()
+        organization = request.form.get("organization", "").strip()
+
+        if not email or not first_name or not last_name:
+            flash("Email, first name, and last name are required.", "danger")
+            return render_template(
+                "editmentor.html",
+                mentor=mentor,
+                assigned_students=assigned_students,
+            )
+
+        if not is_email_available(email, current_role="mentor", current_id=id):
+            flash("That email is already in use.", "danger")
+            return render_template(
+                "editmentor.html",
+                mentor=mentor,
+                assigned_students=assigned_students,
+            )
+
+        conn = get_db_connection()
+        try:
+            with conn:
+                with conn.cursor() as cur:
+                    cur.execute(
+                        "UPDATE mentors SET email = %s, first_name = %s, last_name = %s, organization = %s WHERE id = %s",
+                        (email, first_name, last_name, organization or None, id),
+                    )
+            flash("Mentor updated.", "success")
+            return redirect(url_for("admin", mentor_id=id))
+        finally:
+            conn.close()
+
+    return render_template(
+        "editmentor.html",
+        mentor=mentor,
+        assigned_students=assigned_students,
     )
 
 @app.route("/intr/admin/organizations/<int:id>/delete", methods=["POST"])

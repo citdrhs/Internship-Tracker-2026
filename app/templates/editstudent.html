@@ -1,0 +1,58 @@
+{% extends 'base.html' %}
+
+{% block title %}Edit Student{% endblock %}
+
+{% block content %}
+<div class="container">
+    <header class="edit-header">
+        <h1>Edit Student</h1>
+    </header>
+
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+            {% for category, message in messages %}
+                <div class="alert alert-{{ category }}">{{ message }}</div>
+            {% endfor %}
+        {% endif %}
+    {% endwith %}
+
+    <form method="POST" action="{{ url_for('editStudent', id=student.id) }}" class="admin-edit-form">
+        <div class="form-row">
+            <label for="email">Email</label>
+            <input type="email" id="email" name="email" value="{{ student.email }}" required>
+        </div>
+        <div class="form-row">
+            <label for="first_name">First Name</label>
+            <input type="text" id="first_name" name="first_name" value="{{ student.first_name }}" required>
+        </div>
+        <div class="form-row">
+            <label for="last_name">Last Name</label>
+            <input type="text" id="last_name" name="last_name" value="{{ student.last_name }}" required>
+        </div>
+        <div class="form-row">
+            <label for="grade">Grade</label>
+            <input type="text" id="grade" name="grade" value="{{ student.grade or '' }}">
+        </div>
+        <div class="form-row">
+            <label for="organization">Organization</label>
+            <input type="text" id="organization" name="organization" value="{{ student.organization or '' }}">
+        </div>
+        <div class="form-row">
+            <label for="mentor_id">Assigned Mentor</label>
+            <select id="mentor_id" name="mentor_id">
+                <option value="">No mentor</option>
+                {% for mentor in mentors %}
+                    <option value="{{ mentor[0] }}" {% if selected_mentor_id == mentor[0] %}selected{% endif %}>
+                        {{ mentor[1] }}
+                    </option>
+                {% endfor %}
+            </select>
+        </div>
+
+        <div class="form-actions">
+            <button type="submit">Save Changes</button>
+            <a class="btn-secondary" href="{{ url_for('admin', student_id=student.id) }}">Cancel</a>
+        </div>
+    </form>
+</div>
+{% endblock %}
