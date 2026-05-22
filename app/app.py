@@ -592,16 +592,13 @@ def admin():
     if login_redirect:
         return login_redirect
 
-    if not session.get("is_admin") and not session.get("is_present_view"):
+    if not session.get("is_admin"):
         return redirect(url_for("home"))
     
     orgform = AddOrganizationForm()
     student_form = AdminStudentForm()
 
-    print('test')
-
     if request.method == "POST":
-        print('test')
         if orgform.validate_on_submit():
             organization_name = request.form.get("organization_name", "").strip()
             email = request.form.get("email", "").strip()
@@ -617,18 +614,9 @@ def admin():
 
             wbl_data = wbl_checklist.read() if wbl_checklist else None
             training_data = training_agreement_form.read() if training_agreement_form else None
-            
-            print('test')
-            
-            if not organization_name:
-                flash("Organization name is required.", "danger")
-                return redirect(url_for("admin"))
-            
-            print('test')
 
             with get_db_connection() as conn:
                 with conn.cursor() as cur:
-                    print('test1')
                     cur.execute(
                         """
                         INSERT INTO organizations (organization_name, email, phone_number, address, city, state, zip_code, website, type_of_screening, WBL_checklist, training_agreement_form, confirmed_by_admin_id)
@@ -637,29 +625,20 @@ def admin():
                         (organization_name, email, phone_number, address, city, state, zip_code, website, type_of_screening, psycopg2.Binary(wbl_data), psycopg2.Binary(training_data), session['id'])
                     )
             flash("Organization added.", "success")
-            
-            print('test')
-
             return redirect(url_for("admin"))
-        print(orgform.errors) # THIS WILL TELL YOU WHY IT IS FAILING
+        print(orgform.errors)
 
-    students = fetch_entry('students')
     organizations = fetch_entry('organizations')
     selected_student_id = request.args.get("student_id", "").strip()
     selected_student = None
     selected_feedback = []
 
     if selected_student_id:
-        try:
-            student_id_value = int(selected_student_id)
-        except ValueError:
-            flash("Please select a valid student.", "danger")
-        else:
-            selected_student = fetch_student_hours_summary(student_id_value)
-            selected_feedback = fetch_feedback_for_student(student_id_value)
+        selected_student = fetch_student_hours_summary(student_id_value)
+        selected_feedback = fetch_feedback_for_student(student_id_value)
 
-            if selected_student is None:
-                flash("Student not found.", "warning")
+        if selected_student is None:
+            flash("Student not found.", "warning")
 
     return render_template(
         "admin.html",

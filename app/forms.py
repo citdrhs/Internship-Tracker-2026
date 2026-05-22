@@ -136,6 +136,7 @@ class AddOrganizationForm(FlaskForm):
     type_of_screening = StringField('Type Of Screen', validators= [DataRequired()])
     wbl_checklist = FileField('WBL checklist', validators = [FileRequired(), FileAllowed(['pdf'], 'Must upload a pdf fillable form')])
     training_agreement_form = FileField('Training Agreement Form', validators = [FileRequired(), FileAllowed(['pdf'], 'Must upload a pdf fillable form')])
+    signature = StringField("The Full name of the person validating this information (Note: This will act as your legal signature)", validators = [DataRequired()])
     submit = SubmitField('Add organization')
 
 class AdminStudentForm(FlaskForm):
