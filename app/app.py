@@ -1309,6 +1309,25 @@ def editAdmin(id):
 
     return render_template("editadmin.html", admin=admin_user)
 
+@app.route("/intr/admin/admins/<int:id>/delete", methods=["POST"])
+def deleteAdmin(id):
+    login_redirect = require_login()
+    if login_redirect:
+        return login_redirect
+
+    if not session.get("is_admin"):
+        return redirect(url_for("home"))
+
+    admin_user = Admin.query.get(id)
+    if admin_user is None:
+        flash("Admin account not found.", "warning")
+        return redirect(url_for("admin"))
+
+    db.session.delete(admin_user)
+    db.session.commit()
+    flash("Admin account deleted.", "success")
+    return redirect(url_for("admin"))
+
 @app.route("/intr/admin/organizations/<int:id>/edit", methods=["GET", "POST"])
 def editOrganization(id):
     login_redirect = require_login()

@@ -359,7 +359,12 @@
                 <div class="profile-card-header">
                     <h2>Admin Profile</h2>
                     {% if not session.get('is_present_view') %}
-                        <a href="{{ url_for('editAdmin', id=selected_admin.id) }}" class="btn-edit">Edit Admin</a>
+                        <div class="action-btns">
+                            <a href="{{ url_for('editAdmin', id=selected_admin.id) }}" class="btn-edit">Edit Admin</a>
+                            <form method="post" action="{{ url_for('deleteAdmin', id=selected_admin.id) }}">
+                                <button type="submit" class="btn-delete" onclick="return confirm('Delete this admin account?')">Delete Admin</button>
+                            </form>
+                        </div>
                     {% endif %}
                 </div>
                 <div class="profile-grid">
