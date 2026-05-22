@@ -426,6 +426,7 @@ def fetch_student_hours_summary(student_id):
     conn = get_db_connection()
     try:
         with conn:
+            ensure_progress_schema(conn)
             ensure_feedback_schema(conn)
         with conn.cursor() as cur:
             cur.execute(
@@ -525,6 +526,8 @@ def fetch_feedback_for_student(student_id):
 def fetch_progress_checks(student_id):
     conn = get_db_connection()
     try:
+        with conn:
+            ensure_progress_schema(conn)
         with conn.cursor() as cur:
             cur.execute(
                 """
@@ -606,6 +609,10 @@ def ensure_organization_detail_columns(conn):
     with conn.cursor() as cur:
         for column_name, column_type in ORGANIZATION_DETAIL_COLUMN_TYPES.items():
             cur.execute(f"ALTER TABLE organizations ADD COLUMN IF NOT EXISTS {column_name} {column_type}")
+
+def ensure_progress_schema(conn):
+    with conn.cursor() as cur:
+        cur.execute("ALTER TABLE progress_checks ADD COLUMN IF NOT EXISTS is_approved BOOLEAN NOT NULL DEFAULT FALSE")
 
 def ensure_feedback_schema(conn):
     with conn.cursor() as cur:
