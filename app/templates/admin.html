@@ -76,7 +76,7 @@
         <form method="GET" action="{{ url_for('admin') }}" class="admin-student-select">
             <label for="student_id">Student</label>
             <div class="admin-select-row">
-                <select id="student_id" name="student_id" class="form-control" required>
+                <select id="student_id" name="student_id" class="form-control admin-view-select" data-param="student_id" required>
                     <option value="">Select a student</option>
                     {% for student in students %}
                         <option value="{{ student[0] }}" {% if selected_student_id == student[0]|string %}selected{% endif %}>
@@ -84,7 +84,6 @@
                         </option>
                     {% endfor %}
                 </select>
-                <button type="submit">View Student</button>
             </div>
         </form>
 
@@ -266,7 +265,7 @@
         <form method="GET" action="{{ url_for('admin') }}" class="admin-student-select">
             <label for="mentor_id">Mentor</label>
             <div class="admin-select-row">
-                <select id="mentor_id" name="mentor_id" class="form-control" required>
+                <select id="mentor_id" name="mentor_id" class="form-control admin-view-select" data-param="mentor_id" required>
                     <option value="">Select a mentor</option>
                     {% for mentor in mentors %}
                         <option value="{{ mentor[0] }}" {% if selected_mentor_id == mentor[0]|string %}selected{% endif %}>
@@ -274,7 +273,6 @@
                         </option>
                     {% endfor %}
                 </select>
-                <button type="submit">View Mentor</button>
             </div>
         </form>
 
@@ -328,7 +326,7 @@
         <form method="GET" action="{{ url_for('admin') }}" class="admin-student-select">
             <label for="admin_id">Admin</label>
             <div class="admin-select-row">
-                <select id="admin_id" name="admin_id" class="form-control" required>
+                <select id="admin_id" name="admin_id" class="form-control admin-view-select" data-param="admin_id" required>
                     <option value="">Select an admin</option>
                     {% for admin in admins %}
                         <option value="{{ admin[0] }}" {% if selected_admin_id == admin[0]|string %}selected{% endif %}>
@@ -336,7 +334,6 @@
                         </option>
                     {% endfor %}
                 </select>
-                <button type="submit">View Admin</button>
             </div>
         </form>
 
@@ -370,4 +367,17 @@
     </details>
 
 </div>
+<script>
+    document.querySelectorAll(".admin-view-select").forEach((select) => {
+        select.addEventListener("change", () => {
+            const url = new URL(window.location.href);
+            if (select.value) {
+                url.searchParams.set(select.dataset.param, select.value);
+            } else {
+                url.searchParams.delete(select.dataset.param);
+            }
+            window.location.href = url.toString();
+        });
+    });
+</script>
 {% endblock %}
