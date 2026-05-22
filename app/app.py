@@ -433,7 +433,8 @@ def fetch_student_hours_summary(student_id):
                 WITH progress_totals AS (
                     SELECT
                         student_id,
-                        COALESCE(SUM(hours_worked), 0) AS total_hours,
+                        COALESCE(SUM(CASE WHEN is_approved THEN hours_worked ELSE 0 END), 0) AS approved_hours,
+                        COALESCE(SUM(CASE WHEN NOT is_approved THEN hours_worked ELSE 0 END), 0) AS pending_hours,
                         COUNT(id) AS days_logged
                     FROM progress_checks
                     GROUP BY student_id
@@ -466,7 +467,8 @@ def fetch_student_hours_summary(student_id):
                     u.email,
                     COALESCE(u.grade, '') AS grade,
                     COALESCE(u.organization, '') AS organization,
-                    COALESCE(pt.total_hours, 0) AS total_hours,
+                    COALESCE(pt.approved_hours, 0) AS total_hours,
+                    COALESCE(pt.pending_hours, 0) AS pending_hours,
                     COALESCE(pt.days_logged, 0) AS days_logged,
                     COALESCE(mi.mentor_name, 'No mentor assigned') AS mentor_name,
                     COALESCE(mi.mentor_organization, '') AS mentor_organization,
@@ -535,6 +537,7 @@ def fetch_progress_checks(student_id):
                     reflection,
                     next_steps,
                     self_questions,
+                    is_approved,
                     created_at
                 FROM progress_checks
                 WHERE student_id = %s
@@ -549,8 +552,9 @@ def fetch_progress_checks(student_id):
 def summarize_progress_data(progress_checks):
     daily_hours = {}
     for entry in progress_checks:
-        _, day_worked, hours_worked, *_ = entry
-        if not day_worked:
+        # entry format: (id, day_worked, hours_worked, what_they_did, mentor_questions, reflection, next_steps, self_questions, is_approved, created_at)
+        id_val, day_worked, hours_worked, what_they_did, mentor_questions, reflection, next_steps, self_questions, is_approved, created_at = entry
+        if not day_worked or not is_approved:
             continue
         daily_hours[day_worked] = daily_hours.get(day_worked, 0) + float(hours_worked)
 
@@ -963,11 +967,164 @@ def home():
     login_redirect = require_login()
     if login_redirect:
         return login_redirect
-    return render_template("home.html")
+    
+    student_hours = None
+    if session.get("is_student"):
+        student_id = get_current_user_id()
+        if student_id:
+            student_summary = fetch_student_hours_summary(student_id)
+            if student_summary:
+                student_hours = {
+                    "approved_hours": student_summary[5],  # total_hours (approved)
+                    "pending_hours": student_summary[6],   # pending_hours
+                }
+    
+    return render_template("home.html", student_hours=student_hours)
 
 @app.route("/intr/about")
 def about():
     return render_template("about.html")
+
+@app.route("/intr/mentor/hours", methods=["GET"])
+def mentor_hours():
+    login_redirect = require_login()
+    if login_redirect:
+        return login_redirect
+
+    if not session.get("is_mentor"):
+        flash("This page is only available to mentors.", "warning")
+        return redirect(url_for("home"))
+
+    mentor_id = get_current_user_id()
+    if mentor_id is None:
+        flash("Unable to identify current mentor.", "danger")
+        return redirect(url_for("home"))
+
+    # Fetch students assigned to this mentor
+    students = fetch_students_for_mentor(mentor_id)
+    
+    selected_student_id = request.args.get("student_id", "").strip()
+    selected_student = None
+    selected_progress_checks = []
+    selected_progress_events = []
+    weekly_totals = []
+    monthly_totals = []
+
+    if selected_student_id:
+        try:
+            student_id_value = int(selected_student_id)
+        except ValueError:
+            flash("Please select a valid student.", "danger")
+        else:
+            # Verify that this student is assigned to this mentor
+            student_assigned = False
+            for student in students:
+                if student[0] == student_id_value:
+                    student_assigned = True
+                    break
+            
+            if not student_assigned:
+                flash("You don't have access to this student's hours.", "danger")
+            else:
+                selected_progress_checks = fetch_progress_checks(student_id_value)
+                selected_student = fetch_student_entry(student_id_value)
+                selected_progress_events, weekly_totals, monthly_totals = summarize_progress_data(
+                    selected_progress_checks
+                )
+
+    return render_template(
+        "mentor_hours.html",
+        students=students,
+        selected_student_id=selected_student_id,
+        selected_student=selected_student,
+        selected_progress_checks=selected_progress_checks,
+        selected_progress_events=selected_progress_events,
+        selected_progress_events_json=json.dumps(selected_progress_events),
+        weekly_totals=weekly_totals,
+        monthly_totals=monthly_totals,
+    )
+
+@app.route("/intr/mentor/hours/<int:progress_id>/approve", methods=["POST"])
+def approve_hours(progress_id):
+    login_redirect = require_login()
+    if login_redirect:
+        return login_redirect
+
+    if not session.get("is_mentor"):
+        flash("Only mentors can approve hours.", "warning")
+        return redirect(url_for("home"))
+
+    mentor_id = get_current_user_id()
+    
+    conn = get_db_connection()
+    try:
+        with conn:
+            with conn.cursor() as cur:
+                # Check if this progress check exists and belongs to a student assigned to this mentor
+                cur.execute(
+                    """
+                    SELECT pc.id, pc.student_id 
+                    FROM progress_checks pc
+                    JOIN mentor_assignments ma ON pc.student_id = ma.student_id
+                    WHERE pc.id = %s AND ma.mentor_id = %s
+                    """,
+                    (progress_id, mentor_id),
+                )
+                result = cur.fetchone()
+                
+                if result is None:
+                    flash("You don't have permission to approve this entry.", "danger")
+                else:
+                    student_id = result[1]
+                    cur.execute(
+                        "UPDATE progress_checks SET is_approved = TRUE WHERE id = %s",
+                        (progress_id,),
+                    )
+                    flash("Hours approved.", "success")
+        return redirect(url_for("mentor_hours", student_id=student_id))
+    finally:
+        conn.close()
+
+@app.route("/intr/mentor/hours/<int:progress_id>/reject", methods=["POST"])
+def reject_hours(progress_id):
+    login_redirect = require_login()
+    if login_redirect:
+        return login_redirect
+
+    if not session.get("is_mentor"):
+        flash("Only mentors can reject hours.", "warning")
+        return redirect(url_for("home"))
+
+    mentor_id = get_current_user_id()
+    
+    conn = get_db_connection()
+    try:
+        with conn:
+            with conn.cursor() as cur:
+                # Check if this progress check exists and belongs to a student assigned to this mentor
+                cur.execute(
+                    """
+                    SELECT pc.id, pc.student_id 
+                    FROM progress_checks pc
+                    JOIN mentor_assignments ma ON pc.student_id = ma.student_id
+                    WHERE pc.id = %s AND ma.mentor_id = %s
+                    """,
+                    (progress_id, mentor_id),
+                )
+                result = cur.fetchone()
+                
+                if result is None:
+                    flash("You don't have permission to reject this entry.", "danger")
+                else:
+                    student_id = result[1]
+                    cur.execute(
+                        "UPDATE progress_checks SET is_approved = FALSE WHERE id = %s",
+                        (progress_id,),
+                    )
+                    flash("Hours rejected.", "success")
+        return redirect(url_for("mentor_hours", student_id=student_id))
+    finally:
+        conn.close()
 
 @app.route("/intr/admin", methods=["GET", "POST"])
 def admin():
@@ -1309,6 +1466,40 @@ def editMentor(id):
         mentor=mentor,
         assigned_students=assigned_students,
     )
+
+@app.route("/intr/admin/mentors/<int:mentor_id>/assign-student", methods=["POST"])
+def assignStudentToMentor(mentor_id):
+    login_redirect = require_login()
+    if login_redirect:
+        return login_redirect
+
+    if not session.get("is_admin") and not session.get("is_present_view"):
+        return redirect(url_for("home"))
+
+    student_id_raw = request.form.get("student_id", "").strip()
+    if not student_id_raw:
+        flash("Please select a student to assign.", "warning")
+        return redirect(url_for("admin", mentor_id=mentor_id))
+
+    try:
+        student_id = int(student_id_raw)
+    except ValueError:
+        flash("Please select a valid student.", "danger")
+        return redirect(url_for("admin", mentor_id=mentor_id))
+
+    conn = get_db_connection()
+    try:
+        with conn:
+            with conn.cursor() as cur:
+                cur.execute(
+                    "INSERT INTO mentor_assignments (student_id, mentor_id) VALUES (%s, %s) ON CONFLICT (student_id) DO UPDATE SET mentor_id = EXCLUDED.mentor_id",
+                    (student_id, mentor_id),
+                )
+        flash("Mentor assignment updated.", "success")
+    finally:
+        conn.close()
+
+    return redirect(url_for("admin", mentor_id=mentor_id))
 
 @app.route("/intr/admin/organizations/<int:id>/delete", methods=["POST"])
 def deleteOrganization(id):

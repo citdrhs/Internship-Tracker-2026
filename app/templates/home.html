@@ -10,6 +10,22 @@
             A platform for students to log daily work, for mentors to provide actionable feedback, and for teachers to view progress over time.
         </p>
 
+        {% if student_hours %}
+            <section class="student-summary">
+                <h2>Your Hours Summary</h2>
+                <div class="student-hours-grid">
+                    <div class="hours-card">
+                        <h3>Approved Hours</h3>
+                        <p class="hours-value">{{ student_hours.approved_hours }}</p>
+                    </div>
+                    <div class="hours-card">
+                        <h3>Pending Hours</h3>
+                        <p class="hours-value-pending">{{ student_hours.pending_hours }}</p>
+                    </div>
+                </div>
+            </section>
+        {% endif %}
+
         <section class="home-about">
             <h2>What this website is for</h2>
             <div class="home-about-grid">

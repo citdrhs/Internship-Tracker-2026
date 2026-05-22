@@ -103,20 +103,24 @@
                         <p>{{ selected_student[4] or 'N/A' }}</p>
                     </div>
                     <div>
-                        <p class="profile-label">Total Hours</p>
+                        <p class="profile-label">Total Hours (Approved)</p>
                         <p>{{ selected_student[5] | round(1) }}</p>
                     </div>
                     <div>
-                        <p class="profile-label">Days Logged</p>
-                        <p>{{ selected_student[6] }}</p>
+                        <p class="profile-label">Pending Hours</p>
+                        <p>{{ selected_student[6] | round(1) }}</p>
                     </div>
                     <div>
-                        <p class="profile-label">Mentor</p>
+                        <p class="profile-label">Days Logged</p>
                         <p>{{ selected_student[7] }}</p>
                     </div>
                     <div>
+                        <p class="profile-label">Mentor</p>
+                        <p>{{ selected_student[8] }}</p>
+                    </div>
+                    <div>
                         <p class="profile-label">Organization</p>
-                        <p>{{ selected_student[8] or 'N/A' }}</p>
+                        <p>{{ selected_student[9] or 'N/A' }}</p>
                     </div>
                 </div>
 
@@ -230,12 +234,12 @@
                             <th>Total Average Rating</th>
                         </tr>
                         <tr>
-                            <td>{{ selected_student[9] if selected_student[9] is not none else 'No ratings' }}</td>
                             <td>{{ selected_student[10] if selected_student[10] is not none else 'No ratings' }}</td>
                             <td>{{ selected_student[11] if selected_student[11] is not none else 'No ratings' }}</td>
                             <td>{{ selected_student[12] if selected_student[12] is not none else 'No ratings' }}</td>
                             <td>{{ selected_student[13] if selected_student[13] is not none else 'No ratings' }}</td>
                             <td>{{ selected_student[14] if selected_student[14] is not none else 'No ratings' }}</td>
+                            <td>{{ selected_student[15] if selected_student[15] is not none else 'No ratings' }}</td>
                         </tr>
                     </table>
                 </section>
@@ -294,6 +298,20 @@
                         </p>
                     </div>
                 </div>
+                <section class="mentor-assign-section">
+                    <h3>Assign Student to Mentor</h3>
+                    <form method="POST" action="{{ url_for('assignStudentToMentor', mentor_id=selected_mentor.id) }}" class="admin-mentor-assign">
+                        <div class="admin-select-row">
+                            <select name="student_id" class="form-control" required>
+                                <option value="">Select student to assign</option>
+                                {% for student in students %}
+                                    <option value="{{ student[0] }}">{{ student[1] }}</option>
+                                {% endfor %}
+                            </select>
+                            <button type="submit" class="btn-submit">Assign</button>
+                        </div>
+                    </form>
+                </section>
             </div>
         {% else %}
             <p>Select a mentor to view their profile and edit their information.</p>

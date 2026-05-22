@@ -94,6 +94,7 @@
             <th>Reflection</th>
             <th>Next Steps</th>
             <th>Questions for Yourself</th>
+            <th>Status</th>
             <th>Saved</th>
         </tr>
         {% for entry in entries %}
@@ -105,7 +106,14 @@
             <td>{{ entry[5] or '' }}</td>
             <td>{{ entry[6] or '' }}</td>
             <td>{{ entry[7] or '' }}</td>
-            <td>{{ entry[8] }}</td>
+            <td>
+                {% if entry[8] %}
+                    <span class="status-badge approved">Approved</span>
+                {% else %}
+                    <span class="status-badge pending">Pending</span>
+                {% endif %}
+            </td>
+            <td>{{ entry[9] }}</td>
         </tr>
         {% endfor %}
     </table>
