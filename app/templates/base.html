@@ -24,6 +24,7 @@
 
                     {% if session.get('is_present_view') %}
                         <li><a href="{{ url_for('progressCheck') }}">Daily Worklog</a></li>
+                        <li><a href="{{ url_for('studentFeedback') }}">My Feedback</a></li>
                         <li><a href="{{ url_for('feedbackPage') }}">Feedback</a></li>
                         <li><a href="{{ url_for('submitFeedback') }}">Submit Feedback</a></li>
                         <li><a href="{{ url_for('admin') }}">Admin</a></li>
@@ -44,7 +45,9 @@
                 {% else %}
                     <li><a href="{{ url_for('login') }}">Login</a></li>
                     <li><a href="{{ url_for('register') }}">Register</a></li>
+                    
                 {% endif %}
+                    <li><a href="https://bugs.drhscit.org" target="_blank">Report Issue</a></li>
             </ul>
         </nav>
     </div>

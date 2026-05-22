@@ -12,7 +12,7 @@ from flask_bcrypt import Bcrypt
 from flask_mail import Mail, Message
 from app.forms import LoginForm, RegisterForm
 from itsdangerous import URLSafeTimedSerializer
-from app.models import PendingUser, User, MentorAssignment, db
+from app.models import Admin, Mentor, PendingUser, Student, MentorAssignment, db
 
 BASE_DIR = Path(__file__).resolve().parent
 TEMPLATES_DIR = BASE_DIR / "templates"
@@ -21,10 +21,14 @@ STATIC_DIR = BASE_DIR / "static"
 load_dotenv()
 profanity.load_censor_words()
 
+DB_CONNECT_TIMEOUT = int(os.environ.get("DB_CONNECT_TIMEOUT", "10"))
+DB_POOL_RECYCLE_SECONDS = int(os.environ.get("DB_POOL_RECYCLE_SECONDS", "300"))
+DB_POOL_TIMEOUT_SECONDS = int(os.environ.get("DB_POOL_TIMEOUT_SECONDS", "30"))
+
 ORGANIZATION_TEXT_FIELDS = [
     {
         "name": "organization_number",
-        "label": "Organization Number",
+        "label": "Organization Phone Number",
         "type": "number",
         "placeholder": "Enter organization number",
     },
@@ -157,8 +161,16 @@ def build_sqlalchemy_uri():
 
 def get_db_connection():
     settings = get_database_settings()
+    connect_options = {
+        "connect_timeout": DB_CONNECT_TIMEOUT,
+        "keepalives": 1,
+        "keepalives_idle": 30,
+        "keepalives_interval": 10,
+        "keepalives_count": 5,
+    }
+
     if "database_uri" in settings:
-        return psycopg2.connect(settings["database_uri"])
+        return psycopg2.connect(settings["database_uri"], **connect_options)
 
     return psycopg2.connect(
         dbname=settings["dbname"],
@@ -166,6 +178,7 @@ def get_db_connection():
         password=settings["password"],
         host=settings["host"],
         port=settings["port"],
+        **connect_options,
     )
 
 def fetch_all_mentors():
@@ -175,13 +188,12 @@ def fetch_all_mentors():
             cur.execute(
                 """
                 SELECT
-                    u.id,
-                    CONCAT(u.first_name, ' ', u.last_name) AS mentor_name,
-                    COALESCE(o.name, u.organization) AS organization_name
-                FROM users u
-                LEFT JOIN organizations o ON u.organization_id = o.id
-                WHERE COALESCE(u.is_mentor, FALSE) = TRUE
-                ORDER BY COALESCE(o.name, u.organization), u.first_name, u.last_name
+                    m.id,
+                    CONCAT(m.first_name, ' ', m.last_name) AS mentor_name,
+                    COALESCE(o.name, m.organization) AS organization_name
+                FROM mentors m
+                LEFT JOIN organizations o ON m.organization_id = o.id
+                ORDER BY COALESCE(o.name, m.organization), m.first_name, m.last_name
                 """
             )
             return cur.fetchall()
@@ -196,6 +208,18 @@ app = Flask(
 )
 app.config["SECRET_KEY"] = os.environ.get("SECRET_KEY", "Internship 2026-OD")
 app.config["SQLALCHEMY_DATABASE_URI"] = build_sqlalchemy_uri()
+app.config["SQLALCHEMY_ENGINE_OPTIONS"] = {
+    "pool_pre_ping": True,
+    "pool_recycle": DB_POOL_RECYCLE_SECONDS,
+    "pool_timeout": DB_POOL_TIMEOUT_SECONDS,
+    "connect_args": {
+        "connect_timeout": DB_CONNECT_TIMEOUT,
+        "keepalives": 1,
+        "keepalives_idle": 30,
+        "keepalives_interval": 10,
+        "keepalives_count": 5,
+    },
+}
 app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
 app.config["MAIL_SERVER"] = "smtp.gmail.com"
 app.config["MAIL_PORT"] = 587
@@ -236,6 +260,17 @@ def require_student():
         return redirect(url_for("home"))
     return None
 
+@app.before_request
+def restrict_present_view_edits():
+    if (
+        session.get("is_present_view")
+        and request.endpoint != "toggle_present_view"
+        and request.method == "POST"
+    ):
+        flash("Presenter view is read-only. Turn it off to make changes.", "warning")
+        return redirect(url_for("admin"))
+    return None
+
 def fetch_students(mentor_id=None):
     conn = get_db_connection()
     try:
@@ -243,15 +278,11 @@ def fetch_students(mentor_id=None):
             if mentor_id is not None:
                 cur.execute(
                     """
-                    SELECT u.id, CONCAT(u.first_name, ' ', u.last_name) AS full_name
-                    FROM users u
-                    JOIN mentor_assignments ma ON ma.student_id = u.id
+                    SELECT s.id, CONCAT(s.first_name, ' ', s.last_name) AS full_name
+                    FROM students s
+                    JOIN mentor_assignments ma ON ma.student_id = s.id
                     WHERE ma.mentor_id = %s
-                      AND COALESCE(u.is_admin, FALSE) = FALSE
-                      AND COALESCE(u.is_teacher, FALSE) = FALSE
-                      AND COALESCE(u.is_mentor, FALSE) = FALSE
-                      AND COALESCE(u.is_present_view, FALSE) = FALSE
-                    ORDER BY u.first_name, u.last_name
+                    ORDER BY s.first_name, s.last_name
                     """,
                     (mentor_id,),
                 )
@@ -259,11 +290,7 @@ def fetch_students(mentor_id=None):
                 cur.execute(
                     """
                     SELECT id, CONCAT(first_name, ' ', last_name) AS full_name
-                    FROM users
-                    WHERE COALESCE(is_admin, FALSE) = FALSE
-                      AND COALESCE(is_teacher, FALSE) = FALSE
-                      AND COALESCE(is_mentor, FALSE) = FALSE
-                      AND COALESCE(is_present_view, FALSE) = FALSE
+                    FROM students
                     ORDER BY first_name, last_name
                     """
                 )
@@ -313,6 +340,8 @@ def can_access_student(student_id):
 def fetch_feedback(mentor_id=None):
     conn = get_db_connection()
     try:
+        with conn:
+            ensure_feedback_schema(conn)
         with conn.cursor() as cur:
             if mentor_id is not None:
                 cur.execute(
@@ -331,7 +360,7 @@ def fetch_feedback(mentor_id=None):
                         f.initiative,
                         f.softskills
                     FROM feedback f
-                    JOIN users u ON f.student_id = u.id
+                    JOIN students u ON f.student_id = u.id
                     JOIN mentor_assignments ma ON ma.student_id = u.id
                     WHERE ma.mentor_id = %s
                     ORDER BY f.week DESC, f.id DESC
@@ -355,7 +384,7 @@ def fetch_feedback(mentor_id=None):
                         f.initiative,
                         f.softskills
                     FROM feedback f
-                    JOIN users u ON f.student_id = u.id
+                    JOIN students u ON f.student_id = u.id
                     ORDER BY f.week DESC, f.id DESC
                     """
                 )
@@ -366,6 +395,8 @@ def fetch_feedback(mentor_id=None):
 def fetch_feedback_entry(feedback_id):
     conn = get_db_connection()
     try:
+        with conn:
+            ensure_feedback_schema(conn)
         with conn.cursor() as cur:
             cur.execute(
                 """
@@ -394,6 +425,8 @@ def fetch_feedback_entry(feedback_id):
 def fetch_student_hours_summary(student_id):
     conn = get_db_connection()
     try:
+        with conn:
+            ensure_feedback_schema(conn)
         with conn.cursor() as cur:
             cur.execute(
                 """
@@ -423,7 +456,7 @@ def fetch_student_hours_summary(student_id):
                         STRING_AGG(DISTINCT CONCAT(m.first_name, ' ', m.last_name), ', ') AS mentor_name,
                         STRING_AGG(DISTINCT COALESCE(o.name, m.organization), ', ') AS mentor_organization
                     FROM mentor_assignments ma
-                    JOIN users m ON ma.mentor_id = m.id
+                    JOIN mentors m ON ma.mentor_id = m.id
                     LEFT JOIN organizations o ON m.organization_id = o.id
                     GROUP BY ma.student_id
                 )
@@ -443,15 +476,11 @@ def fetch_student_hours_summary(student_id):
                     fa.avg_initiative,
                     fa.avg_softskills,
                     fa.total_average_rating
-                FROM users u
+                FROM students u
                 LEFT JOIN progress_totals pt ON pt.student_id = u.id
                 LEFT JOIN feedback_averages fa ON fa.student_id = u.id
                 LEFT JOIN mentor_info mi ON mi.student_id = u.id
                 WHERE u.id = %s
-                  AND COALESCE(u.is_admin, FALSE) = FALSE
-                  AND COALESCE(u.is_teacher, FALSE) = FALSE
-                  AND COALESCE(u.is_mentor, FALSE) = FALSE
-                  AND COALESCE(u.is_present_view, FALSE) = FALSE
                 """,
                 (student_id,),
             )
@@ -462,6 +491,8 @@ def fetch_student_hours_summary(student_id):
 def fetch_feedback_for_student(student_id):
     conn = get_db_connection()
     try:
+        with conn:
+            ensure_feedback_schema(conn)
         with conn.cursor() as cur:
             cur.execute(
                 """
@@ -479,7 +510,7 @@ def fetch_feedback_for_student(student_id):
                     f.initiative,
                     f.softskills
                 FROM feedback f
-                JOIN users u ON f.student_id = u.id
+                JOIN students u ON f.student_id = u.id
                 WHERE f.student_id = %s
                 ORDER BY f.week DESC, f.id DESC
                 """,
@@ -572,6 +603,14 @@ def ensure_organization_detail_columns(conn):
         for column_name, column_type in ORGANIZATION_DETAIL_COLUMN_TYPES.items():
             cur.execute(f"ALTER TABLE organizations ADD COLUMN IF NOT EXISTS {column_name} {column_type}")
 
+def ensure_feedback_schema(conn):
+    with conn.cursor() as cur:
+        cur.execute("ALTER TABLE feedback ADD COLUMN IF NOT EXISTS mentor_id BIGINT")
+        cur.execute("ALTER TABLE feedback ALTER COLUMN mentor_id DROP NOT NULL")
+        cur.execute("ALTER TABLE feedback ADD COLUMN IF NOT EXISTS action_items TEXT")
+        cur.execute("ALTER TABLE feedback ADD COLUMN IF NOT EXISTS focus_areas TEXT")
+        cur.execute("ALTER TABLE feedback ADD COLUMN IF NOT EXISTS submitted_at TIMESTAMPTZ NOT NULL DEFAULT NOW()")
+
 def organization_details_from_row(row):
     return {
         column_name: row[index + 2]
@@ -625,9 +664,8 @@ def fetch_mentors_by_organization(organization_id):
             cur.execute(
                 """
                 SELECT id, CONCAT(first_name, ' ', last_name) AS full_name
-                FROM users
+                FROM mentors
                 WHERE organization_id = %s
-                  AND COALESCE(is_mentor, FALSE) = TRUE
                 ORDER BY first_name, last_name
                 """,
                 (organization_id,),
@@ -636,11 +674,30 @@ def fetch_mentors_by_organization(organization_id):
     finally:
         conn.close()
 
+def find_account_by_email(email):
+    student = Student.query.filter_by(email=email).first()
+    if student:
+        return student, "student"
+
+    mentor = Mentor.query.filter_by(email=email).first()
+    if mentor:
+        return mentor, "mentor"
+
+    admin = Admin.query.filter_by(email=email).first()
+    if admin:
+        return admin, "admin"
+
+    return None, None
+
+def account_exists(email):
+    account, _ = find_account_by_email(email)
+    return account is not None
+
 def get_current_user_id():
     email = session.get("email")
     if not email:
         return None
-    user = User.query.filter_by(email=email).first()
+    user, _ = find_account_by_email(email)
     return user.id if user else None
 
 def validate_progress_check_form():
@@ -768,7 +825,7 @@ def login():
     form = LoginForm()
 
     if request.method == "POST" and form.validate_on_submit():
-        user = User.query.filter_by(email=form.email.data).first()
+        user, role = find_account_by_email(form.email.data)
 
         if not user:
             flash("Email does not exist.", "danger")
@@ -780,10 +837,10 @@ def login():
 
         session["email"] = user.email
         session["organization"] = fetch_organization_name(user.organization_id) or user.organization
-        session["is_admin"] = bool(user.is_admin)
-        session["is_teacher"] = bool(user.is_teacher)
-        session["is_mentor"] = bool(user.is_mentor)
-        session["is_present_view"] = bool(user.is_present_view)
+        session["is_admin"] = role == "admin"
+        session["is_teacher"] = False
+        session["is_mentor"] = role == "mentor"
+        session["is_present_view"] = bool(getattr(user, "is_present_view", False))
 
         return redirect(url_for("home"))
 
@@ -830,11 +887,17 @@ def admin():
                     detail_columns = list(ORGANIZATION_DETAIL_COLUMN_TYPES)
                     columns = ", ".join(["name", *detail_columns])
                     placeholders = ", ".join(["%s"] * (len(detail_columns) + 1))
-                    cur.execute(
-                        f"INSERT INTO organizations ({columns}) VALUES ({placeholders}) ON CONFLICT (name) DO NOTHING",
-                        (organization_name, *[organization_details[column] for column in detail_columns]),
-                    )
-            flash("Organization added.", "success")
+                    cur.execute("SELECT 1 FROM organizations WHERE name = %s", (organization_name,))
+                    inserted = cur.fetchone() is None
+                    if inserted:
+                        cur.execute(
+                            f"INSERT INTO organizations ({columns}) VALUES ({placeholders})",
+                            (organization_name, *[organization_details[column] for column in detail_columns]),
+                        )
+            if inserted:
+                flash("Organization added.", "success")
+            else:
+                flash("Organization already exists.", "warning")
         finally:
             conn.close()
 
@@ -941,7 +1004,15 @@ def editOrganization(id):
                         ),
                     )
                     cur.execute(
-                        "UPDATE users SET organization = %s WHERE organization = %s",
+                        "UPDATE students SET organization = %s WHERE organization = %s",
+                        (organization_name, organization[1]),
+                    )
+                    cur.execute(
+                        "UPDATE mentors SET organization = %s WHERE organization = %s",
+                        (organization_name, organization[1]),
+                    )
+                    cur.execute(
+                        "UPDATE admins SET organization = %s WHERE organization = %s",
                         (organization_name, organization[1]),
                     )
                     cur.execute(
@@ -987,7 +1058,15 @@ def deleteOrganization(id):
                 organization = fetch_organization_entry(id)
                 if organization is not None:
                     cur.execute(
-                        "UPDATE users SET organization = NULL, organization_id = NULL WHERE organization_id = %s OR organization = %s",
+                        "UPDATE students SET organization = NULL, organization_id = NULL WHERE organization_id = %s OR organization = %s",
+                        (id, organization[1]),
+                    )
+                    cur.execute(
+                        "UPDATE mentors SET organization = NULL, organization_id = NULL WHERE organization_id = %s OR organization = %s",
+                        (id, organization[1]),
+                    )
+                    cur.execute(
+                        "UPDATE admins SET organization = NULL, organization_id = NULL WHERE organization_id = %s OR organization = %s",
                         (id, organization[1]),
                     )
                     cur.execute(
@@ -1029,9 +1108,6 @@ def register():
             flash("Please select Student, Mentor, or Admin.", "danger")
             return render_template("register.html", form=form, organizations=organizations, mentors=mentors)
 
-        is_admin = False
-        is_mentor = False
-        is_teacher = False
         organization_id_value = None
         selected_organization = None
 
@@ -1060,16 +1136,12 @@ def register():
                 flash("Invalid mentor security code.", "danger")
                 return render_template("register.html", form=form, organizations=organizations, mentors=mentors)
 
-            is_mentor = True
-
         elif selected_role == "admin":
             if security_code != os.environ.get("ADMIN_CODE"):
                 flash("Invalid admin security code.", "danger")
                 return render_template("register.html", form=form, organizations=organizations, mentors=mentors)
 
-            is_admin = True
-
-        if User.query.filter_by(email=form.email.data).first():
+        if account_exists(form.email.data):
             flash("Email already in use.", "danger")
             return redirect(url_for("register"))
 
@@ -1099,9 +1171,6 @@ def register():
             organization_id=organization_id_value,
             role=selected_role,
             requested_mentor_id=int(selected_mentor_id) if selected_role == "student" else None,
-            is_admin=is_admin,
-            is_mentor=is_mentor,
-            is_teacher=is_teacher,
             is_present_view=False,
         )
 
@@ -1181,14 +1250,16 @@ def submitFeedback():
             flash("You can only submit feedback for assigned students.", "danger")
             return render_template("feedbackform.html", students=students)
 
-        mentor_id = get_current_user_id()
-        if mentor_id is None:
+        current_user_id = get_current_user_id()
+        if current_user_id is None:
             flash("You must be logged in as a valid user to submit feedback.", "danger")
             return redirect(url_for("login"))
 
+        mentor_id = current_user_id if session.get("is_mentor") else None
         conn = get_db_connection()
         try:
             with conn:
+                ensure_feedback_schema(conn)
                 with conn.cursor() as cur:
                     cur.execute(
                         """
@@ -1425,25 +1496,37 @@ def confirm_email(token):
         flash("No matching pending registration.", "danger")
         return redirect(url_for("register"))
 
-    if User.query.filter_by(email=email).first():
+    if account_exists(email):
         db.session.delete(pending)
         db.session.commit()
         flash("Account already confirmed. Please log in.", "info")
         return redirect(url_for("login"))
 
-    new_user = User(
-        email=pending.email,
-        first_name=pending.first_name,
-        last_name=pending.last_name,
-        password=pending.password,
-        grade=pending.grade,
-        organization=pending.organization,
-        organization_id=pending.organization_id,
-        is_admin=pending.is_admin,
-        is_mentor=pending.is_mentor,
-        is_teacher=pending.is_teacher,
-        is_present_view=pending.is_present_view,
-    )
+    account_data = {
+        "email": pending.email,
+        "first_name": pending.first_name,
+        "last_name": pending.last_name,
+        "password": pending.password,
+        "organization": pending.organization,
+        "organization_id": pending.organization_id,
+    }
+
+    if pending.role == "student":
+        new_user = Student(
+            **account_data,
+            grade=pending.grade,
+        )
+    elif pending.role == "mentor":
+        new_user = Mentor(**account_data)
+    elif pending.role == "admin":
+        new_user = Admin(
+            **account_data,
+            is_present_view=pending.is_present_view,
+        )
+    else:
+        flash("Invalid pending registration role.", "danger")
+        return redirect(url_for("register"))
+
     db.session.add(new_user)
     db.session.flush()
 

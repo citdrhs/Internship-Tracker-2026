@@ -19,9 +19,37 @@ jobs:
           username: internships
           key: ${{ secrets.SSH_KEY }}
           script: |
+            set -e
+            dump_logs() {
+              echo "Deploy failed. Service status:"
+              sudo systemctl status internships --no-pager || true
+              echo "Recent service logs:"
+              sudo journalctl -u internships -n 120 --no-pager || true
+              echo "App log:"
+              tail -n 120 /home/internships/www/logs/internship_tracker.log || true
+            }
+            smoke_test() {
+              url="$1"
+              echo "Smoke testing $url"
+              response="$(mktemp)"
+              status="$(curl -sS -o "$response" -w "%{http_code}" "$url" || true)"
+              echo "HTTP $status"
+              cat "$response"
+              echo
+              rm -f "$response"
+              test "$status" = "200"
+            }
+            trap dump_logs ERR
             cd /home/internships/www
             git pull origin main
+            git rev-parse --short HEAD
             source venv/bin/activate
             pip install -r requirements.txt
+            python -c "from app.app import get_database_settings; s=get_database_settings(); print('App DB target:', s.get('host', 'DATABASE_URI'), s.get('port', ''), s.get('dbname', ''))"
+            python -m app.init_db
             deactivate
             sudo systemctl restart internships
+            sleep 5
+            smoke_test https://drhscit.org/internships/intr/
+            smoke_test https://drhscit.org/internships/intr/register
+            echo "Deploy smoke tests passed."
