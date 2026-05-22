@@ -35,6 +35,7 @@
                     {% elif session.get('is_mentor') %}
                         <li><a href="{{ url_for('feedbackPage') }}">Feedback</a></li>
                         <li><a href="{{ url_for('submitFeedback') }}">Submit Feedback</a></li>
+                        <li><a href="{{ url_for('mentor_hours') }}">Hours Approval</a></li>
 
                     {% else %}
                         <li><a href="{{ url_for('progressCheck') }}">Daily Worklog</a></li>
