@@ -1251,6 +1251,46 @@ def toggle_present_view():
     session["is_present_view"] = not session.get("is_present_view", False)
     return redirect(url_for("admin" if session.get("is_admin") or session.get("is_present_view") else "home"))
 
+@app.route("/intr/admin/profile", methods=["GET", "POST"])
+def editAdminProfile():
+    login_redirect = require_login()
+    if login_redirect:
+        return login_redirect
+
+    if not session.get("is_admin") or session.get("is_present_view"):
+        return redirect(url_for("admin"))
+
+    admin_user = Admin.query.get(get_current_user_id())
+    if admin_user is None:
+        flash("Admin account not found.", "warning")
+        return redirect(url_for("home"))
+
+    if request.method == "POST":
+        email = request.form.get("email", "").strip()
+        first_name = request.form.get("first_name", "").strip()
+        last_name = request.form.get("last_name", "").strip()
+        organization = request.form.get("organization", "").strip()
+
+        if not email or not first_name or not last_name:
+            flash("Email, first name, and last name are required.", "danger")
+            return render_template("editadmin.html", admin=admin_user)
+
+        if not is_email_available(email, current_role="admin", current_id=admin_user.id):
+            flash("That email is already in use.", "danger")
+            return render_template("editadmin.html", admin=admin_user)
+
+        admin_user.email = email
+        admin_user.first_name = first_name
+        admin_user.last_name = last_name
+        admin_user.organization = organization or None
+        db.session.commit()
+        session["email"] = email
+        session["organization"] = organization or None
+        flash("Admin profile updated.", "success")
+        return redirect(url_for("admin"))
+
+    return render_template("editadmin.html", admin=admin_user)
+
 @app.route("/intr/admin/organizations/<int:id>/edit", methods=["GET", "POST"])
 def editOrganization(id):
     login_redirect = require_login()
@@ -1417,6 +1457,28 @@ def editStudent(id):
     )
 
 
+@app.route("/intr/admin/students/<int:id>/delete", methods=["POST"])
+def deleteStudent(id):
+    login_redirect = require_login()
+    if login_redirect:
+        return login_redirect
+
+    if not session.get("is_admin"):
+        return redirect(url_for("home"))
+
+    conn = get_db_connection()
+    try:
+        with conn:
+            with conn.cursor() as cur:
+                cur.execute("DELETE FROM students WHERE id = %s", (id,))
+                deleted = cur.rowcount
+    finally:
+        conn.close()
+
+    flash("Student deleted." if deleted else "Student not found.", "success" if deleted else "warning")
+    return redirect(url_for("admin"))
+
+
 @app.route("/intr/admin/mentors/<int:id>/edit", methods=["GET", "POST"])
 def editMentor(id):
     login_redirect = require_login()
@@ -1473,6 +1535,28 @@ def editMentor(id):
         mentor=mentor,
         assigned_students=assigned_students,
     )
+
+@app.route("/intr/admin/mentors/<int:id>/delete", methods=["POST"])
+def deleteMentor(id):
+    login_redirect = require_login()
+    if login_redirect:
+        return login_redirect
+
+    if not session.get("is_admin"):
+        return redirect(url_for("home"))
+
+    conn = get_db_connection()
+    try:
+        with conn:
+            with conn.cursor() as cur:
+                cur.execute("UPDATE feedback SET mentor_id = NULL WHERE mentor_id = %s", (id,))
+                cur.execute("DELETE FROM mentors WHERE id = %s", (id,))
+                deleted = cur.rowcount
+    finally:
+        conn.close()
+
+    flash("Mentor deleted." if deleted else "Mentor not found.", "success" if deleted else "warning")
+    return redirect(url_for("admin"))
 
 @app.route("/intr/admin/mentors/<int:mentor_id>/assign-student", methods=["POST"])
 def assignStudentToMentor(mentor_id):

@@ -11,6 +11,9 @@
                 {% if session.get('is_present_view') %}Turn Off Presenter View{% else %}Presenter View{% endif %}
             </button>
         </form>
+        {% if session.get('is_admin') and not session.get('is_present_view') %}
+            <a href="{{ url_for('editAdminProfile') }}" class="btn-edit">Edit My Info</a>
+        {% endif %}
 
         <!-- calendar  -->
         <link href="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.15/index.global.min.css" rel="stylesheet">
@@ -27,16 +30,18 @@
     <section class="admin-panel admin-organizations">
         <h2>Manage Organizations</h2>
 
-        <details class="admin-org-details">
-            <summary>Add Organization</summary>
+        {% if not session.get('is_present_view') %}
+            <details class="admin-org-details">
+                <summary>Add Organization</summary>
 
-            <form method="POST" action="{{ url_for('admin') }}" class="admin-org-form">
-                {% set organization_name = '' %}
-                {% set organization_details = {} %}
-                {% include '_organization_form_fields.html' %}
-                <button type="submit">Submit</button>
-            </form>
-        </details>
+                <form method="POST" action="{{ url_for('admin') }}" class="admin-org-form">
+                    {% set organization_name = '' %}
+                    {% set organization_details = {} %}
+                    {% include '_organization_form_fields.html' %}
+                    <button type="submit">Submit</button>
+                </form>
+            </details>
+        {% endif %}
 
         <h3>Existing Organizations</h3>
 
@@ -51,10 +56,14 @@
                         <td>{{ organization[1] }}</td>
                         <td>
                             <div class="action-btns">
-                                <a href="{{ url_for('editOrganization', id=organization[0]) }}" class="btn-edit">Edit</a>
-                                <form method="post" action="{{ url_for('deleteOrganization', id=organization[0]) }}">
-                                    <button type="submit" class="btn-delete" onclick="return confirm('Delete this organization?')">Delete</button>
-                                </form>
+                                {% if not session.get('is_present_view') %}
+                                    <a href="{{ url_for('editOrganization', id=organization[0]) }}" class="btn-edit">Edit</a>
+                                    <form method="post" action="{{ url_for('deleteOrganization', id=organization[0]) }}">
+                                        <button type="submit" class="btn-delete" onclick="return confirm('Delete this organization?')">Delete</button>
+                                    </form>
+                                {% else %}
+                                    <span class="status-badge pending">Read only</span>
+                                {% endif %}
                             </div>
                         </td>
                     </tr>
@@ -87,7 +96,14 @@
             <div class="profile-card">
                 <div class="profile-card-header">
                     <h2>Student Profile</h2>
-                    <a href="{{ url_for('editStudent', id=selected_student[0]) }}" class="btn-edit">Edit Student</a>
+                    {% if not session.get('is_present_view') %}
+                        <div class="action-btns">
+                            <a href="{{ url_for('editStudent', id=selected_student[0]) }}" class="btn-edit">Edit Student</a>
+                            <form method="post" action="{{ url_for('deleteStudent', id=selected_student[0]) }}">
+                                <button type="submit" class="btn-delete" onclick="return confirm('Delete this student and their records?')">Delete Student</button>
+                            </form>
+                        </div>
+                    {% endif %}
                 </div>
                 <div class="profile-grid">
                     <div>
@@ -270,7 +286,14 @@
             <div class="profile-card">
                 <div class="profile-card-header">
                     <h2>Mentor Profile</h2>
-                    <a href="{{ url_for('editMentor', id=selected_mentor.id) }}" class="btn-edit">Edit Mentor</a>
+                    {% if not session.get('is_present_view') %}
+                        <div class="action-btns">
+                            <a href="{{ url_for('editMentor', id=selected_mentor.id) }}" class="btn-edit">Edit Mentor</a>
+                            <form method="post" action="{{ url_for('deleteMentor', id=selected_mentor.id) }}">
+                                <button type="submit" class="btn-delete" onclick="return confirm('Delete this mentor?')">Delete Mentor</button>
+                            </form>
+                        </div>
+                    {% endif %}
                 </div>
                 <div class="profile-grid">
                     <div>
@@ -298,6 +321,20 @@
                         </p>
                     </div>
                 </div>
+                {% if not session.get('is_present_view') %}
+                    <form method="POST" action="{{ url_for('assignStudentToMentor', mentor_id=selected_mentor.id) }}" class="admin-student-select">
+                        <label for="student_id_for_mentor">Assign Student to This Mentor</label>
+                        <div class="admin-select-row">
+                            <select id="student_id_for_mentor" name="student_id" class="form-control" required>
+                                <option value="">Select a student</option>
+                                {% for student in students %}
+                                    <option value="{{ student[0] }}">{{ student[1] }}</option>
+                                {% endfor %}
+                            </select>
+                            <button type="submit">Assign</button>
+                        </div>
+                    </form>
+                {% endif %}
             </div>
         {% else %}
             <p>Select a mentor to view their profile and edit their information.</p>
