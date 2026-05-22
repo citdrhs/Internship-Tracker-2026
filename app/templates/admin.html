@@ -11,10 +11,6 @@
                 {% if session.get('is_present_view') %}Turn Off Presenter View{% else %}Presenter View{% endif %}
             </button>
         </form>
-        {% if session.get('is_admin') and not session.get('is_present_view') %}
-            <a href="{{ url_for('editAdminProfile') }}" class="btn-edit">Edit My Info</a>
-        {% endif %}
-
         <!-- calendar  -->
         <link href="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.15/index.global.min.css" rel="stylesheet">
         <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.15/index.global.min.js"></script>
@@ -75,8 +71,8 @@
     </section>
 
     
-    <section class="admin-panel">
-        <h2>Student Information</h2>
+    <details class="admin-panel" open>
+        <summary>Student Information</summary>
         <form method="GET" action="{{ url_for('admin') }}" class="admin-student-select">
             <label for="student_id">Student</label>
             <div class="admin-select-row">
@@ -115,7 +111,7 @@
                         <p>{{ selected_student[2] }}</p>
                     </div>
                     <div>
-                        <p class="pro    file-label">Organization</p>
+                        <p class="profile-label">Organization</p>
                         <p>{{ selected_student[4] or 'N/A' }}</p>
                     </div>
                     <div>
@@ -135,7 +131,7 @@
                         <p>{{ selected_student[8] }}</p>
                     </div>
                     <div>
-                        <p class="profile-label">Organization</p>
+                        <p class="profile-label">Mentor Organization</p>
                         <p>{{ selected_student[9] or 'N/A' }}</p>
                     </div>
                 </div>
@@ -263,10 +259,10 @@
         {% else %}
             <p>Select a student to view their profile, feedback, and averages.</p>
         {% endif %}
-    </section>
+    </details>
 
-    <section class="admin-panel">
-        <h2>Mentor Information</h2>
+    <details class="admin-panel" open>
+        <summary>Mentor Information</summary>
         <form method="GET" action="{{ url_for('admin') }}" class="admin-student-select">
             <label for="mentor_id">Mentor</label>
             <div class="admin-select-row">
@@ -339,7 +335,48 @@
         {% else %}
             <p>Select a mentor to view their profile and edit their information.</p>
         {% endif %}
-    </section>
+    </details>
+
+    <details class="admin-panel" open>
+        <summary>Admin Information</summary>
+        <form method="GET" action="{{ url_for('admin') }}" class="admin-student-select">
+            <label for="admin_id">Admin</label>
+            <div class="admin-select-row">
+                <select id="admin_id" name="admin_id" class="form-control" required>
+                    <option value="">Select an admin</option>
+                    {% for admin in admins %}
+                        <option value="{{ admin[0] }}" {% if selected_admin_id == admin[0]|string %}selected{% endif %}>
+                            {{ admin[1] }}
+                        </option>
+                    {% endfor %}
+                </select>
+                <button type="submit">View Admin</button>
+            </div>
+        </form>
+
+        {% if selected_admin %}
+            <div class="profile-card">
+                <div class="profile-card-header">
+                    <h2>Admin Profile</h2>
+                    {% if not session.get('is_present_view') %}
+                        <a href="{{ url_for('editAdmin', id=selected_admin.id) }}" class="btn-edit">Edit Admin</a>
+                    {% endif %}
+                </div>
+                <div class="profile-grid">
+                    <div>
+                        <p class="profile-label">Name</p>
+                        <p>{{ selected_admin.first_name }} {{ selected_admin.last_name }}</p>
+                    </div>
+                    <div>
+                        <p class="profile-label">Email</p>
+                        <p>{{ selected_admin.email }}</p>
+                    </div>
+                </div>
+            </div>
+        {% else %}
+            <p>Select an admin to view and edit their information.</p>
+        {% endif %}
+    </details>
 
 </div>
 {% endblock %}

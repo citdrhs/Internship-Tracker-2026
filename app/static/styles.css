@@ -365,6 +365,11 @@ h1 {
     background-color: #555;
 }
 
+.btn-secondary {
+    color: rgb(22, 4, 77);
+    font-weight: 600;
+}
+
 .btn-delete {
     background-color: transparent;
     color: #cc3333;
@@ -935,6 +940,60 @@ h1 {
 
 .admin-student-select button:hover {
     background-color: #5248d1;
+}
+
+.admin-panel summary {
+    cursor: pointer;
+    font-size: 1.5rem;
+    font-weight: 800;
+    color: rgb(22, 4, 77);
+    margin-bottom: 16px;
+}
+
+.edit-container {
+    align-items: center;
+    flex-direction: column;
+    justify-content: flex-start;
+}
+
+.edit-header,
+.admin-edit-form {
+    width: min(640px, 100%);
+}
+
+.edit-header h1 {
+    margin: 0 0 18px;
+    text-align: left;
+}
+
+.admin-edit-form {
+    background-color: #ececec;
+    border-radius: 18px;
+    padding: 24px;
+}
+
+.form-row {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    margin-bottom: 16px;
+}
+
+.form-row label {
+    font-size: 1rem;
+}
+
+.form-row input,
+.form-row select {
+    width: 100%;
+    margin-left: 0;
+    padding: 10px 12px;
+}
+
+.form-actions {
+    align-items: center;
+    display: flex;
+    gap: 12px;
 }
 
 .student-calendar-section {

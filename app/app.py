@@ -702,7 +702,7 @@ def fetch_mentor_entry(mentor_id):
         with conn.cursor() as cur:
             cur.execute(
                 """
-                SELECT id, email, first_name, last_name, organization
+                SELECT id, email, first_name, last_name, organization, organization_id
                 FROM mentors
                 WHERE id = %s
                 """,
@@ -717,6 +717,7 @@ def fetch_mentor_entry(mentor_id):
                 "first_name": row[2],
                 "last_name": row[3],
                 "organization": row[4],
+                "organization_id": row[5],
             }
     finally:
         conn.close()
@@ -1177,8 +1178,13 @@ def admin():
     students = fetch_students()
     organizations = fetch_organizations()
     mentors = fetch_mentors()
+    admins = [
+        (admin.id, f"{admin.first_name} {admin.last_name}")
+        for admin in Admin.query.order_by(Admin.first_name, Admin.last_name).all()
+    ]
     selected_student_id = request.args.get("student_id", "").strip()
     selected_mentor_id = request.args.get("mentor_id", "").strip()
+    selected_admin_id = request.args.get("admin_id", "").strip()
     selected_student = None
     selected_feedback = []
     selected_progress_events = []
@@ -1186,6 +1192,7 @@ def admin():
     monthly_totals = []
     selected_mentor = None
     selected_mentor_students = []
+    selected_admin = None
 
     if selected_student_id:
         try:
@@ -1220,10 +1227,21 @@ def admin():
             else:
                 selected_mentor_students = fetch_students_for_mentor(mentor_id_value)
 
+    if selected_admin_id:
+        try:
+            admin_id_value = int(selected_admin_id)
+        except ValueError:
+            flash("Please select a valid admin.", "danger")
+        else:
+            selected_admin = Admin.query.get(admin_id_value)
+            if selected_admin is None:
+                flash("Admin not found.", "warning")
+
     return render_template(
         "admin.html",
         students=students,
         mentors=mentors,
+        admins=admins,
         selected_student_id=selected_student_id,
         selected_student=selected_student,
         selected_feedback=selected_feedback,
@@ -1234,6 +1252,8 @@ def admin():
         selected_mentor_id=selected_mentor_id,
         selected_mentor=selected_mentor,
         selected_mentor_students=selected_mentor_students,
+        selected_admin_id=selected_admin_id,
+        selected_admin=selected_admin,
         organizations=organizations,
         organization_text_fields=ORGANIZATION_TEXT_FIELDS,
         organization_checkbox_fields=ORGANIZATION_CHECKBOX_FIELDS,
@@ -1251,8 +1271,8 @@ def toggle_present_view():
     session["is_present_view"] = not session.get("is_present_view", False)
     return redirect(url_for("admin" if session.get("is_admin") or session.get("is_present_view") else "home"))
 
-@app.route("/intr/admin/profile", methods=["GET", "POST"])
-def editAdminProfile():
+@app.route("/intr/admin/admins/<int:id>/edit", methods=["GET", "POST"])
+def editAdmin(id):
     login_redirect = require_login()
     if login_redirect:
         return login_redirect
@@ -1260,16 +1280,15 @@ def editAdminProfile():
     if not session.get("is_admin") or session.get("is_present_view"):
         return redirect(url_for("admin"))
 
-    admin_user = Admin.query.get(get_current_user_id())
+    admin_user = Admin.query.get(id)
     if admin_user is None:
         flash("Admin account not found.", "warning")
-        return redirect(url_for("home"))
+        return redirect(url_for("admin"))
 
     if request.method == "POST":
         email = request.form.get("email", "").strip()
         first_name = request.form.get("first_name", "").strip()
         last_name = request.form.get("last_name", "").strip()
-        organization = request.form.get("organization", "").strip()
 
         if not email or not first_name or not last_name:
             flash("Email, first name, and last name are required.", "danger")
@@ -1282,12 +1301,11 @@ def editAdminProfile():
         admin_user.email = email
         admin_user.first_name = first_name
         admin_user.last_name = last_name
-        admin_user.organization = organization or None
         db.session.commit()
-        session["email"] = email
-        session["organization"] = organization or None
+        if get_current_user_id() == admin_user.id:
+            session["email"] = email
         flash("Admin profile updated.", "success")
-        return redirect(url_for("admin"))
+        return redirect(url_for("admin", admin_id=admin_user.id))
 
     return render_template("editadmin.html", admin=admin_user)
 
@@ -1394,8 +1412,6 @@ def editStudent(id):
         email = request.form.get("email", "").strip()
         first_name = request.form.get("first_name", "").strip()
         last_name = request.form.get("last_name", "").strip()
-        grade = request.form.get("grade", "").strip()
-        organization = request.form.get("organization", "").strip()
         mentor_id_raw = request.form.get("mentor_id", "").strip()
 
         if not email or not first_name or not last_name:
@@ -1434,8 +1450,8 @@ def editStudent(id):
             with conn:
                 with conn.cursor() as cur:
                     cur.execute(
-                        "UPDATE students SET email = %s, first_name = %s, last_name = %s, grade = %s, organization = %s WHERE id = %s",
-                        (email, first_name, last_name, grade or None, organization or None, id),
+                        "UPDATE students SET email = %s, first_name = %s, last_name = %s WHERE id = %s",
+                        (email, first_name, last_name, id),
                     )
                     if mentor_id is None:
                         cur.execute("DELETE FROM mentor_assignments WHERE student_id = %s", (id,))
@@ -1494,12 +1510,13 @@ def editMentor(id):
         return redirect(url_for("admin"))
 
     assigned_students = fetch_students_for_mentor(id)
+    organizations = fetch_organizations()
 
     if request.method == "POST":
         email = request.form.get("email", "").strip()
         first_name = request.form.get("first_name", "").strip()
         last_name = request.form.get("last_name", "").strip()
-        organization = request.form.get("organization", "").strip()
+        organization_id_raw = request.form.get("organization_id", "").strip()
 
         if not email or not first_name or not last_name:
             flash("Email, first name, and last name are required.", "danger")
@@ -1507,6 +1524,7 @@ def editMentor(id):
                 "editmentor.html",
                 mentor=mentor,
                 assigned_students=assigned_students,
+                organizations=organizations,
             )
 
         if not is_email_available(email, current_role="mentor", current_id=id):
@@ -1515,15 +1533,40 @@ def editMentor(id):
                 "editmentor.html",
                 mentor=mentor,
                 assigned_students=assigned_students,
+                organizations=organizations,
             )
+
+        organization_id = None
+        organization_name = None
+        if organization_id_raw:
+            try:
+                organization_id = int(organization_id_raw)
+            except ValueError:
+                flash("Please select a valid organization.", "danger")
+                return render_template(
+                    "editmentor.html",
+                    mentor=mentor,
+                    assigned_students=assigned_students,
+                    organizations=organizations,
+                )
+            organization = fetch_organization_entry(organization_id)
+            if organization is None:
+                flash("Please select a valid organization.", "danger")
+                return render_template(
+                    "editmentor.html",
+                    mentor=mentor,
+                    assigned_students=assigned_students,
+                    organizations=organizations,
+                )
+            organization_name = organization[1]
 
         conn = get_db_connection()
         try:
             with conn:
                 with conn.cursor() as cur:
                     cur.execute(
-                        "UPDATE mentors SET email = %s, first_name = %s, last_name = %s, organization = %s WHERE id = %s",
-                        (email, first_name, last_name, organization or None, id),
+                        "UPDATE mentors SET email = %s, first_name = %s, last_name = %s, organization = %s, organization_id = %s WHERE id = %s",
+                        (email, first_name, last_name, organization_name, organization_id, id),
                     )
             flash("Mentor updated.", "success")
             return redirect(url_for("admin", mentor_id=id))
@@ -1534,6 +1577,7 @@ def editMentor(id):
         "editmentor.html",
         mentor=mentor,
         assigned_students=assigned_students,
+        organizations=organizations,
     )
 
 @app.route("/intr/admin/mentors/<int:id>/delete", methods=["POST"])

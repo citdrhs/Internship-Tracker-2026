@@ -3,7 +3,7 @@
 {% block title %}Edit Student{% endblock %}
 
 {% block content %}
-<div class="container">
+<div class="container edit-container">
     <header class="edit-header">
         <h1>Edit Student</h1>
     </header>
@@ -28,14 +28,6 @@
         <div class="form-row">
             <label for="last_name">Last Name</label>
             <input type="text" id="last_name" name="last_name" value="{{ student.last_name }}" required>
-        </div>
-        <div class="form-row">
-            <label for="grade">Grade</label>
-            <input type="text" id="grade" name="grade" value="{{ student.grade or '' }}">
-        </div>
-        <div class="form-row">
-            <label for="organization">Organization</label>
-            <input type="text" id="organization" name="organization" value="{{ student.organization or '' }}">
         </div>
         <div class="form-row">
             <label for="mentor_id">Assigned Mentor</label>

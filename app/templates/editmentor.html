@@ -3,7 +3,7 @@
 {% block title %}Edit Mentor{% endblock %}
 
 {% block content %}
-<div class="container">
+<div class="container edit-container">
     <header class="edit-header">
         <h1>Edit Mentor</h1>
     </header>
@@ -30,8 +30,15 @@
             <input type="text" id="last_name" name="last_name" value="{{ mentor.last_name }}" required>
         </div>
         <div class="form-row">
-            <label for="organization">Organization</label>
-            <input type="text" id="organization" name="organization" value="{{ mentor.organization or '' }}">
+            <label for="organization_id">Organization</label>
+            <select id="organization_id" name="organization_id">
+                <option value="">No organization</option>
+                {% for organization in organizations %}
+                    <option value="{{ organization[0] }}" {% if mentor.organization_id == organization[0] %}selected{% endif %}>
+                        {{ organization[1] }}
+                    </option>
+                {% endfor %}
+            </select>
         </div>
 
         {% if assigned_students %}
