@@ -45,11 +45,22 @@
             <table class="admin-table">
                 <tr>
                     <th>Organization</th>
+                    <th>Info</th>
                     <th>Actions</th>
                 </tr>
                 {% for organization in organizations %}
+                    {% set organization_details = organization[2] or {} %}
                     <tr>
                         <td>{{ organization[1] }}</td>
+                        <td>
+                            {% for field in organization_text_fields %}
+                                <strong>{{ field.label }}:</strong> {{ organization_details.get(field.name) or 'N/A' }}<br>
+                            {% endfor %}
+                            <strong>Signature:</strong> {{ organization_details.get('signature') or 'N/A' }}<br>
+                            {% for field in organization_checkbox_fields %}
+                                <strong>{{ field.label }}:</strong> {% if organization_details.get(field.name) %}Yes{% else %}No{% endif %}<br>
+                            {% endfor %}
+                        </td>
                         <td>
                             <div class="action-btns">
                                 {% if not session.get('is_present_view') %}

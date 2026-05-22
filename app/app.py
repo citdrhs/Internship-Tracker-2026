@@ -631,15 +631,21 @@ def organization_details_from_row(row):
 def fetch_organizations():
     conn = get_db_connection()
     try:
+        with conn:
+            ensure_organization_detail_columns(conn)
         with conn.cursor() as cur:
+            detail_columns = ", ".join(ORGANIZATION_DETAIL_COLUMN_TYPES)
             cur.execute(
-                """
-                SELECT id, name
+                f"""
+                SELECT id, name, {detail_columns}
                 FROM organizations
                 ORDER BY name
                 """
             )
-            return cur.fetchall()
+            return [
+                (organization[0], organization[1], organization_details_from_row(organization))
+                for organization in cur.fetchall()
+            ]
     finally:
         conn.close()
 
