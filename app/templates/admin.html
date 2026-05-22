@@ -317,20 +317,6 @@
                         </p>
                     </div>
                 </div>
-                {% if not session.get('is_present_view') %}
-                    <form method="POST" action="{{ url_for('assignStudentToMentor', mentor_id=selected_mentor.id) }}" class="admin-student-select">
-                        <label for="student_id_for_mentor">Assign Student to This Mentor</label>
-                        <div class="admin-select-row">
-                            <select id="student_id_for_mentor" name="student_id" class="form-control" required>
-                                <option value="">Select a student</option>
-                                {% for student in students %}
-                                    <option value="{{ student[0] }}">{{ student[1] }}</option>
-                                {% endfor %}
-                            </select>
-                            <button type="submit">Assign</button>
-                        </div>
-                    </form>
-                {% endif %}
             </div>
         {% else %}
             <p>Select a mentor to view their profile and edit their information.</p>

@@ -950,6 +950,12 @@ h1 {
     margin-bottom: 16px;
 }
 
+.admin-panel .admin-org-details summary {
+    color: #ffffff;
+    font-size: 1rem;
+    margin-bottom: 0;
+}
+
 .edit-container {
     align-items: center;
     flex-direction: column;
