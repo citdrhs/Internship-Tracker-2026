@@ -947,6 +947,9 @@ def send_confirmation_email(user_email):
 
 @app.route("/intr/", methods=["GET", "POST"])
 def login():
+    if session.get("email"):
+        return redirect(url_for("home"))
+
     form = LoginForm()
 
     if request.method == "POST" and form.validate_on_submit():
