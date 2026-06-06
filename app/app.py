@@ -945,6 +945,10 @@ def send_confirmation_email(user_email):
     msg.html = html
     mail.send(msg)
 
+@app.route("/")
+def index():
+    return redirect(url_for("login"))
+
 @app.route("/intr/", methods=["GET", "POST"])
 def login():
     if session.get("email"):
