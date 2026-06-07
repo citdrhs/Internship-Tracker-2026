@@ -84,3 +84,15 @@ if (weekSelect && weekCustom) {
         weekSelect.name = other ? "" : "week";
     });
 }
+
+// Feedback list: filter rows by student and week for easy viewing
+function filterFeedback() {
+    const student = document.getElementById("filter-student").value;
+    const week = document.getElementById("filter-week").value;
+    document.querySelectorAll("#feedback-table tr").forEach((row) => {
+        if (!row.querySelector("td")) return;
+        const okStudent = !student || row.children[0].textContent.trim() === student;
+        const okWeek = !week || row.children[1].textContent.trim() === week;
+        row.style.display = okStudent && okWeek ? "" : "none";
+    });
+}

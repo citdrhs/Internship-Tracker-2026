@@ -1803,7 +1803,12 @@ def feedbackPage():
     except psycopg2.Error:
         flash("Feedback data could not be loaded. Run initdb.py to create the tables.", "danger")
         feedback = []
-    return render_template("feedbackpage.html", feedback=feedback)
+    return render_template(
+        "feedbackpage.html",
+        feedback=feedback,
+        students_to_filter=sorted({f[1] for f in feedback}),
+        weeks_to_filter=sorted({f[2] for f in feedback}),
+    )
 
 @app.route("/intr/student-feedback")
 def studentFeedback():
