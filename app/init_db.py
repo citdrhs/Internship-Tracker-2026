@@ -111,7 +111,6 @@ CREATE TABLE IF NOT EXISTS admins (
     password TEXT NOT NULL,
     organization VARCHAR(200),
     organization_id BIGINT REFERENCES organizations(id) ON DELETE SET NULL,
-    is_present_view BOOLEAN NOT NULL DEFAULT FALSE,
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
@@ -121,7 +120,6 @@ ALTER TABLE admins ADD COLUMN IF NOT EXISTS last_name TEXT;
 ALTER TABLE admins ADD COLUMN IF NOT EXISTS password TEXT;
 ALTER TABLE admins ADD COLUMN IF NOT EXISTS organization VARCHAR(200);
 ALTER TABLE admins ADD COLUMN IF NOT EXISTS organization_id BIGINT REFERENCES organizations(id) ON DELETE SET NULL;
-ALTER TABLE admins ADD COLUMN IF NOT EXISTS is_present_view BOOLEAN NOT NULL DEFAULT FALSE;
 ALTER TABLE admins ADD COLUMN IF NOT EXISTS created_at TIMESTAMPTZ NOT NULL DEFAULT NOW();
 
 CREATE TABLE IF NOT EXISTS pending_users (
@@ -135,7 +133,6 @@ CREATE TABLE IF NOT EXISTS pending_users (
     organization_id BIGINT REFERENCES organizations(id) ON DELETE SET NULL,
     role TEXT NOT NULL DEFAULT 'student',
     requested_mentor_id BIGINT,
-    is_present_view BOOLEAN NOT NULL DEFAULT FALSE,
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
@@ -144,7 +141,6 @@ ALTER TABLE pending_users ADD COLUMN IF NOT EXISTS organization VARCHAR(200);
 ALTER TABLE pending_users ADD COLUMN IF NOT EXISTS organization_id BIGINT REFERENCES organizations(id) ON DELETE SET NULL;
 ALTER TABLE pending_users ADD COLUMN IF NOT EXISTS role TEXT DEFAULT 'student';
 ALTER TABLE pending_users ADD COLUMN IF NOT EXISTS requested_mentor_id BIGINT;
-ALTER TABLE pending_users ADD COLUMN IF NOT EXISTS is_present_view BOOLEAN NOT NULL DEFAULT FALSE;
 ALTER TABLE pending_users ADD COLUMN IF NOT EXISTS created_at TIMESTAMPTZ NOT NULL DEFAULT NOW();
 UPDATE pending_users SET role = 'student' WHERE role IS NULL;
 ALTER TABLE pending_users ALTER COLUMN role SET DEFAULT 'student';
@@ -218,7 +214,6 @@ BEGIN
         WHERE COALESCE(is_admin, FALSE) = FALSE
           AND COALESCE(is_teacher, FALSE) = FALSE
           AND COALESCE(is_mentor, FALSE) = FALSE
-          AND COALESCE(is_present_view, FALSE) = FALSE
         ON CONFLICT (id) DO UPDATE SET
             email = EXCLUDED.email,
             first_name = EXCLUDED.first_name,
@@ -240,20 +235,18 @@ BEGIN
             organization = EXCLUDED.organization,
             organization_id = EXCLUDED.organization_id;
 
-        INSERT INTO admins (id, email, first_name, last_name, password, organization, organization_id, is_present_view)
-        SELECT id, email, first_name, last_name, password, organization, organization_id, COALESCE(is_present_view, FALSE)
+        INSERT INTO admins (id, email, first_name, last_name, password, organization, organization_id)
+        SELECT id, email, first_name, last_name, password, organization, organization_id
         FROM users
         WHERE COALESCE(is_admin, FALSE) = TRUE
            OR COALESCE(is_teacher, FALSE) = TRUE
-           OR COALESCE(is_present_view, FALSE) = TRUE
         ON CONFLICT (id) DO UPDATE SET
             email = EXCLUDED.email,
             first_name = EXCLUDED.first_name,
             last_name = EXCLUDED.last_name,
             password = EXCLUDED.password,
             organization = EXCLUDED.organization,
-            organization_id = EXCLUDED.organization_id,
-            is_present_view = EXCLUDED.is_present_view;
+            organization_id = EXCLUDED.organization_id;
     END IF;
 END $$;
 

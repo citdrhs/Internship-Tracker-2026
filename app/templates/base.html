@@ -34,14 +34,7 @@
                 <li><a href="{{ url_for('home') }}">Home</a></li>
                 <li><a href="{{ url_for('about') }}">About</a></li>
 
-                {% if session.get('is_present_view') %}
-                <li><a href="{{ url_for('progressCheck') }}">Daily Worklog</a></li>
-                <li><a href="{{ url_for('studentFeedback') }}">My Feedback</a></li>
-                <li><a href="{{ url_for('feedbackPage') }}">Feedback</a></li>
-                <li><a href="{{ url_for('submitFeedback') }}">Submit Feedback</a></li>
-                <li><a href="{{ url_for('admin') }}">Admin</a></li>
-
-                {% elif session.get('is_admin') %}
+                {% if session.get('is_admin') %}
                 <li><a href="{{ url_for('admin') }}">Admin</a></li>
 
                 {% elif session.get('is_mentor') %}

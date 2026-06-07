@@ -89,7 +89,6 @@ class Admin(db.Model):
     password = db.Column(db.String(500), nullable=False)
     organization = db.Column(db.String(200), nullable=True)
     organization_id = db.Column(db.Integer, db.ForeignKey('organizations.id', ondelete='SET NULL'), nullable=True)
-    is_present_view = db.Column(db.Boolean, nullable=False, default=False)
     created_at = db.Column(db.DateTime, nullable=False, server_default=db.func.now())
 
 
@@ -159,6 +158,5 @@ class PendingUser(db.Model):
     organization_id = db.Column(db.Integer, db.ForeignKey('organizations.id', ondelete='SET NULL'), nullable=True)
     role = db.Column(db.String(20), nullable=False, default="student")
     requested_mentor_id = db.Column(db.Integer, nullable=True)
-    is_present_view = db.Column(db.Boolean, nullable=False, default=False)
     grade = db.Column(db.String(3), nullable=True)
     created_at = db.Column(db.DateTime, nullable=False, server_default=db.func.now())

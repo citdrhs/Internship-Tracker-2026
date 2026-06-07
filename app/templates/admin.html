@@ -6,11 +6,6 @@
 <div class="container" id="admin-container">
     <header class="admin-header">
         <h1>Admin Dashboard</h1>
-        <form method="POST" action="{{ url_for('toggle_present_view') }}">
-            <button type="submit">
-                {% if session.get('is_present_view') %}Turn Off Presenter View{% else %}Presenter View{% endif %}
-            </button>
-        </form>
         <!-- calendar  -->
         <link href="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.15/index.global.min.css" rel="stylesheet">
         <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.15/index.global.min.js"></script>
@@ -19,18 +14,16 @@
     <section class="admin-panel admin-organizations">
         <h2>Manage Organizations</h2>
 
-        {% if not session.get('is_present_view') %}
-            <details class="admin-org-details">
-                <summary>Add Organization</summary>
+        <details class="admin-org-details">
+            <summary>Add Organization</summary>
 
-                <form method="POST" action="{{ url_for('admin') }}" class="admin-org-form">
-                    {% set organization_name = '' %}
-                    {% set organization_details = {} %}
-                    {% include '_organization_form_fields.html' %}
-                    <button type="submit">Submit</button>
-                </form>
-            </details>
-        {% endif %}
+            <form method="POST" action="{{ url_for('admin') }}" class="admin-org-form">
+                {% set organization_name = '' %}
+                {% set organization_details = {} %}
+                {% include '_organization_form_fields.html' %}
+                <button type="submit">Submit</button>
+            </form>
+        </details>
 
         <h3>Existing Organizations</h3>
 
@@ -56,14 +49,12 @@
                 <div class="profile-card">
                     <div class="profile-card-header">
                         <h2>{{ organization[1] }}</h2>
-                        {% if not session.get('is_present_view') %}
-                            <div class="action-btns">
-                                <a href="{{ url_for('editOrganization', id=organization[0]) }}" class="btn-edit">Edit</a>
-                                <form method="post" action="{{ url_for('deleteOrganization', id=organization[0]) }}">
-                                    <button type="submit" class="btn-delete" onclick="return confirm('Delete this organization?')">Delete</button>
-                                </form>
-                            </div>
-                        {% endif %}
+                        <div class="action-btns">
+                            <a href="{{ url_for('editOrganization', id=organization[0]) }}" class="btn-edit">Edit</a>
+                            <form method="post" action="{{ url_for('deleteOrganization', id=organization[0]) }}">
+                                <button type="submit" class="btn-delete" onclick="return confirm('Delete this organization? Students, mentors, and admins will be unlinked from it.')">Delete</button>
+                            </form>
+                        </div>
                     </div>
                     <div class="profile-grid">
                         {% for field in organization_text_fields %}
@@ -97,14 +88,10 @@
                         <td>{{ organization[1] }}</td>
                         <td>
                             <div class="action-btns">
-                                {% if not session.get('is_present_view') %}
-                                    <a href="{{ url_for('editOrganization', id=organization[0]) }}" class="btn-edit">Edit</a>
-                                    <form method="post" action="{{ url_for('deleteOrganization', id=organization[0]) }}">
-                                        <button type="submit" class="btn-delete" onclick="return confirm('Delete this organization?')">Delete</button>
-                                    </form>
-                                {% else %}
-                                    <span class="status-badge pending">Read only</span>
-                                {% endif %}
+                                <a href="{{ url_for('editOrganization', id=organization[0]) }}" class="btn-edit">Edit</a>
+                                <form method="post" action="{{ url_for('deleteOrganization', id=organization[0]) }}">
+                                    <button type="submit" class="btn-delete" onclick="return confirm('Delete this organization? Students, mentors, and admins will be unlinked from it.')">Delete</button>
+                                </form>
                             </div>
                         </td>
                     </tr>
@@ -138,14 +125,12 @@
             <div class="profile-card">
                 <div class="profile-card-header">
                     <h2>Student Profile</h2>
-                    {% if not session.get('is_present_view') %}
-                        <div class="action-btns">
-                            <a href="{{ url_for('editStudent', id=selected_student[0]) }}" class="btn-edit">Edit Student</a>
-                            <form method="post" action="{{ url_for('deleteStudent', id=selected_student[0]) }}">
-                                <button type="submit" class="btn-delete" onclick="return confirm('Delete this student and their records?')">Delete Student</button>
-                            </form>
-                        </div>
-                    {% endif %}
+                    <div class="action-btns">
+                        <a href="{{ url_for('editStudent', id=selected_student[0]) }}" class="btn-edit">Edit Student</a>
+                        <form method="post" action="{{ url_for('deleteStudent', id=selected_student[0]) }}">
+                            <button type="submit" class="btn-delete" onclick="return confirm('Delete this student? Their worklogs and feedback will be permanently deleted.')">Delete Student</button>
+                        </form>
+                    </div>
                 </div>
                 <div class="profile-grid">
                     <div>
@@ -334,14 +319,12 @@
             <div class="profile-card">
                 <div class="profile-card-header">
                     <h2>Mentor Profile</h2>
-                    {% if not session.get('is_present_view') %}
-                        <div class="action-btns">
-                            <a href="{{ url_for('editMentor', id=selected_mentor.id) }}" class="btn-edit">Edit Mentor</a>
-                            <form method="post" action="{{ url_for('deleteMentor', id=selected_mentor.id) }}">
-                                <button type="submit" class="btn-delete" onclick="return confirm('Delete this mentor?')">Delete Mentor</button>
-                            </form>
-                        </div>
-                    {% endif %}
+                    <div class="action-btns">
+                        <a href="{{ url_for('editMentor', id=selected_mentor.id) }}" class="btn-edit">Edit Mentor</a>
+                        <form method="post" action="{{ url_for('deleteMentor', id=selected_mentor.id) }}">
+                            <button type="submit" class="btn-delete" onclick="return confirm('Delete this mentor? Their assigned students will be unassigned.')">Delete Mentor</button>
+                        </form>
+                    </div>
                 </div>
                 <div class="profile-grid">
                     <div>
@@ -396,14 +379,12 @@
             <div class="profile-card">
                 <div class="profile-card-header">
                     <h2>Admin Profile</h2>
-                    {% if not session.get('is_present_view') %}
-                        <div class="action-btns">
-                            <a href="{{ url_for('editAdmin', id=selected_admin.id) }}" class="btn-edit">Edit Admin</a>
-                            <form method="post" action="{{ url_for('deleteAdmin', id=selected_admin.id) }}">
-                                <button type="submit" class="btn-delete" onclick="return confirm('Delete this admin account?')">Delete Admin</button>
-                            </form>
-                        </div>
-                    {% endif %}
+                    <div class="action-btns">
+                        <a href="{{ url_for('editAdmin', id=selected_admin.id) }}" class="btn-edit">Edit Admin</a>
+                        <form method="post" action="{{ url_for('deleteAdmin', id=selected_admin.id) }}">
+                            <button type="submit" class="btn-delete" onclick="return confirm('Delete this admin account?')">Delete Admin</button>
+                        </form>
+                    </div>
                 </div>
                 <div class="profile-grid">
                     <div>

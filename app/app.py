@@ -236,13 +236,7 @@ def require_login():
         return redirect(url_for("login"))
     return None
 
-def is_present_view_session():
-    return bool(session.get("is_present_view"))
-
 def is_student_session():
-    if is_present_view_session():
-        return True
-
     return not any(
         [
             session.get("is_admin"),
@@ -256,19 +250,8 @@ def require_student():
     if login_redirect:
         return login_redirect
     if not is_student_session():
-        flash("That page is only available to students or present view.", "warning")
+        flash("That page is only available to students.", "warning")
         return redirect(url_for("home"))
-    return None
-
-@app.before_request
-def restrict_present_view_edits():
-    if (
-        session.get("is_present_view")
-        and request.endpoint != "toggle_present_view"
-        and request.method == "POST"
-    ):
-        flash("Presenter view is read-only. Turn it off to make changes.", "warning")
-        return redirect(url_for("admin"))
     return None
 
 def fetch_students(mentor_id=None):
@@ -299,7 +282,7 @@ def fetch_students(mentor_id=None):
         conn.close()
 
 def fetch_feedback_students():
-    if session.get("is_admin") or session.get("is_present_view"):
+    if session.get("is_admin"):
         return fetch_students()
 
     if session.get("is_mentor"):
@@ -311,7 +294,7 @@ def fetch_feedback_students():
     return []
 
 def can_access_student(student_id):
-    if session.get("is_admin") or session.get("is_present_view"):
+    if session.get("is_admin"):
         return True
 
     if not session.get("is_mentor"):
@@ -972,7 +955,6 @@ def login():
         session["is_admin"] = role == "admin"
         session["is_teacher"] = False
         session["is_mentor"] = role == "mentor"
-        session["is_present_view"] = bool(getattr(user, "is_present_view", False))
 
         return redirect(url_for("home"))
 
@@ -1153,7 +1135,7 @@ def admin():
     if login_redirect:
         return login_redirect
 
-    if not session.get("is_admin") and not session.get("is_present_view"):
+    if not session.get("is_admin"):
         return redirect(url_for("home"))
 
     if request.method == "POST":
@@ -1272,25 +1254,13 @@ def admin():
         organization_checkbox_fields=ORGANIZATION_CHECKBOX_FIELDS,
     )
 
-@app.route("/intr/admin/present-view", methods=["POST"])
-def toggle_present_view():
-    login_redirect = require_login()
-    if login_redirect:
-        return login_redirect
-
-    if not session.get("is_admin") and not session.get("is_present_view"):
-        return redirect(url_for("home"))
-
-    session["is_present_view"] = not session.get("is_present_view", False)
-    return redirect(url_for("admin" if session.get("is_admin") or session.get("is_present_view") else "home"))
-
 @app.route("/intr/admin/admins/<int:id>/edit", methods=["GET", "POST"])
 def editAdmin(id):
     login_redirect = require_login()
     if login_redirect:
         return login_redirect
 
-    if not session.get("is_admin") or session.get("is_present_view"):
+    if not session.get("is_admin"):
         return redirect(url_for("admin"))
 
     admin_user = Admin.query.get(id)
@@ -1347,7 +1317,7 @@ def editOrganization(id):
     if login_redirect:
         return login_redirect
 
-    if not session.get("is_admin") and not session.get("is_present_view"):
+    if not session.get("is_admin"):
         return redirect(url_for("home"))
 
     organization = fetch_organization_entry(id)
@@ -1429,7 +1399,7 @@ def editStudent(id):
     if login_redirect:
         return login_redirect
 
-    if not session.get("is_admin") and not session.get("is_present_view"):
+    if not session.get("is_admin"):
         return redirect(url_for("home"))
 
     student = fetch_student_entry(id)
@@ -1533,7 +1503,7 @@ def editMentor(id):
     if login_redirect:
         return login_redirect
 
-    if not session.get("is_admin") and not session.get("is_present_view"):
+    if not session.get("is_admin"):
         return redirect(url_for("home"))
 
     mentor = fetch_mentor_entry(id)
@@ -1640,7 +1610,7 @@ def assignStudentToMentor(mentor_id):
     if login_redirect:
         return login_redirect
 
-    if not session.get("is_admin") and not session.get("is_present_view"):
+    if not session.get("is_admin"):
         return redirect(url_for("home"))
 
     student_id_raw = request.form.get("student_id", "").strip()
@@ -1674,7 +1644,7 @@ def deleteOrganization(id):
     if login_redirect:
         return login_redirect
 
-    if not session.get("is_admin") and not session.get("is_present_view"):
+    if not session.get("is_admin"):
         return redirect(url_for("home"))
 
     conn = get_db_connection()
@@ -1797,7 +1767,6 @@ def register():
             organization_id=organization_id_value,
             role=selected_role,
             requested_mentor_id=int(selected_mentor_id) if selected_role == "student" else None,
-            is_present_view=False,
         )
 
         db.session.add(pending_user)
@@ -1820,15 +1789,15 @@ def feedbackPage():
     if login_redirect:
         return login_redirect
 
-    if not session.get("is_mentor") and not session.get("is_admin") and not session.get("is_present_view"):
+    if not session.get("is_mentor") and not session.get("is_admin"):
         flash("That page is only available to mentors, admins, or presenter view.", "warning")
         return redirect(url_for("home"))
 
-    if session.get("is_admin") and not session.get("is_present_view"):
+    if session.get("is_admin"):
         return redirect(url_for("admin"))
 
     try:
-        mentor_id = get_current_user_id() if session.get("is_mentor") and not session.get("is_present_view") else None
+        mentor_id = get_current_user_id() if session.get("is_mentor") else None
         feedback = fetch_feedback(mentor_id=mentor_id)
     except psycopg2.Error:
         flash("Feedback data could not be loaded. Run initdb.py to create the tables.", "danger")
@@ -1855,7 +1824,7 @@ def submitFeedback():
     if login_redirect:
         return login_redirect
 
-    if not session.get("is_mentor") and not session.get("is_admin") and not session.get("is_present_view"):
+    if not session.get("is_mentor") and not session.get("is_admin"):
         flash("That page is only available to mentors, admins, or presenter view.", "warning")
         return redirect(url_for("home"))
 
@@ -2011,7 +1980,7 @@ def editFeedback(id):
     if login_redirect:
         return login_redirect
 
-    if not session.get("is_mentor") and not session.get("is_admin") and not session.get("is_present_view"):
+    if not session.get("is_mentor") and not session.get("is_admin"):
         flash("That page is only available to mentors, admins, or presenter view.", "warning")
         return redirect(url_for("home"))
 
@@ -2091,7 +2060,7 @@ def deleteFeedback(id):
     if login_redirect:
         return login_redirect
 
-    if not session.get("is_mentor") and not session.get("is_admin") and not session.get("is_present_view"):
+    if not session.get("is_mentor") and not session.get("is_admin"):
         flash("That page is only available to mentors, admins, or presenter view.", "warning")
         return redirect(url_for("home"))
 
@@ -2156,7 +2125,6 @@ def confirm_email(token):
     elif pending.role == "admin":
         new_user = Admin(
             **account_data,
-            is_present_view=pending.is_present_view,
         )
     else:
         flash("Invalid pending registration role.", "danger")
