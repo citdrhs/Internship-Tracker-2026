@@ -66,3 +66,7 @@ function editWorklog(button) {
     document.getElementById("self_questions").value = cell[6].textContent.trim();
     document.getElementById("worklog-form").scrollIntoView();
 }
+
+// After picking from a dropdown, jump to the profile that loaded
+const profileCard = document.querySelector(".profile-card");
+if (profileCard) profileCard.scrollIntoView();
