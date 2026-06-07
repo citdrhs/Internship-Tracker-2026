@@ -30,3 +30,23 @@ document.querySelectorAll(".toast").forEach((toast) => {
     toast.addEventListener("click", () => toast.remove());
     setTimeout(() => toast.remove(), 6000);
 });
+
+// For worklog submission: Warn before overwriting an existing entry for the same day
+const worklogForm = document.getElementById("worklog-form");
+if (worklogForm) {
+    const loggedDates = JSON.parse(worklogForm.dataset.loggedDates || "[]");
+    const confirmDialog = document.getElementById("worklog-confirm");
+
+    worklogForm.addEventListener("submit", (e) => {
+
+        if (loggedDates.includes(document.getElementById("day_worked").value)) {
+            e.preventDefault();
+            confirmDialog.showModal();
+        }
+    });
+
+    document.getElementById("worklog-confirm-replace").addEventListener("click", () => {
+        confirmDialog.close();
+        worklogForm.submit();
+    });
+}

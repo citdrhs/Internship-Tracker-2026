@@ -2,12 +2,20 @@
 {% block title %}Daily Worklog{% endblock %}
 {% block content %}
 <h1>Student Worklog</h1>
-<p>Use this daily worklog to track what you worked on, reflect on progress, and leave questions for mentors or yourself.</p>
+<p>Use this daily worklog to track what you worked on, reflect on progress, and leave questions for mentors or yourself.
+</p>
 
 
 <div class="container">
     <div class="card">
-        <form method="post">
+        <p><span style="font-weight: bold">Important!</span>
+            You may log one worklog per day. Submitting again for a day you already logged will replace that day's
+            entry.
+        </p>
+        <form method="post" id="worklog-form" data-logged-dates='[
+                {% for entry in entries %}"{{ entry[1] }}"
+                {% if not loop.last %},{% endif %}
+                {% endfor %}]'>
             <div class="form-group">
                 <label for="day_worked">Day Worked</label>
                 <input type="date" id="day_worked" name="day_worked" required>
@@ -44,17 +52,20 @@
 
             <div class="form-group">
                 <label for="what_they_did">What You Did</label>
-                <textarea id="what_they_did" name="what_they_did" placeholder="What did you work on today?" required></textarea>
+                <textarea id="what_they_did" name="what_they_did" placeholder="What did you work on today?"
+                    required></textarea>
             </div>
 
             <div class="form-group">
                 <label for="mentor_questions">Questions for Mentors</label>
-                <textarea id="mentor_questions" name="mentor_questions" placeholder="Anything you want a mentor to answer?"></textarea>
+                <textarea id="mentor_questions" name="mentor_questions"
+                    placeholder="Anything you want a mentor to answer?"></textarea>
             </div>
 
             <div class="form-group">
                 <label for="reflection">Reflection</label>
-                <textarea id="reflection" name="reflection" placeholder="What went well? What was difficult?"></textarea>
+                <textarea id="reflection" name="reflection"
+                    placeholder="What went well? What was difficult?"></textarea>
             </div>
 
             <div class="form-group">
@@ -64,7 +75,8 @@
 
             <div class="form-group">
                 <label for="self_questions">Questions for Yourself</label>
-                <textarea id="self_questions" name="self_questions" placeholder="Anything you want to remember or revisit later?"></textarea>
+                <textarea id="self_questions" name="self_questions"
+                    placeholder="Anything you want to remember or revisit later?"></textarea>
             </div>
 
             <div class="form-group">
@@ -79,40 +91,50 @@
     <h2>Your Previous Entries</h2>
     {% if entries %}
     <div class="table-scroll">
-    <table>
-        <tr>
-            <th>Day Worked</th>
-            <th>Hours</th>
-            <th>What You Did</th>
-            <th>Questions for Mentors</th>
-            <th>Reflection</th>
-            <th>Next Steps</th>
-            <th>Questions for Yourself</th>
-            <th>Status</th>
-            <th>Saved</th>
-            <th>View</th>
-        </tr>
-        {% for entry in entries %}
-        <tr>
-            <td>{{ entry[1] }}</td>
-            <td>{{ entry[2] }}</td>
-            <td><div class="cell-scroll">{{ entry[3] }}</div></td>
-            <td><div class="cell-scroll">{{ entry[4] or '' }}</div></td>
-            <td><div class="cell-scroll">{{ entry[5] or '' }}</div></td>
-            <td><div class="cell-scroll">{{ entry[6] or '' }}</div></td>
-            <td><div class="cell-scroll">{{ entry[7] or '' }}</div></td>
-            <td>
-                {% if entry[8] %}
+        <table>
+            <tr>
+                <th>Day Worked</th>
+                <th>Hours</th>
+                <th>What You Did</th>
+                <th>Questions for Mentors</th>
+                <th>Reflection</th>
+                <th>Next Steps</th>
+                <th>Questions for Yourself</th>
+                <th>Status</th>
+                <th>Saved</th>
+                <th>View</th>
+            </tr>
+            {% for entry in entries %}
+            <tr>
+                <td>{{ entry[1] }}</td>
+                <td>{{ entry[2] }}</td>
+                <td>
+                    <div class="cell-scroll">{{ entry[3] }}</div>
+                </td>
+                <td>
+                    <div class="cell-scroll">{{ entry[4] or '' }}</div>
+                </td>
+                <td>
+                    <div class="cell-scroll">{{ entry[5] or '' }}</div>
+                </td>
+                <td>
+                    <div class="cell-scroll">{{ entry[6] or '' }}</div>
+                </td>
+                <td>
+                    <div class="cell-scroll">{{ entry[7] or '' }}</div>
+                </td>
+                <td>
+                    {% if entry[8] %}
                     <span class="status-badge approved">Approved</span>
-                {% else %}
+                    {% else %}
                     <span class="status-badge pending">Pending</span>
-                {% endif %}
-            </td>
-            <td>{{ entry[9] }}</td>
-            <td><button type="button" class="btn-view" onclick="openRowModal(this)">View</button></td>
-        </tr>
-        {% endfor %}
-    </table>
+                    {% endif %}
+                </td>
+                <td>{{ entry[9] }}</td>
+                <td><button type="button" class="btn-view" onclick="openRowModal(this)">View</button></td>
+            </tr>
+            {% endfor %}
+        </table>
     </div>
     {% else %}
     <div class="empty-state">
@@ -120,4 +142,12 @@
     </div>
     {% endif %}
 </div>
+
+<dialog id="worklog-confirm" class="modal">
+    <p>You already logged hours for this day! Saving will replace that day's entry.</p>
+    <div class="action-btns">
+        <button type="button" id="worklog-confirm-replace" class="btn-delete">Replace it</button>
+        <button type="button" onclick="this.closest('dialog').close()">Cancel</button>
+    </div>
+</dialog>
 {% endblock %}

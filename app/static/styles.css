@@ -1279,8 +1279,8 @@ footer a {
     background-color: #574fd6;
 }
 
-/* Row detail popup */
-#row-modal {
+/* Popups */
+.modal {
     border: none;
     border-radius: 16px;
     padding: 24px;
@@ -1289,7 +1289,7 @@ footer a {
     overflow: auto;
 }
 
-#row-modal::backdrop {
+.modal::backdrop {
     background: rgba(0, 0, 0, 0.5);
 }
 
@@ -1325,7 +1325,19 @@ footer a {
     cursor: pointer;
 }
 
-.toast-success { background-color: #2e7d32; }
-.toast-danger { background-color: #c62828; }
-.toast-warning { background-color: #ffca28; color: #333; }
-.toast-info { background-color: #1565c0; }
+.toast-success {
+    background-color: #2e7d32;
+}
+
+.toast-danger {
+    background-color: #c62828;
+}
+
+.toast-warning {
+    background-color: #ffca28;
+    color: #333;
+}
+
+.toast-info {
+    background-color: #1565c0;
+}
