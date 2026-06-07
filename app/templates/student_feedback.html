@@ -2,7 +2,9 @@
 {% block title %}My Feedback{% endblock %}
 {% block content %}
 <h1>My Feedback</h1>
-<p><a href="{{ url_for('home') }}">Return home</a>.</p>
+<div class="action-btns" style="justify-content: center">
+    <a href="{{ url_for('home') }}" class="btn-secondary">Return home</a>
+</div>
 <div class="tableBox">
 
     {% if feedback %}

@@ -2,7 +2,10 @@
 {% block title %}Submit Feedback{% endblock %}
 {% block content %}
 <h1>Submit Student Feedback</h1>
-<p><a href="{{ url_for('feedbackPage') }}">Back to feedback list</a> or <a href="{{ url_for('home') }}">return home</a>.</p>
+<div class="action-btns" style="justify-content: center">
+    <a href="{{ url_for('feedbackPage') }}" class="btn-edit">Back to feedback list</a>
+    <a href="{{ url_for('home') }}" class="btn-secondary">Return home</a>
+</div>
 <div class="container">
     <div class="card card--wide">
 

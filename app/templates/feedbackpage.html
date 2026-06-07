@@ -2,7 +2,10 @@
 {% block title %}Feedback List{% endblock %}
 {% block content %}
 <h1>Student Feedback</h1>
-<p><a href="{{ url_for('submitFeedback') }}">Submit new feedback</a> or <a href="{{ url_for('home') }}">return home</a>.</p>
+<div class="action-btns" style="justify-content: center">
+    <a href="{{ url_for('submitFeedback') }}" class="btn-edit">Submit new feedback</a>
+    <a href="{{ url_for('home') }}" class="btn-secondary">Return home</a>
+</div>
 <div class="tableBox">
 
     {% if feedback %}
