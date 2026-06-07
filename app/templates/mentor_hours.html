@@ -121,24 +121,20 @@
                                     <td>
                                         {% if check[8] %}
                                             <span class="status-badge approved">Approved</span>
+                                        {% elif check[10] %}
+                                            <span class="status-badge rejected">Rejected</span>
                                         {% else %}
                                             <span class="status-badge pending">Pending</span>
                                         {% endif %}
                                     </td>
                                     <td>
                                         <div class="action-btns">
-                                            {% if not check[8] %}
-                                                <form method="POST" action="{{ url_for('approve_hours', progress_id=check[0]) }}" style="display:inline;">
-                                                    <button type="submit" class="btn-approve" title="Approve">✓</button>
-                                                </form>
-                                                <form method="POST" action="{{ url_for('reject_hours', progress_id=check[0]) }}" style="display:inline;">
-                                                    <button type="submit" class="btn-reject" title="Reject">✗</button>
-                                                </form>
-                                            {% else %}
-                                                <form method="POST" action="{{ url_for('reject_hours', progress_id=check[0]) }}" style="display:inline;">
-                                                    <button type="submit" class="btn-reject" title="Unapprove">✗</button>
-                                                </form>
-                                            {% endif %}
+                                            <form method="POST" action="{{ url_for('approve_hours', progress_id=check[0]) }}" style="display:inline;">
+                                                <button type="submit" class="btn-approve" title="Approve">✓</button>
+                                            </form>
+                                            <form method="POST" action="{{ url_for('reject_hours', progress_id=check[0]) }}" style="display:inline;">
+                                                <button type="submit" class="btn-reject" title="Reject">✗</button>
+                                            </form>
                                         </div>
                                     </td>
                                     <td><button type="button" class="btn-view" onclick="openRowModal(this)">View</button></td>

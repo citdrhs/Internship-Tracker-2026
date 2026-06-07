@@ -113,6 +113,7 @@ class ProgressCheck(db.Model):
     next_steps = db.Column(db.Text, nullable=True)
     self_questions = db.Column(db.Text, nullable=True)
     is_approved = db.Column(db.Boolean, nullable=False, default=False)
+    is_rejected = db.Column(db.Boolean, nullable=False, default=False)
     created_at = db.Column(db.DateTime, nullable=False, server_default=db.func.now())
     __table_args__ = (
         db.CheckConstraint("hours_worked >= 0 AND hours_worked <= 24", name="progress_checks_hours_range"),

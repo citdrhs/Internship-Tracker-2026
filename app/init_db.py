@@ -164,6 +164,7 @@ CREATE TABLE IF NOT EXISTS progress_checks (
     next_steps TEXT,
     self_questions TEXT,
     is_approved BOOLEAN NOT NULL DEFAULT FALSE,
+    is_rejected BOOLEAN NOT NULL DEFAULT FALSE,
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
@@ -197,6 +198,7 @@ ALTER TABLE feedback ADD COLUMN IF NOT EXISTS rating NUMERIC(4,2);
 ALTER TABLE feedback ADD COLUMN IF NOT EXISTS submitted_at TIMESTAMPTZ NOT NULL DEFAULT NOW();
 
 ALTER TABLE progress_checks ADD COLUMN IF NOT EXISTS is_approved BOOLEAN NOT NULL DEFAULT FALSE;
+ALTER TABLE progress_checks ADD COLUMN IF NOT EXISTS is_rejected BOOLEAN NOT NULL DEFAULT FALSE;
 
 CREATE UNIQUE INDEX IF NOT EXISTS mentor_assignments_student_id_idx ON mentor_assignments (student_id);
 CREATE UNIQUE INDEX IF NOT EXISTS progress_checks_student_day_idx ON progress_checks (student_id, day_worked);

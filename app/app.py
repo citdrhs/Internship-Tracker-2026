@@ -418,7 +418,7 @@ def fetch_student_hours_summary(student_id):
                     SELECT
                         student_id,
                         COALESCE(SUM(CASE WHEN is_approved THEN hours_worked ELSE 0 END), 0) AS approved_hours,
-                        COALESCE(SUM(CASE WHEN NOT is_approved THEN hours_worked ELSE 0 END), 0) AS pending_hours,
+                        COALESCE(SUM(CASE WHEN NOT is_approved AND NOT is_rejected THEN hours_worked ELSE 0 END), 0) AS pending_hours,
                         COUNT(id) AS days_logged
                     FROM progress_checks
                     GROUP BY student_id
@@ -524,7 +524,8 @@ def fetch_progress_checks(student_id):
                     next_steps,
                     self_questions,
                     is_approved,
-                    created_at
+                    created_at,
+                    is_rejected
                 FROM progress_checks
                 WHERE student_id = %s
                 ORDER BY day_worked DESC, created_at DESC
@@ -538,8 +539,7 @@ def fetch_progress_checks(student_id):
 def summarize_progress_data(progress_checks):
     daily_hours = {}
     for entry in progress_checks:
-        # entry format: (id, day_worked, hours_worked, what_they_did, mentor_questions, reflection, next_steps, self_questions, is_approved, created_at)
-        id_val, day_worked, hours_worked, what_they_did, mentor_questions, reflection, next_steps, self_questions, is_approved, created_at = entry
+        id_val, day_worked, hours_worked, what_they_did, mentor_questions, reflection, next_steps, self_questions, is_approved, created_at, is_rejected = entry
         if not day_worked or not is_approved:
             continue
         daily_hours[day_worked] = daily_hours.get(day_worked, 0) + float(hours_worked)
@@ -596,6 +596,7 @@ def ensure_organization_detail_columns(conn):
 def ensure_progress_schema(conn):
     with conn.cursor() as cur:
         cur.execute("ALTER TABLE progress_checks ADD COLUMN IF NOT EXISTS is_approved BOOLEAN NOT NULL DEFAULT FALSE")
+        cur.execute("ALTER TABLE progress_checks ADD COLUMN IF NOT EXISTS is_rejected BOOLEAN NOT NULL DEFAULT FALSE")
 
 def ensure_feedback_schema(conn):
     with conn.cursor() as cur:
@@ -1080,7 +1081,7 @@ def approve_hours(progress_id):
                 else:
                     student_id = result[1]
                     cur.execute(
-                        "UPDATE progress_checks SET is_approved = TRUE WHERE id = %s",
+                        "UPDATE progress_checks SET is_approved = TRUE, is_rejected = FALSE WHERE id = %s",
                         (progress_id,),
                     )
                     flash("Hours approved.", "success")
@@ -1121,7 +1122,7 @@ def reject_hours(progress_id):
                 else:
                     student_id = result[1]
                     cur.execute(
-                        "UPDATE progress_checks SET is_approved = FALSE WHERE id = %s",
+                        "UPDATE progress_checks SET is_approved = FALSE, is_rejected = TRUE WHERE id = %s",
                         (progress_id,),
                     )
                     flash("Hours rejected.", "success")
@@ -1952,7 +1953,8 @@ def progressCheck():
                             next_steps = EXCLUDED.next_steps,
                             self_questions = EXCLUDED.self_questions,
                             created_at = NOW(),
-                            is_approved = FALSE
+                            is_approved = FALSE,
+                            is_rejected = FALSE
                         """,
                         (
                             student_id,

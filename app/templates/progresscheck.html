@@ -125,6 +125,8 @@
                 <td>
                     {% if entry[8] %}
                     <span class="status-badge approved">Approved</span>
+                    {% elif entry[10] %}
+                    <span class="status-badge rejected">Rejected</span>
                     {% else %}
                     <span class="status-badge pending">Pending</span>
                     {% endif %}

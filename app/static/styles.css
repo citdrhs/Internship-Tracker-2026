@@ -1175,6 +1175,11 @@ footer a {
     color: #856404;
 }
 
+.status-badge.rejected {
+    background-color: #f8d7da;
+    color: #842029;
+}
+
 .btn-approve {
     background-color: #28a745;
     color: white;
