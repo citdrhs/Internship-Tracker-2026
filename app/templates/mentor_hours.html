@@ -8,13 +8,6 @@
         <h1>Hours Approval</h1>
     </header>
 
-    {% with messages = get_flashed_messages(with_categories=true) %}
-        {% if messages %}
-            {% for category, message in messages %}
-                <div class="alert alert-{{ category }}">{{ message }}</div>
-            {% endfor %}
-        {% endif %}
-    {% endwith %}
 
     <section class="admin-panel">
         <h2>Select Student</h2>

@@ -4,13 +4,6 @@
 <h1>Edit Feedback</h1>
 <div class="container">
     <div class="card card--wide">
-        {% with messages = get_flashed_messages(with_categories=true) %}
-            {% if messages %}
-                {% for category, message in messages %}
-                    <div class="alert alert-{{ category }}">{{ message }}</div>
-                {% endfor %}
-            {% endif %}
-        {% endwith %}
 
         <form method="post">
             <div class="form-grid">

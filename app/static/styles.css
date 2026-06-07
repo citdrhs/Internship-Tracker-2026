@@ -1307,3 +1307,25 @@ footer a {
     overflow-wrap: anywhere;
     white-space: pre-wrap;
 }
+
+/* Flash toasts */
+#toast-container {
+    position: fixed;
+    top: 90px;
+    right: 20px;
+    z-index: 2000;
+}
+
+.toast {
+    margin-bottom: 10px;
+    padding: 14px 18px;
+    border-radius: 10px;
+    background-color: #333;
+    color: #fff;
+    cursor: pointer;
+}
+
+.toast-success { background-color: #2e7d32; }
+.toast-danger { background-color: #c62828; }
+.toast-warning { background-color: #ffca28; color: #333; }
+.toast-info { background-color: #1565c0; }

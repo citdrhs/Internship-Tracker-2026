@@ -24,3 +24,9 @@ function openRowModal(button) {
 document.getElementById("row-modal").addEventListener("click", (e) => {
     if (e.target.id === "row-modal") e.target.close();
 });
+
+// Flash "toast" popup for success or error messages
+document.querySelectorAll(".toast").forEach((toast) => {
+    toast.addEventListener("click", () => toast.remove());
+    setTimeout(() => toast.remove(), 6000);
+});
