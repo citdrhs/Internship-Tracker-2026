@@ -72,8 +72,10 @@
                 </div>
 
                 <div class="form-group form-span-2">
-                    <label>Current Average</label>
-                    <div class="rating-badge">{{ feedback[11] }}<span>/5</span></div>
+                    <label for="overall_rating">Overall Rating</label>
+                    <input type="range" name="overall_rating" id="overall_rating" min="1" max="5" value="{{ feedback[11] | int }}"
+                           oninput="document.getElementById('overallDisplay').textContent = this.value">
+                    <div class="range-labels"><span>1</span><span id="overallDisplay">{{ feedback[11] | int }}</span><span>5</span></div>
                 </div>
 
                 <div class="form-group form-span-2 btn-row">
