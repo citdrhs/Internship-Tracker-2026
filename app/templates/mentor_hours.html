@@ -110,6 +110,7 @@
                 <section class="mentor-approval-section">
                     <h3>Hours for Approval</h3>
                     {% if selected_progress_checks %}
+                        <div class="table-scroll">
                         <table class="admin-table">
                             <tr>
                                 <th>Date</th>
@@ -117,12 +118,13 @@
                                 <th>What They Did</th>
                                 <th>Status</th>
                                 <th>Action</th>
+                                <th>View</th>
                             </tr>
                             {% for check in selected_progress_checks %}
                                 <tr>
                                     <td>{{ check[1] }}</td>
                                     <td>{{ check[2] }}</td>
-                                    <td>{{ check[3] }}</td>
+                                    <td><div class="cell-scroll">{{ check[3] }}</div></td>
                                     <td>
                                         {% if check[8] %}
                                             <span class="status-badge approved">Approved</span>
@@ -146,9 +148,11 @@
                                             {% endif %}
                                         </div>
                                     </td>
+                                    <td><button type="button" class="btn-view" onclick="openRowModal(this)">View</button></td>
                                 </tr>
                             {% endfor %}
                         </table>
+                        </div>
                     {% else %}
                         <div class="empty-state">
                             <p>No hours to review for this student.</p>

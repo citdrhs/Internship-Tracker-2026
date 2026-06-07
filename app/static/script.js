@@ -1,33 +1,26 @@
+// Show data in table row as popup
+function openRowModal(button) {
+    const row = button.closest("tr");
+    const headers = button.closest("table").querySelectorAll("th");
+    const body = document.getElementById("row-modal-body");
+    const skip = ["", "view", "action", "actions"];
+    body.innerHTML = "";
 
-// // Templating header that is pre-login
+    row.querySelectorAll("td").forEach((cell, i) => {
+        const label = headers[i] ? headers[i].textContent.trim() : "";
+        if (skip.includes(label.toLowerCase())) return;
 
-// class PreLogHeader extends HTMLElement {
-//     connectedCallback() {
-//         this.innerHTML = `<img src="../assets/large-logo.svg" alt="">
+        const dt = document.createElement("dt");
+        dt.textContent = label;
+        const dd = document.createElement("dd");
+        dd.textContent = cell.textContent.trim() || "—";
+        body.append(dt, dd);
+    });
 
-//         <nav class="primary-navigation">
-//             <ul>  
-//                 <li><a href="start.html">Getting Started</a></li>
-//                 <li><a href="about.html">About</a></li>
-//             </ul>
-//         </nav>`
-
-
-//     }
-// }
-
-// customElements.define('prelog-header', PreLogHeader)
-
-
-function toggleAccessCode() {
-    const role = document.getElementById("role").value;
-    const accessGroup = document.getElementById("access-code-group");
-
-    if (role === "admin" || role === "mentor" || role === "teacher") {
-        accessGroup.style.display = "block";
-    } else {
-        accessGroup.style.display = "none";
-    }
+    document.getElementById("row-modal").showModal();
 }
 
-}
+// Close popup by clicking outside
+document.getElementById("row-modal").addEventListener("click", (e) => {
+    if (e.target.id === "row-modal") e.target.close();
+});

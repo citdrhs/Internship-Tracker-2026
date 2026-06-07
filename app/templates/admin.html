@@ -93,6 +93,7 @@
                 </div>
             {% endfor %}
 
+            <div class="table-scroll">
             <table class="admin-table">
                 <tr>
                     <th>Organization</th>
@@ -116,6 +117,7 @@
                     </tr>
                 {% endfor %}
             </table>
+            </div>
         {% else %}
             <p>No organizations added yet.</p>
         {% endif %}
@@ -248,6 +250,7 @@
                 <section class="student-feedback-section">
                     <h3>Weekly Feedback</h3>
                     {% if selected_feedback %}
+                        <div class="table-scroll">
                         <table class="admin-table">
                             <tr>
                                 <th>Week</th>
@@ -260,6 +263,7 @@
                                 <th>Feedback</th>
                                 <th>Action Items</th>
                                 <th>Focus Areas</th>
+                                <th>View</th>
                             </tr>
                             {% for feedback in selected_feedback %}
                                 <tr>
@@ -272,12 +276,14 @@
                                     <td>
                                         <div class="rating-badge">{{ feedback[6] }}<span>/5</span></div>
                                     </td>
-                                    <td>{{ feedback[3] }}</td>
-                                    <td>{{ feedback[4] or '' }}</td>
-                                    <td>{{ feedback[5] or '' }}</td>
+                                    <td><div class="cell-scroll">{{ feedback[3] }}</div></td>
+                                    <td><div class="cell-scroll">{{ feedback[4] or '' }}</div></td>
+                                    <td><div class="cell-scroll">{{ feedback[5] or '' }}</div></td>
+                                    <td><button type="button" class="btn-view" onclick="openRowModal(this)">View</button></td>
                                 </tr>
                             {% endfor %}
                         </table>
+                        </div>
                     {% else %}
                         <div class="empty-state">
                             <p>No weekly feedback available for this student.</p>
@@ -287,6 +293,7 @@
 
                 <section class="student-averages">
                     <h3>Overall Feedback Averages</h3>
+                    <div class="table-scroll">
                     <table class="admin-table">
                         <tr>
                             <th>Quality of Work Avg</th>
@@ -305,6 +312,7 @@
                             <td>{{ selected_student[15] if selected_student[15] is not none else 'No ratings' }}</td>
                         </tr>
                     </table>
+                    </div>
                 </section>
             </div>
         {% else %}

@@ -85,6 +85,7 @@
 <div class="tableBox">
     <h2>Your Previous Entries</h2>
     {% if entries %}
+    <div class="table-scroll">
     <table>
         <tr>
             <th>Day Worked</th>
@@ -96,16 +97,17 @@
             <th>Questions for Yourself</th>
             <th>Status</th>
             <th>Saved</th>
+            <th>View</th>
         </tr>
         {% for entry in entries %}
         <tr>
             <td>{{ entry[1] }}</td>
             <td>{{ entry[2] }}</td>
-            <td>{{ entry[3] }}</td>
-            <td>{{ entry[4] or '' }}</td>
-            <td>{{ entry[5] or '' }}</td>
-            <td>{{ entry[6] or '' }}</td>
-            <td>{{ entry[7] or '' }}</td>
+            <td><div class="cell-scroll">{{ entry[3] }}</div></td>
+            <td><div class="cell-scroll">{{ entry[4] or '' }}</div></td>
+            <td><div class="cell-scroll">{{ entry[5] or '' }}</div></td>
+            <td><div class="cell-scroll">{{ entry[6] or '' }}</div></td>
+            <td><div class="cell-scroll">{{ entry[7] or '' }}</div></td>
             <td>
                 {% if entry[8] %}
                     <span class="status-badge approved">Approved</span>
@@ -114,9 +116,11 @@
                 {% endif %}
             </td>
             <td>{{ entry[9] }}</td>
+            <td><button type="button" class="btn-view" onclick="openRowModal(this)">View</button></td>
         </tr>
         {% endfor %}
     </table>
+    </div>
     {% else %}
     <div class="empty-state">
         <p>No worklog entries yet. Start with today’s worklog.</p>

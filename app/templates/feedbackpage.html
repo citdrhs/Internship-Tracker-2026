@@ -13,6 +13,7 @@
     {% endwith %}
 
     {% if feedback %}
+    <div class="table-scroll">
     <table>
         <tr>
             <th>Student</th>
@@ -22,14 +23,15 @@
             <th>Focus Areas</th>
             <th>Average</th>
             <th>Actions</th>
+            <th>View</th>
         </tr>
         {% for f in feedback %}
         <tr>
             <td>{{ f[1] }}</td>
             <td>{{ f[2] }}</td>
-            <td>{{ f[3] }}</td>
-            <td>{{ f[4] or '' }}</td>
-            <td>{{ f[5] or '' }}</td>
+            <td><div class="cell-scroll">{{ f[3] }}</div></td>
+            <td><div class="cell-scroll">{{ f[4] or '' }}</div></td>
+            <td><div class="cell-scroll">{{ f[5] or '' }}</div></td>
             <td>
                 <div class="rating-badge">{{ f[6] }}<span>/5</span></div>
             </td>
@@ -41,9 +43,11 @@
                     </form>
                 </div>
             </td>
+            <td><button type="button" class="btn-view" onclick="openRowModal(this)">View</button></td>
         </tr>
         {% endfor %}
     </table>
+    </div>
     {% else %}
     <div class="empty-state">
         <p>No feedback submitted yet.</p>

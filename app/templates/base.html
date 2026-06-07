@@ -1,11 +1,13 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{% block title %}{% endblock %}</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
 </head>
+
 <body>
 
     <div class="wrapper" id="navbar">
@@ -19,43 +21,53 @@
         <nav class="primary-navigation">
             <ul>
                 {% if session.get('email') %}
-                    <li><a href="{{ url_for('home') }}">Home</a></li>
-                    <li><a href="{{ url_for('about') }}">About</a></li>
+                <li><a href="{{ url_for('home') }}">Home</a></li>
+                <li><a href="{{ url_for('about') }}">About</a></li>
 
-                    {% if session.get('is_present_view') %}
-                        <li><a href="{{ url_for('progressCheck') }}">Daily Worklog</a></li>
-                        <li><a href="{{ url_for('studentFeedback') }}">My Feedback</a></li>
-                        <li><a href="{{ url_for('feedbackPage') }}">Feedback</a></li>
-                        <li><a href="{{ url_for('submitFeedback') }}">Submit Feedback</a></li>
-                        <li><a href="{{ url_for('admin') }}">Admin</a></li>
+                {% if session.get('is_present_view') %}
+                <li><a href="{{ url_for('progressCheck') }}">Daily Worklog</a></li>
+                <li><a href="{{ url_for('studentFeedback') }}">My Feedback</a></li>
+                <li><a href="{{ url_for('feedbackPage') }}">Feedback</a></li>
+                <li><a href="{{ url_for('submitFeedback') }}">Submit Feedback</a></li>
+                <li><a href="{{ url_for('admin') }}">Admin</a></li>
 
-                    {% elif session.get('is_admin') %}
-                        <li><a href="{{ url_for('admin') }}">Admin</a></li>
+                {% elif session.get('is_admin') %}
+                <li><a href="{{ url_for('admin') }}">Admin</a></li>
 
-                    {% elif session.get('is_mentor') %}
-                        <li><a href="{{ url_for('feedbackPage') }}">Feedback</a></li>
-                        <li><a href="{{ url_for('submitFeedback') }}">Submit Feedback</a></li>
-                        <li><a href="{{ url_for('mentor_hours') }}">Hours Approval</a></li>
+                {% elif session.get('is_mentor') %}
+                <li><a href="{{ url_for('feedbackPage') }}">Feedback</a></li>
+                <li><a href="{{ url_for('submitFeedback') }}">Submit Feedback</a></li>
+                <li><a href="{{ url_for('mentor_hours') }}">Hours Approval</a></li>
 
-                    {% else %}
-                        <li><a href="{{ url_for('progressCheck') }}">Daily Worklog</a></li>
-                        <li><a href="{{ url_for('studentFeedback') }}">My Feedback</a></li>
-                    {% endif %}
-
-                    <li><a href="{{ url_for('logout') }}">Logout</a></li>
                 {% else %}
-                    <li><a href="{{ url_for('login') }}">Login</a></li>
-                    <li><a href="{{ url_for('register') }}">Register</a></li>
-                    
+                <li><a href="{{ url_for('progressCheck') }}">Daily Worklog</a></li>
+                <li><a href="{{ url_for('studentFeedback') }}">My Feedback</a></li>
                 {% endif %}
-                    <li><a href="https://bugs.drhscit.org" target="_blank">Report Issue</a></li>
+
+                <li><a href="{{ url_for('logout') }}">Logout</a></li>
+                {% else %}
+                <li><a href="{{ url_for('login') }}">Login</a></li>
+                <li><a href="{{ url_for('register') }}">Register</a></li>
+
+                {% endif %}
+                <li><a href="https://bugs.drhscit.org" target="_blank">Report Issue</a></li>
             </ul>
         </nav>
     </div>
-    
+
 
     <div class="content">
         {% block content %} {% endblock %}
     </div>
+
+    <dialog id="row-modal">
+        <dl id="row-modal-body" class="modal-body"></dl>
+        <form method="dialog">
+            <button class="modal-close">Close</button>
+        </form>
+    </dialog>
+
+    <script src="{{ url_for('static', filename='script.js') }}"></script>
 </body>
+
 </html>

@@ -13,6 +13,7 @@
     {% endwith %}
 
     {% if feedback %}
+    <div class="table-scroll">
     <table>
         <tr>
             <th>Week</th>
@@ -25,13 +26,14 @@
             <th>Initiative</th>
             <th>Soft Skills</th>
             <th>Overall Rating</th>
+            <th>View</th>
         </tr>
         {% for f in feedback %}
         <tr>
             <td>{{ f[2] }}</td>
-            <td>{{ f[3] }}</td>
-            <td>{{ f[4] or '' }}</td>
-            <td>{{ f[5] or '' }}</td>
+            <td><div class="cell-scroll">{{ f[3] }}</div></td>
+            <td><div class="cell-scroll">{{ f[4] or '' }}</div></td>
+            <td><div class="cell-scroll">{{ f[5] or '' }}</div></td>
             <td>{{ f[7] }}</td>
             <td>{{ f[8] }}</td>
             <td>{{ f[9] }}</td>
@@ -40,9 +42,11 @@
             <td>
                 <div class="rating-badge">{{ f[6] }}<span>/5</span></div>
             </td>
+            <td><button type="button" class="btn-view" onclick="openRowModal(this)">View</button></td>
         </tr>
         {% endfor %}
     </table>
+    </div>
     {% else %}
     <div class="empty-state">
         <p>No feedback has been submitted for your account yet.</p>
