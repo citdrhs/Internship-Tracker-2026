@@ -1953,6 +1953,14 @@ def progressCheck():
             with conn:
                 with conn.cursor() as cur:
                     cur.execute(
+                        "SELECT is_approved FROM progress_checks WHERE student_id = %s AND day_worked = %s",
+                        (student_id, payload["day_worked"]),
+                    )
+                    existing = cur.fetchone()
+                    if existing and existing[0]:
+                        flash("Worklogs cannot be edited following mentor approval", "warning")
+                        return redirect(url_for("progressCheck"))
+                    cur.execute(
                         """
                         INSERT INTO progress_checks
                         (

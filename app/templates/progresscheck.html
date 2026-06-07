@@ -102,7 +102,7 @@
                 <th>Questions for Yourself</th>
                 <th>Status</th>
                 <th>Saved</th>
-                <th>View</th>
+                <th>Actions</th>
             </tr>
             {% for entry in entries %}
             <tr>
@@ -131,7 +131,14 @@
                     {% endif %}
                 </td>
                 <td>{{ entry[9] }}</td>
-                <td><button type="button" class="btn-view" onclick="openRowModal(this)">View</button></td>
+                <td>
+                    <div class="action-btns" style="flex-direction: column; align-items: flex-start">
+                        {% if not entry[8] %}
+                        <button type="button" class="btn-edit" onclick="editWorklog(this)">Edit</button>
+                        {% endif %}
+                        <button type="button" class="btn-view" onclick="openRowModal(this)">View</button>
+                    </div>
+                </td>
             </tr>
             {% endfor %}
         </table>

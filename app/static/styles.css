@@ -389,6 +389,7 @@ h1 {
 .btn-edit {
     background-color: #333;
     color: white;
+    border: none;
     border-radius: 8px;
     padding: 6px 14px;
     font-weight: 600;

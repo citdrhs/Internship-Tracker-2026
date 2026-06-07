@@ -50,3 +50,19 @@ if (worklogForm) {
         worklogForm.submit();
     });
 }
+
+// Edit worklog: copy the row's values back into the form
+// The user can choose to override an existing entry per the functionality above
+function editWorklog(button) {
+    const cell = button.closest("tr").children;
+    const hours = parseFloat(cell[1].textContent);
+    document.getElementById("day_worked").value = cell[0].textContent.trim();
+    document.getElementById("hours_worked").value = Math.floor(hours);
+    document.getElementById("minutes_worked").value = Math.round((hours % 1) * 60);
+    document.getElementById("what_they_did").value = cell[2].textContent.trim();
+    document.getElementById("mentor_questions").value = cell[3].textContent.trim();
+    document.getElementById("reflection").value = cell[4].textContent.trim();
+    document.getElementById("next_steps").value = cell[5].textContent.trim();
+    document.getElementById("self_questions").value = cell[6].textContent.trim();
+    document.getElementById("worklog-form").scrollIntoView();
+}
