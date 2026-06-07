@@ -70,3 +70,17 @@ function editWorklog(button) {
 // After picking from a dropdown, jump to the profile that loaded
 const profileCard = document.querySelector(".profile-card");
 if (profileCard) profileCard.scrollIntoView();
+
+// Allow mentors to add an extra week to give feedback for
+// as a precautionary mechanism (just in case)
+const weekSelect = document.getElementById("week");
+const weekCustom = document.getElementById("week_custom");
+if (weekSelect && weekCustom) {
+    weekSelect.addEventListener("change", () => {
+        const other = weekSelect.value === "other";
+        weekCustom.style.display = other ? "block" : "none";
+        weekCustom.required = other;
+        weekCustom.name = other ? "week" : "";
+        weekSelect.name = other ? "" : "week";
+    });
+}
