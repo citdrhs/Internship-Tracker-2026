@@ -1,0 +1,15 @@
+{% extends 'base.html' %}
+
+{% block title %}Check Your Email{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="card">
+        <h2>Confirm Your Email</h2>
+        <p>A confirmation email has been sent to your address. Please check your inbox and click the link to confirm
+            your
+            account.</p>
+        <p><a href="{{ url_for('login') }}" class="btn-secondary">Return to login</a></p>
+    </div>
+</div>
+{% endblock %}

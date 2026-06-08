@@ -1681,7 +1681,7 @@ def deleteOrganization(id):
 
 @app.route("/intr/registration-pending")
 def registration_pending():
-    return render_template("confirm_email.html", confirm_url="#")
+    return render_template("registration_pending.html")
 
 
 
