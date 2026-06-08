@@ -107,7 +107,7 @@
                             <th>What They Did</th>
                             <th>Status</th>
                             <th>Action</th>
-                            <th>View</th>
+                            <th>Details</th>
                         </tr>
                         {% for check in selected_progress_checks %}
                         <tr>
@@ -137,7 +137,19 @@
                                     </form>
                                 </div>
                             </td>
-                            <td><button type="button" class="btn-view" onclick="openRowModal(this)">View</button></td>
+                            <td>
+                                <button type="button" class="btn-view" data-date="{{ check[1] }}"
+                                    data-hours="{{ check[2] }}" data-what="{{ check[3] }}"
+                                    data-questions="{{ check[4] or '' }}" data-reflection="{{ check[5] or '' }}"
+                                    data-next="{{ check[6] or '' }}" data-response="{{ check[11] or '' }}"
+                                    data-action="{{ url_for('respond_hours', progress_id=check[0]) }}"
+                                    onclick="openHoursDetail(this)"
+                                    style="display: inline-flex; flex-direction: column; align-items: center; justify-content: center; line-height: 1.3; padding: 8px 12px; min-width: 160px;">
+                                    <div>View More</div>
+                                    <div>Respond to Questions</div>
+                                    <div>Explain Hr Rejections</div>
+                                </button>
+                            </td>
                         </tr>
                         {% endfor %}
                     </table>
@@ -158,4 +170,30 @@
     <link href="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.15/index.global.min.css" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.15/index.global.min.js"></script>
 </div>
+
+<dialog id="hours-detail" class="modal">
+    <dl class="modal-body">
+        <dt>Date</dt>
+        <dd id="hd-date"></dd>
+        <dt>Hours</dt>
+        <dd id="hd-hours"></dd>
+        <dt>What They Did</dt>
+        <dd id="hd-what"></dd>
+        <dt>Questions for Mentors</dt>
+        <dd id="hd-questions"></dd>
+        <dt>Reflection</dt>
+        <dd id="hd-reflection"></dd>
+        <dt>Next Steps</dt>
+        <dd id="hd-next"></dd>
+    </dl>
+    <form method="POST" id="hd-form">
+        <label for="hd-response">Your response to the student's questions OR clarification regarding hour
+            rejection</label>
+        <textarea name="mentor_response" id="hd-response"></textarea>
+        <button type="submit">Save Response</button>
+    </form>
+    <form method="dialog">
+        <button type="submit" class="modal-close">Close</button>
+    </form>
+</dialog>
 {% endblock %}

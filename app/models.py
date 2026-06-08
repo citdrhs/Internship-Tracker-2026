@@ -111,6 +111,7 @@ class ProgressCheck(db.Model):
     reflection = db.Column(db.Text, nullable=True)
     next_steps = db.Column(db.Text, nullable=True)
     self_questions = db.Column(db.Text, nullable=True)
+    mentor_response = db.Column(db.Text, nullable=True)
     is_approved = db.Column(db.Boolean, nullable=False, default=False)
     is_rejected = db.Column(db.Boolean, nullable=False, default=False)
     created_at = db.Column(db.DateTime, nullable=False, server_default=db.func.now())

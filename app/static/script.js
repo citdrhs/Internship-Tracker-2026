@@ -102,3 +102,24 @@ function filterFeedback() {
         row.style.display = row.dataset.student === student ? "" : "none";
     });
 }
+
+// Mentor hours: open popup with full worklog info + a box to respond to the student
+function openHoursDetail(button) {
+    const d = button.dataset;
+    document.getElementById("hd-date").textContent = d.date;
+    document.getElementById("hd-hours").textContent = d.hours;
+    document.getElementById("hd-what").textContent = d.what || "—";
+    document.getElementById("hd-questions").textContent = d.questions || "—";
+    document.getElementById("hd-reflection").textContent = d.reflection || "—";
+    document.getElementById("hd-next").textContent = d.next || "—";
+    document.getElementById("hd-response").value = d.response;
+    document.getElementById("hd-form").action = d.action;
+    document.getElementById("hours-detail").showModal();
+}
+
+const hoursDetail = document.getElementById("hours-detail");
+if (hoursDetail) {
+    hoursDetail.addEventListener("click", (e) => {
+        if (e.target.id === "hours-detail") e.target.close();
+    });
+}

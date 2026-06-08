@@ -1,0 +1,21 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Student Question</title>
+</head>
+
+<body style="font-family: Arial, sans-serif; color: #222222; line-height: 1.5;">
+    <h2>A student left you a question</h2>
+    <p><strong>{{ student_name }}</strong> asked a question on their worklog for {{ day_worked }}:</p>
+    <p style="color: #444444;"> → {{ question }}</p>
+    <p>Log in to the Internship Tracker to view the full worklog and respond.</p>
+    <p>
+        <a href="{{ url_for('login', _external=True) }}"
+            style="display: inline-block; background-color: rgb(22, 4, 77); color: #ffffff; padding: 12px 22px; border-radius: 8px; text-decoration: none; font-weight: bold;">Open
+            Internship Tracker</a>
+    </p>
+</body>
+
+</html>

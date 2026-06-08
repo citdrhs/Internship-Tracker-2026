@@ -524,7 +524,8 @@ def fetch_progress_checks(student_id):
                     self_questions,
                     is_approved,
                     created_at,
-                    is_rejected
+                    is_rejected,
+                    mentor_response
                 FROM progress_checks
                 WHERE student_id = %s
                 ORDER BY day_worked DESC, created_at DESC
@@ -538,7 +539,7 @@ def fetch_progress_checks(student_id):
 def summarize_progress_data(progress_checks):
     daily_hours = {}
     for entry in progress_checks:
-        id_val, day_worked, hours_worked, what_they_did, mentor_questions, reflection, next_steps, self_questions, is_approved, created_at, is_rejected = entry
+        id_val, day_worked, hours_worked, what_they_did, mentor_questions, reflection, next_steps, self_questions, is_approved, created_at, is_rejected, mentor_response = entry
         if not day_worked or not is_approved:
             continue
         daily_hours[day_worked] = daily_hours.get(day_worked, 0) + float(hours_worked)
@@ -596,6 +597,7 @@ def ensure_progress_schema(conn):
     with conn.cursor() as cur:
         cur.execute("ALTER TABLE progress_checks ADD COLUMN IF NOT EXISTS is_approved BOOLEAN NOT NULL DEFAULT FALSE")
         cur.execute("ALTER TABLE progress_checks ADD COLUMN IF NOT EXISTS is_rejected BOOLEAN NOT NULL DEFAULT FALSE")
+        cur.execute("ALTER TABLE progress_checks ADD COLUMN IF NOT EXISTS mentor_response TEXT")
 
 def ensure_feedback_schema(conn):
     with conn.cursor() as cur:
@@ -926,6 +928,63 @@ def send_confirmation_email(user_email):
     msg.html = html
     mail.send(msg)
 
+def notify_mentor_of_question(student_id, day_worked, question):
+    conn = get_db_connection()
+    try:
+        with conn.cursor() as cur:
+            cur.execute(
+                """
+                SELECT m.email, CONCAT(s.first_name, ' ', s.last_name)
+                FROM students s
+                JOIN mentor_assignments ma ON ma.student_id = s.id
+                JOIN mentors m ON m.id = ma.mentor_id
+                WHERE s.id = %s
+                """,
+                (student_id,),
+            )
+            row = cur.fetchone()
+    finally:
+        conn.close()
+
+    if not row or not row[0]:
+        return
+
+    mentor_email, student_name = row
+    try:
+        msg = Message(
+            "A student left you a question",
+            sender=app.config["MAIL_USERNAME"],
+            recipients=[mentor_email],
+        )
+        msg.html = render_template(
+            "question_email.html",
+            student_name=student_name,
+            day_worked=day_worked,
+            question=question,
+        )
+        mail.send(msg)
+    except Exception:
+        pass
+
+def notify_student_of_response(student_email, student_name, day_worked, response):
+    if not student_email:
+        return
+    try:
+        msg = Message(
+            "Your mentor responded to your worklog",
+            sender=app.config["MAIL_USERNAME"],
+            recipients=[student_email],
+        )
+        msg.html = render_template(
+            "response_email.html",
+            student_name=student_name,
+            day_worked=day_worked,
+            response=response,
+        )
+        mail.send(msg)
+    except Exception:
+        pass
+
 @app.route("/")
 def index():
     return redirect(url_for("login"))
@@ -1123,6 +1182,50 @@ def reject_hours(progress_id):
                         (progress_id,),
                     )
                     flash("Hours rejected.", "success")
+        return redirect(url_for("mentor_hours", student_id=student_id))
+    finally:
+        conn.close()
+
+@app.route("/intr/mentor/hours/<int:progress_id>/respond", methods=["POST"])
+def respond_hours(progress_id):
+    login_redirect = require_login()
+    if login_redirect:
+        return login_redirect
+
+    if not session.get("is_mentor"):
+        flash("Only mentors can respond to worklogs.", "warning")
+        return redirect(url_for("home"))
+
+    mentor_id = get_current_user_id()
+    response = request.form.get("mentor_response", "").strip()
+
+    conn = get_db_connection()
+    try:
+        with conn:
+            with conn.cursor() as cur:
+                cur.execute(
+                    """
+                    SELECT pc.student_id, s.email, CONCAT(s.first_name, ' ', s.last_name),
+                           pc.day_worked, pc.mentor_response
+                    FROM progress_checks pc
+                    JOIN mentor_assignments ma ON pc.student_id = ma.student_id
+                    JOIN students s ON s.id = pc.student_id
+                    WHERE pc.id = %s AND ma.mentor_id = %s
+                    """,
+                    (progress_id, mentor_id),
+                )
+                result = cur.fetchone()
+                if result is None:
+                    flash("You don't have permission to respond to this entry.", "danger")
+                    return redirect(url_for("mentor_hours"))
+                student_id, student_email, student_name, day_worked, previous_response = result
+                cur.execute(
+                    "UPDATE progress_checks SET mentor_response = %s WHERE id = %s",
+                    (response or None, progress_id),
+                )
+                flash("Response saved.", "success")
+        if response and response != (previous_response or ""):
+            notify_student_of_response(student_email, student_name, day_worked, response)
         return redirect(url_for("mentor_hours", student_id=student_id))
     finally:
         conn.close()
@@ -1942,18 +2045,20 @@ def progressCheck():
             entries = fetch_progress_checks(student_id)
             return render_template("progresscheck.html", entries=entries)
 
+        previous_question = None
         conn = get_db_connection()
         try:
             with conn:
                 with conn.cursor() as cur:
                     cur.execute(
-                        "SELECT is_approved FROM progress_checks WHERE student_id = %s AND day_worked = %s",
+                        "SELECT is_approved, mentor_questions FROM progress_checks WHERE student_id = %s AND day_worked = %s",
                         (student_id, payload["day_worked"]),
                     )
                     existing = cur.fetchone()
                     if existing and existing[0]:
                         flash("Worklogs cannot be edited following mentor approval", "warning")
                         return redirect(url_for("progressCheck"))
+                    previous_question = existing[1] if existing else None
                     cur.execute(
                         """
                         INSERT INTO progress_checks
@@ -1993,6 +2098,10 @@ def progressCheck():
                     )
         finally:
             conn.close()
+
+        new_question = payload["mentor_questions"]
+        if new_question and new_question != (previous_question or ""):
+            notify_mentor_of_question(student_id, payload["day_worked"], new_question)
 
         flash("Daily worklog saved.", "success")
         return redirect(url_for("progressCheck"))

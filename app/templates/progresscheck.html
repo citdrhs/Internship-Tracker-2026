@@ -2,7 +2,8 @@
 {% block title %}Daily Worklog{% endblock %}
 {% block content %}
 <h1>Student Worklog</h1>
-<p class="page-intro">Use this daily worklog to track what you worked on, reflect on progress, and leave questions for mentors or yourself.</p>
+<p class="page-intro">Use this daily worklog to track what you worked on, reflect on progress, and leave questions for
+    mentors or yourself.</p>
 
 
 <div class="container">
@@ -56,9 +57,11 @@
             </div>
 
             <div class="form-group">
-                <label for="mentor_questions">Questions for Mentors</label>
+                <label for="mentor_questions">Questions for Mentors (optional)</label>
+                <small>Leave this blank if you have no question. If you write something here, your mentor will be
+                    emailed about it. Their response will appear in the table below this submission form.</small>
                 <textarea id="mentor_questions" name="mentor_questions"
-                    placeholder="Anything you want a mentor to answer?"></textarea>
+                    placeholder="Ask your mentor a question, or leave blank"></textarea>
             </div>
 
             <div class="form-group">
@@ -99,6 +102,7 @@
                 <th>Reflection</th>
                 <th>Next Steps</th>
                 <th>Questions for Yourself</th>
+                <th>Mentor Response</th>
                 <th>Status</th>
                 <th>Saved</th>
                 <th>Actions</th>
@@ -121,6 +125,9 @@
                 </td>
                 <td>
                     <div class="cell-scroll">{{ entry[7] or '' }}</div>
+                </td>
+                <td>
+                    <div class="cell-scroll">{{ entry[11] or '' }}</div>
                 </td>
                 <td>
                     {% if entry[8] %}
