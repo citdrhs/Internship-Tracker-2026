@@ -17,9 +17,9 @@
                 <select id="student_id" name="student_id" class="form-control" required>
                     <option value="">Select a student</option>
                     {% for student in students %}
-                        <option value="{{ student[0] }}" {% if selected_student_id == student[0]|string %}selected{% endif %}>
-                            {{ student[1] }}
-                        </option>
+                    <option value="{{ student[0] }}" {% if selected_student_id==student[0]|string %}selected{% endif %}>
+                        {{ student[1] }}
+                    </option>
                     {% endfor %}
                 </select>
                 <button type="submit">View Student</button>
@@ -27,130 +27,130 @@
         </form>
 
         {% if selected_student %}
-            <div class="profile-card">
-                <div class="profile-card-header">
-                    <h2>{{ selected_student.first_name }} {{ selected_student.last_name }}</h2>
-                </div>
-                <div class="profile-grid">
-                    <div>
-                        <p class="profile-label">Email</p>
-                        <p>{{ selected_student.email }}</p>
-                    </div>
-                    <div>
-                        <p class="profile-label">Grade</p>
-                        <p>{{ selected_student.grade or 'N/A' }}</p>
-                    </div>
-                </div>
-
-                <section class="student-calendar-section">
-                    <h3>Work Hours Calendar (Approved Only)</h3>
-                    {% if selected_progress_events %}
-                        <div class="calendar-grid">
-                            <div id="student-calendar" data-events='{{ selected_progress_events_json|safe }}'></div>
-                            <aside class="calendar-sidebar">
-                                <div class="summary-card">
-                                    <h4>Weekly Totals (Approved)</h4>
-                                    <ul>
-                                        {% for item in weekly_totals %}
-                                            <li><strong>{{ item.label }}</strong>: {{ item.hours }} hrs</li>
-                                        {% endfor %}
-                                    </ul>
-                                </div>
-                                <div class="summary-card">
-                                    <h4>Monthly Totals (Approved)</h4>
-                                    <ul>
-                                        {% for item in monthly_totals %}
-                                            <li><strong>{{ item.label }}</strong>: {{ item.hours }} hrs</li>
-                                        {% endfor %}
-                                    </ul>
-                                </div>
-                            </aside>
-                        </div>
-                    {% else %}
-                        <div class="empty-state">
-                            <p>No approved work hours for calendar display.</p>
-                        </div>
-                    {% endif %}
-                    <script>
-                        document.addEventListener('DOMContentLoaded', function () {
-                            const calendarEl = document.getElementById('student-calendar');
-                            if (!calendarEl) return;
-                            const eventsJson = calendarEl.dataset.events || '[]';
-                            const events = JSON.parse(eventsJson)
-                            
-
-                            const calendar = new FullCalendar.Calendar(calendarEl, {
-                                initialView: 'dayGridMonth',
-                                headerToolbar: {
-                                    left: 'prev,next today',
-                                    center: 'title',
-                                    right: ''
-                                },
-                                events: events,
-                                dayMaxEvents: true,
-                                height: 'auto',
-                                editable: false,
-                                eventDisplay: 'block',
-                                eventColor: '#6c63ff',
-                                eventTextColor: '#ffffff',
-                            });
-
-                            calendar.render();
-                        });
-                    </script>
-                </section>
-
-                <section class="mentor-approval-section">
-                    <h3>Hours for Approval</h3>
-                    {% if selected_progress_checks %}
-                        <div class="table-scroll">
-                        <table class="admin-table">
-                            <tr>
-                                <th>Date</th>
-                                <th>Hours</th>
-                                <th>What They Did</th>
-                                <th>Status</th>
-                                <th>Action</th>
-                                <th>View</th>
-                            </tr>
-                            {% for check in selected_progress_checks %}
-                                <tr>
-                                    <td>{{ check[1] }}</td>
-                                    <td>{{ check[2] }}</td>
-                                    <td><div class="cell-scroll">{{ check[3] }}</div></td>
-                                    <td>
-                                        {% if check[8] %}
-                                            <span class="status-badge approved">Approved</span>
-                                        {% elif check[10] %}
-                                            <span class="status-badge rejected">Rejected</span>
-                                        {% else %}
-                                            <span class="status-badge pending">Pending</span>
-                                        {% endif %}
-                                    </td>
-                                    <td>
-                                        <div class="action-btns">
-                                            <form method="POST" action="{{ url_for('approve_hours', progress_id=check[0]) }}" style="display:inline;">
-                                                <button type="submit" class="btn-approve" title="Approve">✓</button>
-                                            </form>
-                                            <form method="POST" action="{{ url_for('reject_hours', progress_id=check[0]) }}" style="display:inline;">
-                                                <button type="submit" class="btn-reject" title="Reject">✗</button>
-                                            </form>
-                                        </div>
-                                    </td>
-                                    <td><button type="button" class="btn-view" onclick="openRowModal(this)">View</button></td>
-                                </tr>
-                            {% endfor %}
-                        </table>
-                        </div>
-                    {% else %}
-                        <div class="empty-state">
-                            <p>No hours to review for this student.</p>
-                        </div>
-                    {% endif %}
-                </section>
+        <div class="profile-card">
+            <div class="profile-card-header">
+                <h2>{{ selected_student.first_name }} {{ selected_student.last_name }}</h2>
             </div>
+            <div class="profile-grid">
+                <div>
+                    <p class="profile-label">Email</p>
+                    <p>{{ selected_student.email }}</p>
+                </div>
+            </div>
+
+            <section class="student-calendar-section">
+                <h3>Work Hours Calendar (Approved Only)</h3>
+                {% if selected_progress_events %}
+                <div class="calendar-grid">
+                    <div id="student-calendar" data-events='{{ selected_progress_events_json|safe }}'></div>
+                    <aside class="calendar-sidebar">
+                        <div class="summary-card">
+                            <h4>Weekly Totals (Approved)</h4>
+                            <ul>
+                                {% for item in weekly_totals %}
+                                <li><strong>{{ item.label }}</strong>: {{ item.hours }} hrs</li>
+                                {% endfor %}
+                            </ul>
+                        </div>
+                        <div class="summary-card">
+                            <h4>Monthly Totals (Approved)</h4>
+                            <ul>
+                                {% for item in monthly_totals %}
+                                <li><strong>{{ item.label }}</strong>: {{ item.hours }} hrs</li>
+                                {% endfor %}
+                            </ul>
+                        </div>
+                    </aside>
+                </div>
+                {% else %}
+                <div class="empty-state">
+                    <p>No approved work hours for calendar display.</p>
+                </div>
+                {% endif %}
+                <script>
+                    document.addEventListener('DOMContentLoaded', function () {
+                        const calendarEl = document.getElementById('student-calendar');
+                        if (!calendarEl) return;
+                        const eventsJson = calendarEl.dataset.events || '[]';
+                        const events = JSON.parse(eventsJson)
+
+
+                        const calendar = new FullCalendar.Calendar(calendarEl, {
+                            initialView: 'dayGridMonth',
+                            headerToolbar: {
+                                left: 'prev,next today',
+                                center: 'title',
+                                right: ''
+                            },
+                            events: events,
+                            dayMaxEvents: true,
+                            height: 'auto',
+                            editable: false,
+                            eventDisplay: 'block',
+                            eventColor: '#6c63ff',
+                            eventTextColor: '#ffffff',
+                        });
+
+                        calendar.render();
+                    });
+                </script>
+            </section>
+
+            <section class="mentor-approval-section">
+                <h3>Hours for Approval</h3>
+                {% if selected_progress_checks %}
+                <div class="table-scroll">
+                    <table class="admin-table">
+                        <tr>
+                            <th>Date</th>
+                            <th>Hours</th>
+                            <th>What They Did</th>
+                            <th>Status</th>
+                            <th>Action</th>
+                            <th>View</th>
+                        </tr>
+                        {% for check in selected_progress_checks %}
+                        <tr>
+                            <td>{{ check[1] }}</td>
+                            <td>{{ check[2] }}</td>
+                            <td>
+                                <div class="cell-scroll">{{ check[3] }}</div>
+                            </td>
+                            <td>
+                                {% if check[8] %}
+                                <span class="status-badge approved">Approved</span>
+                                {% elif check[10] %}
+                                <span class="status-badge rejected">Rejected</span>
+                                {% else %}
+                                <span class="status-badge pending">Pending</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <div class="action-btns">
+                                    <form method="POST" action="{{ url_for('approve_hours', progress_id=check[0]) }}"
+                                        style="display:inline;">
+                                        <button type="submit" class="btn-approve" title="Approve">✓</button>
+                                    </form>
+                                    <form method="POST" action="{{ url_for('reject_hours', progress_id=check[0]) }}"
+                                        style="display:inline;">
+                                        <button type="submit" class="btn-reject" title="Reject">✗</button>
+                                    </form>
+                                </div>
+                            </td>
+                            <td><button type="button" class="btn-view" onclick="openRowModal(this)">View</button></td>
+                        </tr>
+                        {% endfor %}
+                    </table>
+                </div>
+                {% else %}
+                <div class="empty-state">
+                    <p>No hours to review for this student.</p>
+                </div>
+                {% endif %}
+            </section>
+        </div>
         {% else %}
-            <p>Select a student to view their hours and approve or reject entries.</p>
+        <p>Select a student to view their hours and approve or reject entries.</p>
         {% endif %}
     </section>
 

@@ -449,7 +449,6 @@ def fetch_student_hours_summary(student_id):
                     u.id,
                     CONCAT(u.first_name, ' ', u.last_name) AS student_name,
                     u.email,
-                    COALESCE(u.grade, '') AS grade,
                     COALESCE(u.organization, '') AS organization,
                     COALESCE(pt.approved_hours, 0) AS total_hours,
                     COALESCE(pt.pending_hours, 0) AS pending_hours,
@@ -661,7 +660,6 @@ def fetch_student_entry(student_id):
                     s.email,
                     s.first_name,
                     s.last_name,
-                    s.grade,
                     s.organization,
                     ma.mentor_id
                 FROM students s
@@ -678,9 +676,8 @@ def fetch_student_entry(student_id):
                 "email": row[1],
                 "first_name": row[2],
                 "last_name": row[3],
-                "grade": row[4],
-                "organization": row[5],
-                "mentor_id": row[6],
+                "organization": row[4],
+                "mentor_id": row[5],
             }
     finally:
         conn.close()
@@ -979,8 +976,8 @@ def home():
             student_summary = fetch_student_hours_summary(student_id)
             if student_summary:
                 student_hours = {
-                    "approved_hours": student_summary[5],  # total_hours (approved)
-                    "pending_hours": student_summary[6],   # pending_hours
+                    "approved_hours": student_summary[4],
+                    "pending_hours": student_summary[5],
                 }
     
     return render_template("home.html", student_hours=student_hours, session = session)
@@ -1784,6 +1781,26 @@ def register():
         mentors=mentors,
     )
 
+def compute_student_averages(feedback):
+    groups = {}
+    for row in feedback:
+        groups.setdefault(row[1], []).append(row)
+
+    def average(rows, index):
+        return round(sum(float(r[index]) for r in rows) / len(rows), 2)
+
+    return {
+        name: {
+            "quality": average(rows, 7),
+            "professionalism": average(rows, 8),
+            "timeliness": average(rows, 9),
+            "initiative": average(rows, 10),
+            "softskills": average(rows, 11),
+            "overall": average(rows, 6),
+        }
+        for name, rows in groups.items()
+    }
+
 @app.route("/intr/feedback")
 def feedbackPage():
     login_redirect = require_login()
@@ -1803,11 +1820,13 @@ def feedbackPage():
     except psycopg2.Error:
         flash("Feedback data could not be loaded. Run initdb.py to create the tables.", "danger")
         feedback = []
+
     return render_template(
         "feedbackpage.html",
         feedback=feedback,
         students_to_filter=sorted({f[1] for f in feedback}),
         weeks_to_filter=sorted({f[2] for f in feedback}),
+        student_averages=compute_student_averages(feedback),
     )
 
 @app.route("/intr/student-feedback")
@@ -2123,10 +2142,7 @@ def confirm_email(token):
     }
 
     if pending.role == "student":
-        new_user = Student(
-            **account_data,
-            grade=pending.grade,
-        )
+        new_user = Student(**account_data)
     elif pending.role == "mentor":
         new_user = Mentor(**account_data)
     elif pending.role == "admin":

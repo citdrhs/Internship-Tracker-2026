@@ -69,7 +69,6 @@ CREATE TABLE IF NOT EXISTS students (
     first_name TEXT NOT NULL,
     last_name TEXT NOT NULL,
     password TEXT NOT NULL,
-    grade VARCHAR(3),
     organization VARCHAR(200),
     organization_id BIGINT REFERENCES organizations(id) ON DELETE SET NULL,
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
@@ -79,7 +78,6 @@ ALTER TABLE students ADD COLUMN IF NOT EXISTS email TEXT;
 ALTER TABLE students ADD COLUMN IF NOT EXISTS first_name TEXT;
 ALTER TABLE students ADD COLUMN IF NOT EXISTS last_name TEXT;
 ALTER TABLE students ADD COLUMN IF NOT EXISTS password TEXT;
-ALTER TABLE students ADD COLUMN IF NOT EXISTS grade VARCHAR(3);
 ALTER TABLE students ADD COLUMN IF NOT EXISTS organization VARCHAR(200);
 ALTER TABLE students ADD COLUMN IF NOT EXISTS organization_id BIGINT REFERENCES organizations(id) ON DELETE SET NULL;
 ALTER TABLE students ADD COLUMN IF NOT EXISTS created_at TIMESTAMPTZ NOT NULL DEFAULT NOW();
@@ -128,7 +126,6 @@ CREATE TABLE IF NOT EXISTS pending_users (
     first_name TEXT NOT NULL,
     last_name TEXT NOT NULL,
     password TEXT NOT NULL,
-    grade VARCHAR(3),
     organization VARCHAR(200),
     organization_id BIGINT REFERENCES organizations(id) ON DELETE SET NULL,
     role TEXT NOT NULL DEFAULT 'student',
@@ -136,7 +133,6 @@ CREATE TABLE IF NOT EXISTS pending_users (
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
-ALTER TABLE pending_users ADD COLUMN IF NOT EXISTS grade VARCHAR(3);
 ALTER TABLE pending_users ADD COLUMN IF NOT EXISTS organization VARCHAR(200);
 ALTER TABLE pending_users ADD COLUMN IF NOT EXISTS organization_id BIGINT REFERENCES organizations(id) ON DELETE SET NULL;
 ALTER TABLE pending_users ADD COLUMN IF NOT EXISTS role TEXT DEFAULT 'student';
@@ -210,8 +206,8 @@ CREATE UNIQUE INDEX IF NOT EXISTS pending_users_email_idx ON pending_users (emai
 DO $$
 BEGIN
     IF to_regclass('public.users') IS NOT NULL THEN
-        INSERT INTO students (id, email, first_name, last_name, password, grade, organization, organization_id)
-        SELECT id, email, first_name, last_name, password, grade, organization, organization_id
+        INSERT INTO students (id, email, first_name, last_name, password, organization, organization_id)
+        SELECT id, email, first_name, last_name, password, organization, organization_id
         FROM users
         WHERE COALESCE(is_admin, FALSE) = FALSE
           AND COALESCE(is_teacher, FALSE) = FALSE
@@ -221,7 +217,6 @@ BEGIN
             first_name = EXCLUDED.first_name,
             last_name = EXCLUDED.last_name,
             password = EXCLUDED.password,
-            grade = EXCLUDED.grade,
             organization = EXCLUDED.organization,
             organization_id = EXCLUDED.organization_id;
 

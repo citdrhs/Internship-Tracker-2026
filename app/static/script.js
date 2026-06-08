@@ -85,7 +85,7 @@ if (weekSelect && weekCustom) {
     });
 }
 
-// Feedback list: filter rows by student and week for easy viewing
+// Feedback list: filter rows by student and week, and show chosen student's averages
 function filterFeedback() {
     const student = document.getElementById("filter-student").value;
     const week = document.getElementById("filter-week").value;
@@ -94,5 +94,11 @@ function filterFeedback() {
         const okStudent = !student || row.children[0].textContent.trim() === student;
         const okWeek = !week || row.children[1].textContent.trim() === week;
         row.style.display = okStudent && okWeek ? "" : "none";
+    });
+
+    const averages = document.getElementById("student-averages");
+    averages.style.display = student ? "" : "none";
+    averages.querySelectorAll(".avg-row").forEach((row) => {
+        row.style.display = row.dataset.student === student ? "" : "none";
     });
 }

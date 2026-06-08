@@ -8,8 +8,11 @@
 </div>
 <div class="tableBox">
 
+    <p>Note: filtering for a single student will also display their calculated rating averages.</p>
+
     {% if feedback %}
     <div class="action-btns" style="justify-content: center; padding-bottom: 20px;">
+        <p>Filters:</p>
         <select id="filter-student" onchange="filterFeedback()">
             <option value="">All students</option>
             {% for s in students_to_filter %}
@@ -23,6 +26,30 @@
             {% endfor %}
         </select>
     </div>
+
+    <div id="student-averages" class="table-scroll" style="display: none; margin-bottom: 20px;">
+        <table class="admin-table">
+            <tr>
+                <th>Quality of Work Avg</th>
+                <th>Professionalism Avg</th>
+                <th>Timeliness Avg</th>
+                <th>Initiative Avg</th>
+                <th>Soft Skills Avg</th>
+                <th>Total Average Rating</th>
+            </tr>
+            {% for name, avg in student_averages.items() %}
+            <tr class="avg-row" data-student="{{ name }}" style="display: none">
+                <td>{{ avg.quality }}</td>
+                <td>{{ avg.professionalism }}</td>
+                <td>{{ avg.timeliness }}</td>
+                <td>{{ avg.initiative }}</td>
+                <td>{{ avg.softskills }}</td>
+                <td>{{ avg.overall }}</td>
+            </tr>
+            {% endfor %}
+        </table>
+    </div>
+
     <div class="table-scroll">
         <table id="feedback-table">
             <tr>
@@ -31,7 +58,7 @@
                 <th>Feedback</th>
                 <th>Action Items</th>
                 <th>Focus Areas</th>
-                <th>Average</th>
+                <th>Overall</th>
                 <th>Actions</th>
                 <th>View</th>
             </tr>
