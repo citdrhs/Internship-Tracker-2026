@@ -1024,10 +1024,6 @@ def logout():
 
 @app.route("/intr/home")
 def home():
-    login_redirect = require_login()
-    if login_redirect:
-        return login_redirect
-    
     student_hours = None
     if session.get("is_student"):
         student_id = get_current_user_id()

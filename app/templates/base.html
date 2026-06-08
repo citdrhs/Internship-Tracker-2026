@@ -30,10 +30,10 @@
         </div>
         <nav class="primary-navigation">
             <ul>
-                {% if session.get('email') %}
                 <li><a href="{{ url_for('home') }}">Home</a></li>
                 <li><a href="{{ url_for('about') }}">About</a></li>
 
+                {% if session.get('email') %}
                 {% if session.get('is_admin') %}
                 <li><a href="{{ url_for('admin') }}">Admin</a></li>
 
