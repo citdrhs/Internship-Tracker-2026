@@ -337,7 +337,7 @@ def get_connection():
     db_name = os.getenv("DB")
     db_user = os.getenv("DB_UN")
     db_password = os.getenv("DB_PW")
-    db_host = os.getenv("DB_HOST", "drhscit.org")
+    db_host = os.getenv("DB_HOST", "127.0.0.1")
     db_port = int(os.getenv("DB_PORT", "5434"))
     if db_host == "drhscit.org" and db_port == 5432:
         db_port = 5434
