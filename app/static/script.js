@@ -85,6 +85,19 @@ if (weekSelect && weekCustom) {
     });
 }
 
+// Feedback form: Overall Rating = rounded mean of the five sub-score sliders
+const subscoreSliders = ["Quality_of_Work", "Professionalism", "Timeliness_of_Work", "Initiative", "Soft_Skills"]
+    .map((id) => document.getElementById(id));
+const overallDisplay = document.getElementById("overallDisplay");
+if (overallDisplay && subscoreSliders.every(Boolean)) {
+    const updateOverall = () => {
+        const mean = subscoreSliders.reduce((sum, el) => sum + Number(el.value), 0) / subscoreSliders.length;
+        overallDisplay.textContent = Math.round(mean);
+    };
+    subscoreSliders.forEach((el) => el.addEventListener("input", updateOverall));
+    updateOverall();
+}
+
 // Feedback list: filter rows by student and week, and show chosen student's averages
 function filterFeedback() {
     const student = document.getElementById("filter-student").value;

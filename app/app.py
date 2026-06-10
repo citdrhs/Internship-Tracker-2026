@@ -431,9 +431,7 @@ def fetch_student_hours_summary(student_id):
                         ROUND(AVG(timeliness)::numeric, 2) AS avg_timeliness,
                         ROUND(AVG(initiative)::numeric, 2) AS avg_initiative,
                         ROUND(AVG(softskills)::numeric, 2) AS avg_softskills,
-                        ROUND(AVG(rating)::numeric, 2) AS total_average_rating,
-                        ROUND((AVG(quality) + AVG(professionalism) + AVG(timeliness)
-                               + AVG(initiative) + AVG(softskills)) / 5.0, 2) AS avg_subscores
+                        ROUND(AVG(rating)::numeric, 2) AS total_average_rating
                     FROM feedback
                     GROUP BY student_id
                 ),
@@ -462,8 +460,7 @@ def fetch_student_hours_summary(student_id):
                     fa.avg_timeliness,
                     fa.avg_initiative,
                     fa.avg_softskills,
-                    fa.total_average_rating,
-                    fa.avg_subscores
+                    fa.total_average_rating
                 FROM students u
                 LEFT JOIN progress_totals pt ON pt.student_id = u.id
                 LEFT JOIN feedback_averages fa ON fa.student_id = u.id
@@ -892,7 +889,7 @@ def validate_feedback_form():
     timeliness = parse_score("Timeliness_of_Work")
     initiative = parse_score("Initiative")
     softskills = parse_score("Soft_Skills")
-    overall_rating = parse_score("overall_rating")
+    rating = round((quality + professionalism + timeliness + initiative + softskills) / 5)
 
     return {
         "student_id": student_id_value,
@@ -905,7 +902,7 @@ def validate_feedback_form():
         "timeliness": timeliness,
         "initiative": initiative,
         "softskills": softskills,
-        "rating": overall_rating,
+        "rating": rating,
     }
 
 def generate_confirmation_token(email):
@@ -1891,21 +1888,17 @@ def compute_student_averages(feedback):
     def average(rows, index):
         return round(sum(float(r[index]) for r in rows) / len(rows), 2)
 
-    averages = {}
-    for name, rows in groups.items():
-        scores = {
+    return {
+        name: {
             "quality": average(rows, 7),
             "professionalism": average(rows, 8),
             "timeliness": average(rows, 9),
             "initiative": average(rows, 10),
             "softskills": average(rows, 11),
+            "overall": average(rows, 6),
         }
-        # calculated average of the five category sub-scores
-        scores["subscores"] = round(sum(scores.values()) / len(scores), 2)
-        # mentors' subjective "overall" score, averaged
-        scores["overall"] = average(rows, 6)
-        averages[name] = scores
-    return averages
+        for name, rows in groups.items()
+    }
 
 @app.route("/intr/feedback")
 def feedbackPage():
