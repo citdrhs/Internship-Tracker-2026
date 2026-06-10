@@ -105,6 +105,9 @@
                             <th>Date</th>
                             <th>Hours</th>
                             <th>What They Did</th>
+                            <th>Questions</th>
+                            <th>Reflection</th>
+                            <th>Next Steps</th>
                             <th>Status</th>
                             <th>Action</th>
                             <th>Details</th>
@@ -115,6 +118,15 @@
                             <td>{{ check[2] }}</td>
                             <td>
                                 <div class="cell-scroll">{{ check[3] }}</div>
+                            </td>
+                            <td>
+                                <div class="cell-scroll">{{ check[4] or '' }}</div>
+                            </td>
+                            <td>
+                                <div class="cell-scroll">{{ check[5] or '' }}</div>
+                            </td>
+                            <td>
+                                <div class="cell-scroll">{{ check[6] or '' }}</div>
                             </td>
                             <td>
                                 {% if check[8] %}
