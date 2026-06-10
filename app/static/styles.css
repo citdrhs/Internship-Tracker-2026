@@ -344,6 +344,7 @@ td form {
     max-height: 8em;
     overflow: auto;
     scrollbar-width: thin;
+    white-space: pre-wrap;
 }
 
 .cell-scroll::-webkit-scrollbar {

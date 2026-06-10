@@ -271,6 +271,8 @@
 
                 <section class="student-averages">
                     <h3>Overall Feedback Averages</h3>
+                    <p>Sub-scores Avg = the average of the five category scores. Mentor Overall Avg =
+                       the average of the subjective "Overall" score mentors gave.</p>
                     <div class="table-scroll">
                     <table class="admin-table">
                         <tr>
@@ -279,7 +281,8 @@
                             <th>Timeliness Avg</th>
                             <th>Initiative Avg</th>
                             <th>Soft Skills Avg</th>
-                            <th>Total Average Rating</th>
+                            <th>Sub-scores Avg</th>
+                            <th>Mentor Overall Avg</th>
                         </tr>
                         <tr>
                             <td>{{ selected_student[9] if selected_student[9] is not none else 'No ratings' }}</td>
@@ -287,6 +290,7 @@
                             <td>{{ selected_student[11] if selected_student[11] is not none else 'No ratings' }}</td>
                             <td>{{ selected_student[12] if selected_student[12] is not none else 'No ratings' }}</td>
                             <td>{{ selected_student[13] if selected_student[13] is not none else 'No ratings' }}</td>
+                            <td>{{ selected_student[15] if selected_student[15] is not none else 'No ratings' }}</td>
                             <td>{{ selected_student[14] if selected_student[14] is not none else 'No ratings' }}</td>
                         </tr>
                     </table>

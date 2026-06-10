@@ -8,7 +8,9 @@
 </div>
 <div class="tableBox">
 
-    <p>Note: filtering for a single student will also display their calculated rating averages.</p>
+    <p>Note: filtering for a single student shows their averages below: the five category scores,
+        their combined, calculated Sub-scores Avg, and the Mentor Overall Avg (derived from the
+        "Overall" score in the feedback form), so you can compare the two.</p>
 
     {% if feedback %}
     <div class="action-btns" style="justify-content: center; padding-bottom: 20px;">
@@ -35,7 +37,8 @@
                 <th>Timeliness Avg</th>
                 <th>Initiative Avg</th>
                 <th>Soft Skills Avg</th>
-                <th>Total Average Rating</th>
+                <th>Sub-scores Avg</th>
+                <th>Mentor Overall Avg</th>
             </tr>
             {% for name, avg in student_averages.items() %}
             <tr class="avg-row" data-student="{{ name }}" style="display: none">
@@ -44,6 +47,7 @@
                 <td>{{ avg.timeliness }}</td>
                 <td>{{ avg.initiative }}</td>
                 <td>{{ avg.softskills }}</td>
+                <td>{{ avg.subscores }}</td>
                 <td>{{ avg.overall }}</td>
             </tr>
             {% endfor %}
