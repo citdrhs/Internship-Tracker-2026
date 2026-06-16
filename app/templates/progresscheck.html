@@ -9,8 +9,7 @@
 <div class="container">
     <div class="card">
         <p><span style="font-weight: bold">Important!</span>
-            You may log one worklog per day. Submitting again for a day you already logged will replace that day's
-            entry.
+            You can log your hours as often as you'd like, but the system only allows one worklog per calendar day.
         </p>
         <form method="post" id="worklog-form" data-logged-dates='[
                 {% for entry in entries %}"{{ entry[1] }}"
