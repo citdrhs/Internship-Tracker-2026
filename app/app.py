@@ -1832,6 +1832,11 @@ def register():
                 flash("Students must select a mentor.", "danger")
                 return render_template("register.html", form=form, organizations=organizations, mentors=mentors)
 
+            student_email = form.email.data.strip().lower()
+            if not (student_email.startswith("hcps-") and student_email.endswith("@henricostudents.org")):
+                flash("Students must register with their HCPS email (hcps-username@henricostudents.org).", "danger")
+                return render_template("register.html", form=form, organizations=organizations, mentors=mentors)
+
         elif selected_role == "mentor":
             if not selected_organization_id:
                 flash("Mentors must select an organization.", "danger")
