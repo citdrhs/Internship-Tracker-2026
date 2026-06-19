@@ -10,7 +10,7 @@ from datetime import datetime
 from flask import Flask, flash, redirect, render_template, request, session, url_for
 from flask_bcrypt import Bcrypt
 from flask_mail import Mail, Message
-from app.forms import LoginForm, RegisterForm
+from app.forms import ForgotPasswordForm, LoginForm, RegisterForm, ResetPasswordForm
 from itsdangerous import URLSafeTimedSerializer
 from app.models import Admin, Mentor, PendingUser, Student, MentorAssignment, db
 
@@ -922,6 +922,29 @@ def send_confirmation_email(user_email):
     html = render_template("confirm_email.html", confirm_url=confirm_url)
     msg = Message(
         "Confirm Your Registration",
+        sender=app.config["MAIL_USERNAME"],
+        recipients=[user_email],
+    )
+    msg.html = html
+    mail.send(msg)
+
+def generate_reset_token(email):
+    serializer = URLSafeTimedSerializer(app.config["SECRET_KEY"])
+    return serializer.dumps(email, salt="password-reset-salt")
+
+def confirm_reset_token(token, expiration=3600):
+    serializer = URLSafeTimedSerializer(app.config["SECRET_KEY"])
+    try:
+        return serializer.loads(token, salt="password-reset-salt", max_age=expiration)
+    except Exception:
+        return False
+
+def send_password_reset_email(user_email):
+    token = generate_reset_token(user_email)
+    reset_url = url_for("reset_password", token=token, _external=True)
+    html = render_template("reset_email.html", reset_url=reset_url)
+    msg = Message(
+        "Reset Your Password",
         sender=app.config["MAIL_USERNAME"],
         recipients=[user_email],
     )
@@ -2274,6 +2297,54 @@ def confirm_email(token):
     flash("Registration confirmed!", "success")
     return redirect(url_for("login"))
 
+
+
+@app.route("/intr/forgot-password/", methods=["GET", "POST"])
+def forgot_password():
+    if session.get("email"):
+        return redirect(url_for("home"))
+
+    form = ForgotPasswordForm()
+    if form.validate_on_submit():
+        email = form.email.data.strip()
+        if not account_exists(email):
+            flash("No account found!", "danger")
+            return redirect(url_for("forgot_password"))
+
+        send_password_reset_email(email)
+        flash("A password reset link has been sent to your email.", "info")
+        return redirect(url_for("login"))
+
+    return render_template("forgot_password.html", form=form)
+
+
+@app.route("/intr/reset/<token>/", methods=["GET", "POST"])
+def reset_password(token):
+    email = confirm_reset_token(token)
+    if not email:
+        flash("This password reset link is invalid or has expired.", "danger")
+        return redirect(url_for("forgot_password"))
+
+    user, _ = find_account_by_email(email)
+    if not user:
+        flash("No account matches this reset link.", "danger")
+        return redirect(url_for("forgot_password"))
+
+    form = ResetPasswordForm()
+    if form.validate_on_submit():
+        if len(form.password.data) < 8:
+            flash("Password must be at least 8 characters.", "danger")
+            return render_template("reset_password.html", form=form, token=token)
+        if form.password.data != form.confirmPassword.data:
+            flash("Passwords do not match.", "danger")
+            return render_template("reset_password.html", form=form, token=token)
+
+        user.password = bcrypt.generate_password_hash(form.password.data).decode("utf-8")
+        db.session.commit()
+        flash("Your password has been reset. Please log in.", "success")
+        return redirect(url_for("login"))
+
+    return render_template("reset_password.html", form=form, token=token)
 
 
 if __name__ == "__main__":
