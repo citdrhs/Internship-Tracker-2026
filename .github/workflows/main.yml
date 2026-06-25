@@ -43,8 +43,9 @@ jobs:
             cd /home/internships/www
             git pull origin main
             git rev-parse --short HEAD
-            if [ ! -d venv ]; then
-              echo "venv missing (no longer committed) - creating it"
+            if [ ! -f venv/bin/activate ]; then
+              echo "venv missing or incomplete - (re)creating it"
+              rm -rf venv
               python3 -m venv venv
             fi
             source venv/bin/activate
