@@ -407,6 +407,7 @@ td .action-btns {
     font-weight: 600;
     font-size: 0.85rem;
     text-decoration: none;
+    white-space: nowrap;
     transition: background-color 0.2s;
 }
 
@@ -428,6 +429,7 @@ td .action-btns {
     font-weight: 600;
     font-size: 0.85rem;
     cursor: pointer;
+    white-space: nowrap;
     transition: all 0.2s;
 }
 
