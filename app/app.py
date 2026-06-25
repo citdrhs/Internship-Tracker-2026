@@ -2069,11 +2069,26 @@ def progressCheck():
             entries = fetch_progress_checks(student_id)
             return render_template("progresscheck.html", entries=entries)
 
+        edit_id = request.form.get("edit_id", "").strip()
         previous_question = None
         conn = get_db_connection()
         try:
             with conn:
                 with conn.cursor() as cur:
+                    # When editing a specific entry, make sure it exists and isn't approved.
+                    if edit_id:
+                        cur.execute(
+                            "SELECT is_approved FROM progress_checks WHERE id = %s AND student_id = %s",
+                            (edit_id, student_id),
+                        )
+                        original = cur.fetchone()
+                        if not original:
+                            flash("That worklog entry was not found.", "danger")
+                            return redirect(url_for("progressCheck"))
+                        if original[0]:
+                            flash("Approved worklogs cannot be edited.", "warning")
+                            return redirect(url_for("progressCheck"))
+
                     cur.execute(
                         "SELECT is_approved, mentor_questions FROM progress_checks WHERE student_id = %s AND day_worked = %s",
                         (student_id, payload["day_worked"]),
@@ -2083,6 +2098,15 @@ def progressCheck():
                         flash("Worklogs cannot be edited following mentor approval", "warning")
                         return redirect(url_for("progressCheck"))
                     previous_question = existing[1] if existing else None
+
+                    # Editing: remove the original row first so changing the date moves
+                    # the entry instead of leaving a duplicate behind.
+                    if edit_id:
+                        cur.execute(
+                            "DELETE FROM progress_checks WHERE id = %s AND student_id = %s",
+                            (edit_id, student_id),
+                        )
+
                     cur.execute(
                         """
                         INSERT INTO progress_checks
@@ -2132,6 +2156,42 @@ def progressCheck():
 
     entries = fetch_progress_checks(student_id)
     return render_template("progresscheck.html", entries=entries)
+
+@app.route("/intr/progress-check/<int:id>/delete", methods=["POST"])
+def deleteProgressCheck(id):
+    student_redirect = require_student()
+    if student_redirect:
+        return student_redirect
+
+    student_id = get_current_user_id()
+    if student_id is None:
+        flash("You must be logged in as a student to use the worklog.", "danger")
+        return redirect(url_for("login"))
+
+    conn = get_db_connection()
+    try:
+        with conn:
+            with conn.cursor() as cur:
+                cur.execute(
+                    "SELECT is_approved FROM progress_checks WHERE id = %s AND student_id = %s",
+                    (id, student_id),
+                )
+                entry = cur.fetchone()
+                if not entry:
+                    flash("That worklog entry was not found.", "danger")
+                    return redirect(url_for("progressCheck"))
+                if entry[0]:
+                    flash("Approved worklogs cannot be deleted.", "warning")
+                    return redirect(url_for("progressCheck"))
+                cur.execute(
+                    "DELETE FROM progress_checks WHERE id = %s AND student_id = %s",
+                    (id, student_id),
+                )
+    finally:
+        conn.close()
+
+    flash("Worklog entry deleted.", "success")
+    return redirect(url_for("progressCheck"))
 
 @app.route("/intr/feedback/<int:id>/edit", methods=["GET", "POST"])
 def editFeedback(id):

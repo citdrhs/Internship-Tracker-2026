@@ -56,6 +56,7 @@ if (worklogForm) {
 function editWorklog(button) {
     const cell = button.closest("tr").children;
     const hours = parseFloat(cell[1].textContent);
+    document.getElementById("edit_id").value = button.dataset.id;
     document.getElementById("day_worked").value = cell[0].textContent.trim();
     document.getElementById("hours_worked").value = Math.floor(hours);
     document.getElementById("minutes_worked").value = Math.round((hours % 1) * 60);

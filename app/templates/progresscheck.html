@@ -15,6 +15,7 @@
                 {% for entry in entries %}"{{ entry[1] }}"
                 {% if not loop.last %},{% endif %}
                 {% endfor %}]'>
+            <input type="hidden" name="edit_id" id="edit_id" value="">
             <div class="form-group">
                 <label for="day_worked">Day Worked</label>
                 <input type="date" id="day_worked" name="day_worked" required>
@@ -141,7 +142,11 @@
                 <td>
                     <div class="action-btns">
                         {% if not entry[8] %}
-                        <button type="button" class="btn-edit" onclick="editWorklog(this)">Edit</button>
+                        <button type="button" class="btn-edit" data-id="{{ entry[0] }}" onclick="editWorklog(this)">Edit</button>
+                        <form method="post" action="{{ url_for('deleteProgressCheck', id=entry[0]) }}" style="display:inline;">
+                            <button type="submit" class="btn-delete"
+                                onclick="return confirm('Delete this worklog entry?')">Delete</button>
+                        </form>
                         {% endif %}
                         <button type="button" class="btn-view" onclick="openRowModal(this)">View</button>
                     </div>
