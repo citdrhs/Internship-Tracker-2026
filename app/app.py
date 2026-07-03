@@ -1111,12 +1111,15 @@ def mentor_hours():
                     selected_progress_checks
                 )
 
+    pending_count = sum(1 for c in selected_progress_checks if not c[8] and not c[10])
+
     return render_template(
         "mentor_hours.html",
         students=students,
         selected_student_id=selected_student_id,
         selected_student=selected_student,
         selected_progress_checks=selected_progress_checks,
+        pending_count=pending_count,
         selected_progress_events=selected_progress_events,
         selected_progress_events_json=json.dumps(selected_progress_events),
         weekly_totals=weekly_totals,
@@ -1160,6 +1163,48 @@ def approve_hours(progress_id):
                         (progress_id,),
                     )
                     flash("Hours approved.", "success")
+        return redirect(url_for("mentor_hours", student_id=student_id))
+    finally:
+        conn.close()
+
+@app.route("/intr/mentor/hours/<int:student_id>/approve-all", methods=["POST"])
+def approve_all_hours(student_id):
+    login_redirect = require_login()
+    if login_redirect:
+        return login_redirect
+
+    if not session.get("is_mentor"):
+        flash("Only mentors can approve hours.", "warning")
+        return redirect(url_for("home"))
+
+    mentor_id = get_current_user_id()
+
+    conn = get_db_connection()
+    try:
+        with conn:
+            with conn.cursor() as cur:
+                # Check if the student is assigned to the given mentor first
+                cur.execute(
+                    "SELECT 1 FROM mentor_assignments WHERE mentor_id = %s AND student_id = %s",
+                    (mentor_id, student_id),
+                )
+                if cur.fetchone() is None:
+                    flash("You don't have access to this student's hours.", "danger")
+                else:
+                    # Approve only the pending entries (leave the rejected ones as is)
+                    cur.execute(
+                        """
+                        UPDATE progress_checks
+                        SET is_approved = TRUE, is_rejected = FALSE
+                        WHERE student_id = %s AND NOT is_approved AND NOT is_rejected
+                        """,
+                        (student_id,),
+                    )
+                    count = cur.rowcount
+                    if count:
+                        flash(f"Approved {count} pending {'entry' if count == 1 else 'entries'}.", "success")
+                    else:
+                        flash("No pending hours to approve.", "info")
         return redirect(url_for("mentor_hours", student_id=student_id))
     finally:
         conn.close()
@@ -2075,7 +2120,6 @@ def progressCheck():
         try:
             with conn:
                 with conn.cursor() as cur:
-                    # When editing a specific entry, make sure it exists and isn't approved.
                     if edit_id:
                         cur.execute(
                             "SELECT is_approved FROM progress_checks WHERE id = %s AND student_id = %s",
@@ -2099,8 +2143,6 @@ def progressCheck():
                         return redirect(url_for("progressCheck"))
                     previous_question = existing[1] if existing else None
 
-                    # Editing: remove the original row first so changing the date moves
-                    # the entry instead of leaving a duplicate behind.
                     if edit_id:
                         cur.execute(
                             "DELETE FROM progress_checks WHERE id = %s AND student_id = %s",

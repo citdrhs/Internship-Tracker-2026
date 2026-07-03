@@ -99,6 +99,14 @@
             <section class="mentor-approval-section">
                 <h3>Hours for Approval</h3>
                 {% if selected_progress_checks %}
+                {% if pending_count %}
+                <form method="POST" action="{{ url_for('approve_all_hours', student_id=selected_student_id) }}"
+                    style="margin-bottom: 14px;">
+                    <button type="submit" class="btn-approve"
+                        onclick="return confirm('Approve all {{ pending_count }} pending entries for this student?')">Approve
+                        All Pending ({{ pending_count }})</button>
+                </form>
+                {% endif %}
                 <div class="table-scroll">
                     <table class="admin-table">
                         <tr>
