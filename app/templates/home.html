@@ -75,16 +75,23 @@
                 </details>
                 <details>
                     <summary>Where is the full user guide?</summary>
-                    <p>Use the link below to open the user manual in a Google Doc.</p>
+                    <p>Use the manual link(s) below to open the user guide in Google Docs.</p>
                 </details>
             </div>
         </section>
 
+        {% set mentor_manual = "https://docs.google.com/document/d/1_ER0zeRv4XzvdkAsa-ip4l5V_5oEuR7km37FDV9K7J0/edit?tab=t.0#heading=h.wgzd3smvzpmu" %}
+        {% set student_manual = "https://docs.google.com/document/d/1Lkw7CkcCcRlsDT4iFM0-N4RtGognc6ifJNOuCzNV2sA/edit?tab=t.0" %}
         <p class="home-manual">
             User manual:
-            <a class="manual" href="https://docs.google.com/document/d/1Lkw7CkcCcRlsDT4iFM0-N4RtGognc6ifJNOuCzNV2sA/edit?usp=sharing" target="_blank" rel="noopener noreferrer">
-                Google Doc
-            </a>
+            {% if session.get('is_mentor') %}
+            <a class="manual" href="{{ mentor_manual }}" target="_blank" rel="noopener noreferrer">Mentor Manual</a>
+            {% elif session.get('email') and not session.get('is_admin') %}
+            <a class="manual" href="{{ student_manual }}" target="_blank" rel="noopener noreferrer">Student Manual</a>
+            {% else %}
+            <a class="manual" href="{{ mentor_manual }}" target="_blank" rel="noopener noreferrer">Mentor Manual</a>
+            <a class="manual" href="{{ student_manual }}" target="_blank" rel="noopener noreferrer">Student Manual</a>
+            {% endif %}
         </p>
     </main>
 

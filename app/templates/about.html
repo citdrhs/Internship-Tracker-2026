@@ -86,13 +86,19 @@
         </div>
     </section>
 
+    {% set mentor_manual = "https://docs.google.com/document/d/1_ER0zeRv4XzvdkAsa-ip4l5V_5oEuR7km37FDV9K7J0/edit?tab=t.0#heading=h.wgzd3smvzpmu" %}
+    {% set student_manual = "https://docs.google.com/document/d/1Lkw7CkcCcRlsDT4iFM0-N4RtGognc6ifJNOuCzNV2sA/edit?tab=t.0" %}
     <section class="page-section">
         <h2>User manual</h2>
         <p>
-            
-            <a href="https://docs.google.com/document/d/1Lkw7CkcCcRlsDT4iFM0-N4RtGognc6ifJNOuCzNV2sA/edit?usp=sharing" target="_blank" rel="noopener noreferrer">
-                Internship Tracker User Manual (Google Doc)
-            </a>
+            {% if session.get('is_mentor') %}
+            <a href="{{ mentor_manual }}" target="_blank" rel="noopener noreferrer">Mentor Manual (Google Doc)</a>
+            {% elif session.get('email') and not session.get('is_admin') %}
+            <a href="{{ student_manual }}" target="_blank" rel="noopener noreferrer">Student Manual (Google Doc)</a>
+            {% else %}
+            <a href="{{ mentor_manual }}" target="_blank" rel="noopener noreferrer">Mentor Manual (Google Doc)</a>
+            <a href="{{ student_manual }}" target="_blank" rel="noopener noreferrer">Student Manual (Google Doc)</a>
+            {% endif %}
         </p>
     </section>
 </main>
