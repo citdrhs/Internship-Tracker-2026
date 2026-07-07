@@ -31,6 +31,14 @@ document.querySelectorAll(".toast").forEach((toast) => {
     setTimeout(() => toast.remove(), 6000);
 });
 
+// Mobile navbar hamburger toggle
+const navToggle = document.getElementById("nav-toggle");
+if (navToggle) {
+    navToggle.addEventListener("click", () => {
+        document.getElementById("navbar").classList.toggle("open");
+    });
+}
+
 // For worklog submission: Warn before overwriting an existing entry for the same day
 const worklogForm = document.getElementById("worklog-form");
 if (worklogForm) {

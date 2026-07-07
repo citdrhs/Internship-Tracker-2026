@@ -38,8 +38,6 @@ section {
 .brand {
     display: flex;
     align-items: center;
-    gap: 12px;
-    min-width: 280px;
 }
 
 .brand-logo {
@@ -47,18 +45,6 @@ section {
     object-fit: contain;
     border-radius: 12px;
     background: #fff;
-}
-
-.brand-title {
-    font-weight: 900;
-    font-size: 1.05rem;
-    line-height: 1.2;
-}
-
-.brand-subtitle {
-    font-weight: 600;
-    font-size: 0.85rem;
-    color: #6c6c6c;
 }
 
 .primary-navigation {
@@ -88,6 +74,42 @@ section {
 
 .primary-navigation a:hover {
     background-color: #d8d8d8;
+}
+
+.nav-toggle {
+    display: none;
+    background-color: #ececec;
+    color: black;
+    font-size: 1.4rem;
+}
+
+.nav-toggle:hover {
+    background-color: #d8d8d8;
+}
+
+@media (max-width: 768px) {
+    #navbar {
+        flex-wrap: wrap;
+    }
+
+    .nav-toggle {
+        display: block;
+    }
+
+    .primary-navigation {
+        display: none;
+        width: 100%;
+    }
+
+    #navbar.open .primary-navigation {
+        display: block;
+    }
+
+    .primary-navigation ul {
+        flex-direction: column;
+        align-items: center;
+        padding-right: 0;
+    }
 }
 
 .msgs {

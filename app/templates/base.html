@@ -23,11 +23,8 @@
     <div class="wrapper" id="navbar">
         <div class="brand">
             <img class="brand-logo" src="{{ url_for('static', filename='CIT_image.png') }}" alt="CIT logo">
-            <div class="brand-text">
-                <div class="brand-title">Internship Tracker</div>
-                <div class="brand-subtitle">CIT • Daily Worklogs • Mentor Feedback</div>
-            </div>
         </div>
+        <button id="nav-toggle" class="nav-toggle" aria-label="Toggle navigation">&#9776;</button>
         <nav class="primary-navigation">
             <ul>
                 <li><a href="{{ url_for('home') }}">Home</a></li>
