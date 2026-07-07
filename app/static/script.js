@@ -107,7 +107,7 @@ if (overallDisplay && subscoreSliders.every(Boolean)) {
     updateOverall();
 }
 
-// Feedback list: filter rows by student and week, and show chosen student's averages
+// Feedback list: filter the feedback rows by student and week
 function filterFeedback() {
     const student = document.getElementById("filter-student").value;
     const week = document.getElementById("filter-week").value;
@@ -117,15 +117,9 @@ function filterFeedback() {
         const okWeek = !week || row.children[1].textContent.trim() === week;
         row.style.display = okStudent && okWeek ? "" : "none";
     });
-
-    const averages = document.getElementById("student-averages");
-    averages.style.display = student ? "" : "none";
-    averages.querySelectorAll(".avg-row").forEach((row) => {
-        row.style.display = row.dataset.student === student ? "" : "none";
-    });
 }
 
-// Mentor hours: open popup with full worklog info + a box to respond to the student
+// Mentor hours: open a read-only popup with the full worklog info
 function openHoursDetail(button) {
     const d = button.dataset;
     document.getElementById("hd-date").textContent = d.date;
@@ -134,14 +128,23 @@ function openHoursDetail(button) {
     document.getElementById("hd-questions").textContent = d.questions || "—";
     document.getElementById("hd-reflection").textContent = d.reflection || "—";
     document.getElementById("hd-next").textContent = d.next || "—";
-    document.getElementById("hd-response").value = d.response;
-    document.getElementById("hd-form").action = d.action;
     document.getElementById("hours-detail").showModal();
 }
 
-const hoursDetail = document.getElementById("hours-detail");
-if (hoursDetail) {
-    hoursDetail.addEventListener("click", (e) => {
-        if (e.target.id === "hours-detail") e.target.close();
-    });
+// Mentor hours: open the shared message popup to reply to a question or clarify a rejection
+function openHoursMessage(button) {
+    const d = button.dataset;
+    document.getElementById("hm-response").value = d.response || "";
+    document.getElementById("hm-form").action = d.action;
+    document.getElementById("hours-message").showModal();
 }
+
+// Close either mentor-hours popup by clicking outside it
+["hours-detail", "hours-message"].forEach((id) => {
+    const dialog = document.getElementById(id);
+    if (dialog) {
+        dialog.addEventListener("click", (e) => {
+            if (e.target.id === id) e.target.close();
+        });
+    }
+});

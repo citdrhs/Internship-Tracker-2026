@@ -158,17 +158,22 @@
                                 </div>
                             </td>
                             <td>
-                                <button type="button" class="btn-view" data-date="{{ check[1] }}"
-                                    data-hours="{{ check[2] }}" data-what="{{ check[3] }}"
-                                    data-questions="{{ check[4] or '' }}" data-reflection="{{ check[5] or '' }}"
-                                    data-next="{{ check[6] or '' }}" data-response="{{ check[11] or '' }}"
-                                    data-action="{{ url_for('respond_hours', progress_id=check[0]) }}"
-                                    onclick="openHoursDetail(this)"
-                                    style="display: inline-flex; flex-direction: column; align-items: center; justify-content: center; line-height: 1.3; padding: 8px 12px; min-width: 160px;">
-                                    <div>View More</div>
-                                    <div>Respond to Questions</div>
-                                    <div>Explain Hr Rejections</div>
-                                </button>
+                                <div class="action-btns">
+                                    <button type="button" class="btn-view" data-date="{{ check[1] }}"
+                                        data-hours="{{ check[2] }}" data-what="{{ check[3] }}"
+                                        data-questions="{{ check[4] or '' }}" data-reflection="{{ check[5] or '' }}"
+                                        data-next="{{ check[6] or '' }}" onclick="openHoursDetail(this)">View More</button>
+                                    {% if check[10] %}
+                                    <button type="button" class="btn-edit" data-response="{{ check[11] or '' }}"
+                                        data-action="{{ url_for('respond_hours', progress_id=check[0]) }}"
+                                        onclick="openHoursMessage(this)">Clarify Rejection</button>
+                                    {% endif %}
+                                    {% if check[4] %}
+                                    <button type="button" class="btn-edit" data-response="{{ check[11] or '' }}"
+                                        data-action="{{ url_for('respond_hours', progress_id=check[0]) }}"
+                                        onclick="openHoursMessage(this)">Respond to Question</button>
+                                    {% endif %}
+                                </div>
                             </td>
                         </tr>
                         {% endfor %}
@@ -206,11 +211,17 @@
         <dt>Next Steps</dt>
         <dd id="hd-next"></dd>
     </dl>
-    <form method="POST" id="hd-form">
-        <label for="hd-response">Your response to the student's questions OR clarification regarding hour
-            rejection</label>
-        <textarea name="mentor_response" id="hd-response"></textarea>
-        <button type="submit">Save Response</button>
+    <form method="dialog">
+        <button type="submit" class="modal-close">Close</button>
+    </form>
+</dialog>
+
+<dialog id="hours-message" class="modal">
+    <form method="POST" id="hm-form">
+        <label for="hm-response">Use this textbox to send a message to the student. Pressing submit will notify
+            the student via email of your response.</label>
+        <textarea name="mentor_response" id="hm-response"></textarea>
+        <button type="submit">Send Message</button>
     </form>
     <form method="dialog">
         <button type="submit" class="modal-close">Close</button>

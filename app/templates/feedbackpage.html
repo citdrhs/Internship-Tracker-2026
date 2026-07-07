@@ -8,10 +8,34 @@
 </div>
 <div class="tableBox">
 
-    <p>Note: filtering for a single student shows their average for each score below, plus the
-        Overall Avg (the average of each feedback's auto-calculated overall rating).</p>
-
     {% if feedback %}
+    <h2>Overall Averages</h2>
+    <div class="table-scroll" style="margin-bottom: 20px;">
+        <table class="admin-table">
+            <tr>
+                <th>Name</th>
+                <th>Quality of Work Avg</th>
+                <th>Professionalism Avg</th>
+                <th>Timeliness Avg</th>
+                <th>Initiative Avg</th>
+                <th>Soft Skills Avg</th>
+                <th>Overall Avg</th>
+            </tr>
+            {% for name, avg in student_averages.items() %}
+            <tr>
+                <td>{{ name }}</td>
+                <td>{{ avg.quality }}</td>
+                <td>{{ avg.professionalism }}</td>
+                <td>{{ avg.timeliness }}</td>
+                <td>{{ avg.initiative }}</td>
+                <td>{{ avg.softskills }}</td>
+                <td>{{ avg.overall }}</td>
+            </tr>
+            {% endfor %}
+        </table>
+    </div>
+
+    {% if students_to_filter|length > 1 %}
     <div class="action-btns" style="justify-content: center; padding-bottom: 20px;">
         <p>Filters:</p>
         <select id="filter-student" onchange="filterFeedback()">
@@ -27,29 +51,7 @@
             {% endfor %}
         </select>
     </div>
-
-    <div id="student-averages" class="table-scroll" style="display: none; margin-bottom: 20px;">
-        <table class="admin-table">
-            <tr>
-                <th>Quality of Work Avg</th>
-                <th>Professionalism Avg</th>
-                <th>Timeliness Avg</th>
-                <th>Initiative Avg</th>
-                <th>Soft Skills Avg</th>
-                <th>Overall Avg</th>
-            </tr>
-            {% for name, avg in student_averages.items() %}
-            <tr class="avg-row" data-student="{{ name }}" style="display: none">
-                <td>{{ avg.quality }}</td>
-                <td>{{ avg.professionalism }}</td>
-                <td>{{ avg.timeliness }}</td>
-                <td>{{ avg.initiative }}</td>
-                <td>{{ avg.softskills }}</td>
-                <td>{{ avg.overall }}</td>
-            </tr>
-            {% endfor %}
-        </table>
-    </div>
+    {% endif %}
 
     <div class="table-scroll">
         <table id="feedback-table">
