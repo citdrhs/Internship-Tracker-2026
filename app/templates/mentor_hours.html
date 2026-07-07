@@ -162,16 +162,15 @@
                                     <button type="button" class="btn-view" data-date="{{ check[1] }}"
                                         data-hours="{{ check[2] }}" data-what="{{ check[3] }}"
                                         data-questions="{{ check[4] or '' }}" data-reflection="{{ check[5] or '' }}"
-                                        data-next="{{ check[6] or '' }}" onclick="openHoursDetail(this)">View More</button>
-                                    {% if check[10] %}
+                                        data-next="{{ check[6] or '' }}" onclick="openHoursDetail(this)">View
+                                        More</button>
+                                    {% if check[10] or check[4] %}
                                     <button type="button" class="btn-edit" data-response="{{ check[11] or '' }}"
                                         data-action="{{ url_for('respond_hours', progress_id=check[0]) }}"
-                                        onclick="openHoursMessage(this)">Clarify Rejection</button>
-                                    {% endif %}
-                                    {% if check[4] %}
-                                    <button type="button" class="btn-edit" data-response="{{ check[11] or '' }}"
-                                        data-action="{{ url_for('respond_hours', progress_id=check[0]) }}"
-                                        onclick="openHoursMessage(this)">Respond to Question</button>
+                                        onclick="openHoursMessage(this)">{% if check[10] and check[4] %}Respond to
+                                        Student Question <br> and/or Clarify Hour Rejection{% elif check[10] %}Clarify
+                                        Rejection{%
+                                        else %}Respond to Question{% endif %}</button>
                                     {% endif %}
                                 </div>
                             </td>
