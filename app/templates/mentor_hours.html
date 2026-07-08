@@ -8,25 +8,45 @@
         <h1>Hours Approval</h1>
     </header>
 
+    <!-- calendar  -->
+    <link href="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.15/index.global.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.15/index.global.min.js"></script>
 
     <section class="admin-panel">
-        <h2>Select Student</h2>
-        <form method="GET" action="{{ url_for('mentor_hours') }}" class="admin-student-select">
-            <label for="student_id">Student</label>
-            <div class="admin-select-row">
-                <select id="student_id" name="student_id" class="form-control" required>
-                    <option value="">Select a student</option>
-                    {% for student in students %}
-                    <option value="{{ student[0] }}" {% if selected_student_id==student[0]|string %}selected{% endif %}>
-                        {{ student[1] }}
-                    </option>
-                    {% endfor %}
-                </select>
-                <button type="submit">View Student</button>
-            </div>
-        </form>
+        <h2>Students</h2>
 
-        {% if selected_student %}
+        {% if students %}
+        <input type="text" id="table-search" placeholder="Search by name...">
+        <div class="admin-view-table" data-view="student">
+            <div class="table-scroll">
+                <table class="admin-table">
+                    <tr>
+                        <th>Name</th>
+                        <th>Entries Awaiting Approval</th>
+                        <th>Actions</th>
+                    </tr>
+                    {% for student in students %}
+                    <tr>
+                        <td>{{ student[1] }}</td>
+                        <td>{{ student[2] }}</td>
+                        <td>
+                            <div class="action-btns">
+                                <a href="{{ url_for('mentor_hours', student_id=student[0]) }}" class="btn-view">View</a>
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </table>
+            </div>
+        </div>
+        {% else %}
+        <p>You have no assigned students.</p>
+        {% endif %}
+    </section>
+
+    {% if selected_student %}
+    <dialog id="view-hours" class="modal modal-wide">
+        <form method="dialog" class="modal-x-form"><button class="modal-x" aria-label="Close">&times;</button></form>
         <div class="profile-card">
             <div class="profile-card-header">
                 <h2>{{ selected_student.first_name }} {{ selected_student.last_name }}</h2>
@@ -67,33 +87,6 @@
                     <p>No approved work hours for calendar display.</p>
                 </div>
                 {% endif %}
-                <script>
-                    document.addEventListener('DOMContentLoaded', function () {
-                        const calendarEl = document.getElementById('student-calendar');
-                        if (!calendarEl) return;
-                        const eventsJson = calendarEl.dataset.events || '[]';
-                        const events = JSON.parse(eventsJson)
-
-
-                        const calendar = new FullCalendar.Calendar(calendarEl, {
-                            initialView: 'dayGridMonth',
-                            headerToolbar: {
-                                left: 'prev,next today',
-                                center: 'title',
-                                right: ''
-                            },
-                            events: events,
-                            dayMaxEvents: true,
-                            height: 'auto',
-                            editable: false,
-                            eventDisplay: 'block',
-                            eventColor: '#6c63ff',
-                            eventTextColor: '#ffffff',
-                        });
-
-                        calendar.render();
-                    });
-                </script>
             </section>
 
             <section class="mentor-approval-section">
@@ -185,14 +178,10 @@
                 {% endif %}
             </section>
         </div>
-        {% else %}
-        <p>Select a student to view their hours and approve or reject entries.</p>
-        {% endif %}
-    </section>
+    </dialog>
+    {% endif %}
 
-    <!-- calendar  -->
-    <link href="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.15/index.global.min.css" rel="stylesheet">
-    <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.15/index.global.min.js"></script>
+    <div id="page-data" data-open-dialog="{{ open_dialog }}" hidden></div>
 </div>
 
 <dialog id="hours-detail" class="modal">

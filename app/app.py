@@ -731,6 +731,30 @@ def fetch_students_for_mentor(mentor_id):
         conn.close()
 
 
+def fetch_mentor_students_pending(mentor_id):
+    conn = get_db_connection()
+    try:
+        with conn:
+            ensure_progress_schema(conn)
+        with conn.cursor() as cur:
+            cur.execute(
+                """
+                SELECT s.id, CONCAT(s.first_name, ' ', s.last_name) AS full_name,
+                       COUNT(pc.id) FILTER (WHERE NOT pc.is_approved AND NOT pc.is_rejected) AS pending_count
+                FROM students s
+                JOIN mentor_assignments ma ON ma.student_id = s.id
+                LEFT JOIN progress_checks pc ON pc.student_id = s.id
+                WHERE ma.mentor_id = %s
+                GROUP BY s.id, s.first_name, s.last_name
+                ORDER BY s.first_name, s.last_name
+                """,
+                (mentor_id,),
+            )
+            return cur.fetchall()
+    finally:
+        conn.close()
+
+
 def is_email_available(email, current_role=None, current_id=None):
     account, role = find_account_by_email(email)
     if account is None:
@@ -1079,9 +1103,9 @@ def mentor_hours():
         flash("Unable to identify current mentor.", "danger")
         return redirect(url_for("home"))
 
-    # Fetch students assigned to this mentor
-    students = fetch_students_for_mentor(mentor_id)
-    
+    # Fetch students assigned to this mentor, with each one's pending-entry count for the table
+    students = fetch_mentor_students_pending(mentor_id)
+
     selected_student_id = request.args.get("student_id", "").strip()
     selected_student = None
     selected_progress_checks = []
@@ -1112,6 +1136,7 @@ def mentor_hours():
                 )
 
     pending_count = sum(1 for c in selected_progress_checks if not c[8] and not c[10])
+    open_dialog = "view-hours" if selected_student else ""
 
     return render_template(
         "mentor_hours.html",
@@ -1124,6 +1149,7 @@ def mentor_hours():
         selected_progress_events_json=json.dumps(selected_progress_events),
         weekly_totals=weekly_totals,
         monthly_totals=monthly_totals,
+        open_dialog=open_dialog,
     )
 
 @app.route("/intr/mentor/hours/<int:progress_id>/approve", methods=["POST"])
@@ -1345,6 +1371,12 @@ def admin():
     selected_student_id = request.args.get("student_id", "").strip()
     selected_mentor_id = request.args.get("mentor_id", "").strip()
     selected_admin_id = request.args.get("admin_id", "").strip()
+    selected_organization_id = request.args.get("organization_id", "").strip()
+    edit_student_id = request.args.get("edit_student_id", "").strip()
+    edit_mentor_id = request.args.get("edit_mentor_id", "").strip()
+    edit_admin_id = request.args.get("edit_admin_id", "").strip()
+    edit_organization_id = request.args.get("edit_organization_id", "").strip()
+    add_organization = request.args.get("add_organization", "").strip()
     selected_student = None
     selected_feedback = []
     selected_progress_events = []
@@ -1353,6 +1385,11 @@ def admin():
     selected_mentor = None
     selected_mentor_students = []
     selected_admin = None
+    selected_organization = None
+    edit_student = None
+    edit_mentor = None
+    edit_admin = None
+    edit_organization = None
 
     if selected_student_id:
         try:
@@ -1397,6 +1434,65 @@ def admin():
             if selected_admin is None:
                 flash("Admin not found.", "warning")
 
+    if selected_organization_id:
+        try:
+            selected_organization = fetch_organization_entry(int(selected_organization_id))
+        except ValueError:
+            selected_organization = None
+        if selected_organization is None:
+            flash("Organization not found.", "warning")
+
+    # Edit popups load a single record's fields when its Edit link is clicked
+    if edit_student_id:
+        try:
+            edit_student = fetch_student_entry(int(edit_student_id))
+        except ValueError:
+            edit_student = None
+    if edit_mentor_id:
+        try:
+            edit_mentor = fetch_mentor_entry(int(edit_mentor_id))
+        except ValueError:
+            edit_mentor = None
+    if edit_admin_id:
+        try:
+            edit_admin = Admin.query.get(int(edit_admin_id))
+        except ValueError:
+            edit_admin = None
+    if edit_organization_id:
+        try:
+            edit_organization = fetch_organization_entry(int(edit_organization_id))
+        except ValueError:
+            edit_organization = None
+
+    # Which table to show, and which popup (if any) to auto-open on load
+    active_view = "organization"
+    if selected_mentor or edit_mentor:
+        active_view = "mentor"
+    elif selected_student or edit_student:
+        active_view = "student"
+    elif selected_admin or edit_admin:
+        active_view = "admin"
+
+    open_dialog = ""
+    if selected_student:
+        open_dialog = "view-student"
+    elif edit_student:
+        open_dialog = "edit-student"
+    elif selected_mentor:
+        open_dialog = "view-mentor"
+    elif edit_mentor:
+        open_dialog = "edit-mentor"
+    elif selected_admin:
+        open_dialog = "view-admin"
+    elif edit_admin:
+        open_dialog = "edit-admin"
+    elif selected_organization:
+        open_dialog = "view-organization"
+    elif edit_organization:
+        open_dialog = "edit-organization"
+    elif add_organization:
+        open_dialog = "add-organization"
+
     return render_template(
         "admin.html",
         students=students,
@@ -1414,6 +1510,13 @@ def admin():
         selected_mentor_students=selected_mentor_students,
         selected_admin_id=selected_admin_id,
         selected_admin=selected_admin,
+        selected_organization=selected_organization,
+        edit_student=edit_student,
+        edit_mentor=edit_mentor,
+        edit_admin=edit_admin,
+        edit_organization=edit_organization,
+        active_view=active_view,
+        open_dialog=open_dialog,
         organizations=organizations,
         organization_text_fields=ORGANIZATION_TEXT_FIELDS,
         organization_checkbox_fields=ORGANIZATION_CHECKBOX_FIELDS,
@@ -1548,7 +1651,7 @@ def editOrganization(id):
             conn.close()
 
         flash("Organization updated.", "success")
-        return redirect(url_for("admin"))
+        return redirect(url_for("admin", organization_id=id))
 
     return render_template(
         "editorganization.html",

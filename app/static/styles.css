@@ -1097,6 +1097,36 @@ td .action-btns {
     gap: 12px;
 }
 
+/* Admin "Select a View" radios + searchable user tables */
+.view-select {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 16px;
+    margin-bottom: 14px;
+}
+
+#table-search {
+    width: min(320px, 100%);
+    margin-bottom: 14px;
+    padding: 10px 12px;
+}
+
+.edit-dialog-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 8px;
+    padding-right: 44px;
+}
+
+.student-link {
+    color: #1a0b66;
+    text-decoration: underline;
+    cursor: pointer;
+}
+
 .student-calendar-section {
     margin-top: 24px;
 }
@@ -1341,6 +1371,31 @@ footer a {
     width: min(560px, 92vw);
     max-height: 85vh;
     overflow: auto;
+    position: relative;
+}
+
+/* Wide popups: as wide as a normal page container, still scrollable */
+.modal-wide {
+    width: min(1500px, 94vw);
+}
+
+.modal-x-form {
+    position: absolute;
+    top: 8px;
+    right: 14px;
+}
+
+.modal-x {
+    background: none;
+    color: #555;
+    font-size: 1.6rem;
+    line-height: 1;
+    padding: 2px 8px;
+}
+
+.modal-x:hover {
+    background: none;
+    color: #000;
 }
 
 .modal::backdrop {

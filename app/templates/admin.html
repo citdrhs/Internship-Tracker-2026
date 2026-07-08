@@ -11,267 +11,305 @@
         <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.15/index.global.min.js"></script>
     </header>
 
-    <section class="admin-panel admin-organizations">
-        <h2>Manage Organizations</h2>
+    <section class="admin-panel">
+        <h2>Actions</h2>
+        <div class="action-btns" style="justify-content: flex-start; margin-bottom: 16px;">
+            <a href="{{ url_for('admin', add_organization=1) }}" class="btn-edit">Add Organization</a>
+        </div>
+        <p>To create a new Admin account Register with the code: 1805</p>
 
-        <details class="admin-org-details">
-            <summary>Add Organization</summary>
+        <h2>Select a View</h2>
+        <div class="view-select">
+            <label><input type="radio" name="admin-view" value="organization" {% if active_view=='organization'
+                    %}checked{% endif %}> Organization</label>
+            <label><input type="radio" name="admin-view" value="student" {% if active_view=='student' %}checked{% endif
+                    %}> Student</label>
+            <label><input type="radio" name="admin-view" value="mentor" {% if active_view=='mentor' %}checked{% endif
+                    %}> Mentor</label>
+            <label><input type="radio" name="admin-view" value="admin" {% if active_view=='admin' %}checked{% endif %}>
+                Admin</label>
+        </div>
 
-            <form method="POST" action="{{ url_for('admin') }}" class="admin-org-form">
-                {% set organization_name = '' %}
-                {% set organization_details = {} %}
-                {% include '_organization_form_fields.html' %}
-                <button type="submit">Submit</button>
-            </form>
-        </details>
+        <input type="text" id="table-search" placeholder="Search by name...">
 
-        <h3>Existing Organizations</h3>
-
-        {% if organizations %}
-            {% set selected_organization_id = request.args.get('organization_id', '') %}
-            <form method="GET" action="{{ url_for('admin') }}" class="admin-student-select">
-                <label for="organization_id">Organization</label>
-                <div class="admin-select-row">
-                    <select id="organization_id" name="organization_id" class="form-control" required>
-                        <option value="">Select an organization</option>
-                        {% for organization in organizations %}
-                            <option value="{{ organization[0] }}" {% if selected_organization_id == organization[0]|string %}selected{% endif %}>
-                                {{ organization[1] }}
-                            </option>
-                        {% endfor %}
-                    </select>
-                    <button type="submit">View Organization</button>
-                </div>
-            </form>
-
-            {% for organization in organizations if selected_organization_id == organization[0]|string %}
-                {% set organization_details = organization[2] or {} %}
-                <div class="profile-card">
-                    <div class="profile-card-header">
-                        <h2>{{ organization[1] }}</h2>
-                        <div class="action-btns">
-                            <a href="{{ url_for('editOrganization', id=organization[0]) }}" class="btn-edit">Edit</a>
-                            <form method="post" action="{{ url_for('deleteOrganization', id=organization[0]) }}">
-                                <button type="submit" class="btn-delete" onclick="return confirm('Delete this organization? Students, mentors, and admins will be unlinked from it.')">Delete</button>
-                            </form>
-                        </div>
-                    </div>
-                    <div class="profile-grid">
-                        {% for field in organization_text_fields %}
-                            <div>
-                                <p class="profile-label">{{ field.label }}</p>
-                                <p>{{ organization_details.get(field.name) or 'N/A' }}</p>
-                            </div>
-                        {% endfor %}
-                        <div>
-                            <p class="profile-label">Signature</p>
-                            <p>{{ organization_details.get('signature') or 'N/A' }}</p>
-                        </div>
-                        {% for field in organization_checkbox_fields %}
-                            <div>
-                                <p class="profile-label">{{ field.label }}</p>
-                                <p>{% if organization_details.get(field.name) %}Yes{% else %}No{% endif %}</p>
-                            </div>
-                        {% endfor %}
-                    </div>
-                </div>
-            {% endfor %}
-
+        <div class="admin-view-table" data-view="organization">
             <div class="table-scroll">
-            <table class="admin-table">
-                <tr>
-                    <th>Organization</th>
-                    <th>Actions</th>
-                </tr>
-                {% for organization in organizations %}
+                <table class="admin-table">
+                    <tr>
+                        <th>Organization</th>
+                        <th>Actions</th>
+                    </tr>
+                    {% for organization in organizations %}
                     <tr>
                         <td>{{ organization[1] }}</td>
                         <td>
                             <div class="action-btns">
-                                <a href="{{ url_for('editOrganization', id=organization[0]) }}" class="btn-edit">Edit</a>
-                                <form method="post" action="{{ url_for('deleteOrganization', id=organization[0]) }}">
-                                    <button type="submit" class="btn-delete" onclick="return confirm('Delete this organization? Students, mentors, and admins will be unlinked from it.')">Delete</button>
-                                </form>
+                                <a href="{{ url_for('admin', organization_id=organization[0]) }}"
+                                    class="btn-view">View</a>
+                                <a href="{{ url_for('admin', edit_organization_id=organization[0]) }}"
+                                    class="btn-edit">Edit</a>
                             </div>
                         </td>
                     </tr>
-                {% endfor %}
-            </table>
+                    {% endfor %}
+                </table>
             </div>
-        {% else %}
-            <p>No organizations added yet.</p>
-        {% endif %}
+        </div>
+
+        <div class="admin-view-table" data-view="student">
+            <div class="table-scroll">
+                <table class="admin-table">
+                    <tr>
+                        <th>Name</th>
+                        <th>Actions</th>
+                    </tr>
+                    {% for student in students %}
+                    <tr>
+                        <td>{{ student[1] }}</td>
+                        <td>
+                            <div class="action-btns">
+                                <a href="{{ url_for('admin', student_id=student[0]) }}" class="btn-view">View</a>
+                                <a href="{{ url_for('admin', edit_student_id=student[0]) }}" class="btn-edit">Edit</a>
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </table>
+            </div>
+        </div>
+
+        <div class="admin-view-table" data-view="mentor">
+            <div class="table-scroll">
+                <table class="admin-table">
+                    <tr>
+                        <th>Name</th>
+                        <th>Actions</th>
+                    </tr>
+                    {% for mentor in mentors %}
+                    <tr>
+                        <td>{{ mentor[1] }}</td>
+                        <td>
+                            <div class="action-btns">
+                                <a href="{{ url_for('admin', mentor_id=mentor[0]) }}" class="btn-view">View</a>
+                                <a href="{{ url_for('admin', edit_mentor_id=mentor[0]) }}" class="btn-edit">Edit</a>
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </table>
+            </div>
+        </div>
+
+        <div class="admin-view-table" data-view="admin">
+            <div class="table-scroll">
+                <table class="admin-table">
+                    <tr>
+                        <th>Name</th>
+                        <th>Actions</th>
+                    </tr>
+                    {% for admin in admins %}
+                    <tr>
+                        <td>{{ admin[1] }}</td>
+                        <td>
+                            <div class="action-btns">
+                                <a href="{{ url_for('admin', admin_id=admin[0]) }}" class="btn-view">View</a>
+                                <a href="{{ url_for('admin', edit_admin_id=admin[0]) }}" class="btn-edit">Edit</a>
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </table>
+            </div>
+        </div>
     </section>
 
-    
-    <details class="admin-panel" open>
-        <summary>Student Information</summary>
-        <form method="GET" action="{{ url_for('admin') }}" class="admin-student-select">
-            <label for="student_id">Student</label>
-            <div class="admin-select-row">
-                <select id="student_id" name="student_id" class="form-control" required>
-                    <option value="">Select a student</option>
-                    {% for student in students %}
-                        <option value="{{ student[0] }}" {% if selected_student_id == student[0]|string %}selected{% endif %}>
-                            {{ student[1] }}
-                        </option>
-                    {% endfor %}
-                </select>
-                <button type="submit">View Student</button>
-            </div>
+    {% if not edit_organization %}
+    <dialog id="add-organization" class="modal">
+        <form method="dialog" class="modal-x-form"><button class="modal-x" aria-label="Close">&times;</button></form>
+        <div class="edit-dialog-header">
+            <h2>Add Organization</h2>
+        </div>
+        <form method="POST" action="{{ url_for('admin') }}" class="admin-org-form">
+            {% set organization_name = '' %}
+            {% set organization_details = {} %}
+            {% include '_organization_form_fields.html' %}
+            <button type="submit">Submit</button>
         </form>
+    </dialog>
+    {% endif %}
 
-        {% if selected_student %}
-            <div class="profile-card">
-                <div class="profile-card-header">
-                    <h2>Student Profile</h2>
-                    <div class="action-btns">
-                        <a href="{{ url_for('editStudent', id=selected_student[0]) }}" class="btn-edit">Edit Student</a>
-                        <form method="post" action="{{ url_for('deleteStudent', id=selected_student[0]) }}">
-                            <button type="submit" class="btn-delete" onclick="return confirm('Delete this student? Their worklogs and feedback will be permanently deleted.')">Delete Student</button>
-                        </form>
-                    </div>
+    {% if selected_organization %}
+    <dialog id="view-organization" class="modal modal-wide">
+        <form method="dialog" class="modal-x-form"><button class="modal-x" aria-label="Close">&times;</button></form>
+        {% set organization_details = selected_organization[2] or {} %}
+        <div class="profile-card">
+            <div class="profile-card-header">
+                <h2>{{ selected_organization[1] }}</h2>
+            </div>
+            <div class="profile-grid">
+                {% for field in organization_text_fields %}
+                <div>
+                    <p class="profile-label">{{ field.label }}</p>
+                    <p>{{ organization_details.get(field.name) or 'N/A' }}</p>
                 </div>
-                <div class="profile-grid">
-                    <div>
-                        <p class="profile-label">Name</p>
-                        <p>{{ selected_student[1] }}</p>
-                    </div>
-                    <div>
-                        <p class="profile-label">Email</p>
-                        <p>{{ selected_student[2] }}</p>
-                    </div>
-                    <div>
-                        <p class="profile-label">Organization</p>
-                        <p>{{ selected_student[3] or 'N/A' }}</p>
-                    </div>
-                    <div>
-                        <p class="profile-label">Total Hours (Approved)</p>
-                        <p>{{ selected_student[4] | round(1) }}</p>
-                    </div>
-                    <div>
-                        <p class="profile-label">Pending Hours</p>
-                        <p>{{ selected_student[5] | round(1) }}</p>
-                    </div>
-                    <div>
-                        <p class="profile-label">Days Logged</p>
-                        <p>{{ selected_student[6] }}</p>
-                    </div>
-                    <div>
-                        <p class="profile-label">Mentor</p>
-                        <p>{{ selected_student[7] }}</p>
-                    </div>
-                    <div>
-                        <p class="profile-label">Mentor Organization</p>
-                        <p>{{ selected_student[8] or 'N/A' }}</p>
-                    </div>
+                {% endfor %}
+                <div>
+                    <p class="profile-label">Signature</p>
+                    <p>{{ organization_details.get('signature') or 'N/A' }}</p>
                 </div>
+                {% for field in organization_checkbox_fields %}
+                <div>
+                    <p class="profile-label">{{ field.label }}</p>
+                    <p>{% if organization_details.get(field.name) %}Yes{% else %}No{% endif %}</p>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </dialog>
+    {% endif %}
 
-                <section class="student-calendar-section">
-                    <h3>Work Hours Calendar</h3>
-                    {% if selected_progress_events %}
-                        <div class="calendar-grid">
-                            <div id="student-calendar" data-events='{{ selected_progress_events_json|safe }}'></div>
-                            <aside class="calendar-sidebar">
-                                <div class="summary-card">
-                                    <h4>Weekly Totals</h4>
-                                    <ul>
-                                        {% for item in weekly_totals %}
-                                            <li><strong>{{ item.label }}</strong>: {{ item.hours }} hrs</li>
-                                        {% endfor %}
-                                    </ul>
-                                </div>
-                                <div class="summary-card">
-                                    <h4>Monthly Totals</h4>
-                                    <ul>
-                                        {% for item in monthly_totals %}
-                                            <li><strong>{{ item.label }}</strong>: {{ item.hours }} hrs</li>
-                                        {% endfor %}
-                                    </ul>
-                                </div>
-                            </aside>
+    {% if edit_organization %}
+    <dialog id="edit-organization" class="modal">
+        <form method="dialog" class="modal-x-form"><button class="modal-x" aria-label="Close">&times;</button></form>
+        <div class="edit-dialog-header">
+            <h2>Edit Organization</h2>
+            <form method="post" action="{{ url_for('deleteOrganization', id=edit_organization[0]) }}">
+                <button type="submit" class="btn-delete"
+                    onclick="return confirm('Delete this organization? Students, mentors, and admins will be unlinked from it.')">Delete
+                    Organization</button>
+            </form>
+        </div>
+        <form method="POST" action="{{ url_for('editOrganization', id=edit_organization[0]) }}" class="admin-org-form">
+            {% set organization_name = edit_organization[1] %}
+            {% set organization_details = edit_organization[2] or {} %}
+            {% include '_organization_form_fields.html' %}
+            <button type="submit">Save Changes</button>
+        </form>
+    </dialog>
+    {% endif %}
+
+    {% if selected_student %}
+    <dialog id="view-student" class="modal modal-wide">
+        <form method="dialog" class="modal-x-form"><button class="modal-x" aria-label="Close">&times;</button></form>
+        <div class="profile-card">
+            <div class="profile-card-header">
+                <h2>Student Profile</h2>
+            </div>
+            <div class="profile-grid">
+                <div>
+                    <p class="profile-label">Name</p>
+                    <p>{{ selected_student[1] }}</p>
+                </div>
+                <div>
+                    <p class="profile-label">Email</p>
+                    <p>{{ selected_student[2] }}</p>
+                </div>
+                <div>
+                    <p class="profile-label">Total Hours (Approved)</p>
+                    <p>{{ selected_student[4] | round(1) }}</p>
+                </div>
+                <div>
+                    <p class="profile-label">Pending Hours</p>
+                    <p>{{ selected_student[5] | round(1) }}</p>
+                </div>
+                <div>
+                    <p class="profile-label">Days Logged</p>
+                    <p>{{ selected_student[6] }}</p>
+                </div>
+                <div>
+                    <p class="profile-label">Mentor</p>
+                    <p>{{ selected_student[7] }}</p>
+                </div>
+                <div>
+                    <p class="profile-label">Organization</p>
+                    <p>{{ selected_student[8] or 'N/A' }}</p>
+                </div>
+            </div>
+
+            <section class="student-calendar-section">
+                <h3>Work Hours Calendar</h3>
+                {% if selected_progress_events %}
+                <div class="calendar-grid">
+                    <div id="student-calendar" data-events='{{ selected_progress_events_json|safe }}'></div>
+                    <aside class="calendar-sidebar">
+                        <div class="summary-card">
+                            <h4>Weekly Totals</h4>
+                            <ul>
+                                {% for item in weekly_totals %}
+                                <li><strong>{{ item.label }}</strong>: {{ item.hours }} hrs</li>
+                                {% endfor %}
+                            </ul>
                         </div>
-                    {% else %}
-                        <div class="empty-state">
-                            <p>No work hours logged yet for calendar display.</p>
+                        <div class="summary-card">
+                            <h4>Monthly Totals</h4>
+                            <ul>
+                                {% for item in monthly_totals %}
+                                <li><strong>{{ item.label }}</strong>: {{ item.hours }} hrs</li>
+                                {% endfor %}
+                            </ul>
                         </div>
-                    {% endif %}
-                    <script>
-                        document.addEventListener('DOMContentLoaded', function () {
-                            const calendarEl = document.getElementById('student-calendar');
-                            if (!calendarEl) return;
-                            const eventsJson = calendarEl.dataset.events || '[]';
-                            const events = JSON.parse(eventsJson)
-                            
+                    </aside>
+                </div>
+                {% else %}
+                <div class="empty-state">
+                    <p>No work hours logged yet for calendar display.</p>
+                </div>
+                {% endif %}
+            </section>
 
-                            const calendar = new FullCalendar.Calendar(calendarEl, {
-                                initialView: 'dayGridMonth',
-                                headerToolbar: {
-                                    left: 'prev,next today',
-                                    center: 'title',
-                                    right: ''
-                                },
-                                events: events,
-                                dayMaxEvents: true,
-                                height: 'auto',
-                                editable: false,
-                                eventDisplay: 'block',
-                                eventColor: '#6c63ff',
-                                eventTextColor: '#ffffff',
-                            });
+            <section class="student-feedback-section">
+                <h3>Weekly Feedback</h3>
+                {% if selected_feedback %}
+                <div class="table-scroll">
+                    <table class="admin-table">
+                        <tr>
+                            <th>Week</th>
+                            <th>Quality</th>
+                            <th>Professionalism</th>
+                            <th>Timeliness</th>
+                            <th>Initiative</th>
+                            <th>Soft Skills</th>
+                            <th>Overall</th>
+                            <th>Feedback</th>
+                            <th>Action Items</th>
+                            <th>Focus Areas</th>
+                            <th>View</th>
+                        </tr>
+                        {% for feedback in selected_feedback %}
+                        <tr>
+                            <td>{{ feedback[2] }}</td>
+                            <td>{{ feedback[7] }}</td>
+                            <td>{{ feedback[8] }}</td>
+                            <td>{{ feedback[9] }}</td>
+                            <td>{{ feedback[10] }}</td>
+                            <td>{{ feedback[11] }}</td>
+                            <td>
+                                <div class="rating-badge">{{ feedback[6] }}<span>/5</span></div>
+                            </td>
+                            <td>
+                                <div class="cell-scroll">{{ feedback[3] }}</div>
+                            </td>
+                            <td>
+                                <div class="cell-scroll">{{ feedback[4] or '' }}</div>
+                            </td>
+                            <td>
+                                <div class="cell-scroll">{{ feedback[5] or '' }}</div>
+                            </td>
+                            <td><button type="button" class="btn-view" onclick="openRowModal(this)">View</button></td>
+                        </tr>
+                        {% endfor %}
+                    </table>
+                </div>
+                {% else %}
+                <div class="empty-state">
+                    <p>No weekly feedback available for this student.</p>
+                </div>
+                {% endif %}
+            </section>
 
-                            calendar.render();
-                        });
-                    </script>
-                </section>
-
-                <section class="student-feedback-section">
-                    <h3>Weekly Feedback</h3>
-                    {% if selected_feedback %}
-                        <div class="table-scroll">
-                        <table class="admin-table">
-                            <tr>
-                                <th>Week</th>
-                                <th>Quality</th>
-                                <th>Professionalism</th>
-                                <th>Timeliness</th>
-                                <th>Initiative</th>
-                                <th>Soft Skills</th>
-                                <th>Overall</th>
-                                <th>Feedback</th>
-                                <th>Action Items</th>
-                                <th>Focus Areas</th>
-                                <th>View</th>
-                            </tr>
-                            {% for feedback in selected_feedback %}
-                                <tr>
-                                    <td>{{ feedback[2] }}</td>
-                                    <td>{{ feedback[7] }}</td>
-                                    <td>{{ feedback[8] }}</td>
-                                    <td>{{ feedback[9] }}</td>
-                                    <td>{{ feedback[10] }}</td>
-                                    <td>{{ feedback[11] }}</td>
-                                    <td>
-                                        <div class="rating-badge">{{ feedback[6] }}<span>/5</span></div>
-                                    </td>
-                                    <td><div class="cell-scroll">{{ feedback[3] }}</div></td>
-                                    <td><div class="cell-scroll">{{ feedback[4] or '' }}</div></td>
-                                    <td><div class="cell-scroll">{{ feedback[5] or '' }}</div></td>
-                                    <td><button type="button" class="btn-view" onclick="openRowModal(this)">View</button></td>
-                                </tr>
-                            {% endfor %}
-                        </table>
-                        </div>
-                    {% else %}
-                        <div class="empty-state">
-                            <p>No weekly feedback available for this student.</p>
-                        </div>
-                    {% endif %}
-                </section>
-
-                <section class="student-averages">
-                    <h3>Overall Feedback Averages</h3>
-                    <div class="table-scroll">
+            <section class="student-averages">
+                <h3>Overall Feedback Averages</h3>
+                <div class="table-scroll">
                     <table class="admin-table">
                         <tr>
                             <th>Quality of Work Avg</th>
@@ -290,117 +328,183 @@
                             <td>{{ selected_student[14] if selected_student[14] is not none else 'No ratings' }}</td>
                         </tr>
                     </table>
-                    </div>
-                </section>
-            </div>
-        {% else %}
-            <p>Select a student to view their profile, feedback, and averages.</p>
-        {% endif %}
-    </details>
+                </div>
+            </section>
+        </div>
+    </dialog>
+    {% endif %}
 
-    <details class="admin-panel" open>
-        <summary>Mentor Information</summary>
-        <form method="GET" action="{{ url_for('admin') }}" class="admin-student-select">
-            <label for="mentor_id">Mentor</label>
-            <div class="admin-select-row">
-                <select id="mentor_id" name="mentor_id" class="form-control" required>
-                    <option value="">Select a mentor</option>
+    {% if edit_student %}
+    <dialog id="edit-student" class="modal">
+        <form method="dialog" class="modal-x-form"><button class="modal-x" aria-label="Close">&times;</button></form>
+        <div class="edit-dialog-header">
+            <h2>Edit Student</h2>
+            <form method="post" action="{{ url_for('deleteStudent', id=edit_student.id) }}">
+                <button type="submit" class="btn-delete"
+                    onclick="return confirm('Delete this student? Their worklogs and feedback will be permanently deleted.')">Delete
+                    Student</button>
+            </form>
+        </div>
+        <form method="POST" action="{{ url_for('editStudent', id=edit_student.id) }}" class="admin-edit-form">
+            <div class="form-row">
+                <label for="student-email">Email</label>
+                <input type="email" id="student-email" name="email" value="{{ edit_student.email }}" required>
+            </div>
+            <div class="form-row">
+                <label for="student-first">First Name</label>
+                <input type="text" id="student-first" name="first_name" value="{{ edit_student.first_name }}" required>
+            </div>
+            <div class="form-row">
+                <label for="student-last">Last Name</label>
+                <input type="text" id="student-last" name="last_name" value="{{ edit_student.last_name }}" required>
+            </div>
+            <div class="form-row">
+                <label for="student-mentor">Assigned Mentor</label>
+                <select id="student-mentor" name="mentor_id">
+                    <option value="">No mentor</option>
                     {% for mentor in mentors %}
-                        <option value="{{ mentor[0] }}" {% if selected_mentor_id == mentor[0]|string %}selected{% endif %}>
-                            {{ mentor[1] }}
-                        </option>
+                    <option value="{{ mentor[0] }}" {% if edit_student.mentor_id==mentor[0] %}selected{% endif %}>{{
+                        mentor[1] }}</option>
                     {% endfor %}
                 </select>
-                <button type="submit">View Mentor</button>
+            </div>
+            <div class="form-actions">
+                <button type="submit">Save Changes</button>
             </div>
         </form>
+    </dialog>
+    {% endif %}
 
-        {% if selected_mentor %}
-            <div class="profile-card">
-                <div class="profile-card-header">
-                    <h2>Mentor Profile</h2>
-                    <div class="action-btns">
-                        <a href="{{ url_for('editMentor', id=selected_mentor.id) }}" class="btn-edit">Edit Mentor</a>
-                        <form method="post" action="{{ url_for('deleteMentor', id=selected_mentor.id) }}">
-                            <button type="submit" class="btn-delete" onclick="return confirm('Delete this mentor? Their assigned students will be unassigned.')">Delete Mentor</button>
-                        </form>
-                    </div>
+    {% if selected_mentor %}
+    <dialog id="view-mentor" class="modal modal-wide">
+        <form method="dialog" class="modal-x-form"><button class="modal-x" aria-label="Close">&times;</button></form>
+        <div class="profile-card">
+            <div class="profile-card-header">
+                <h2>Mentor Profile</h2>
+            </div>
+            <div class="profile-grid">
+                <div>
+                    <p class="profile-label">Name</p>
+                    <p>{{ selected_mentor.first_name }} {{ selected_mentor.last_name }}</p>
                 </div>
-                <div class="profile-grid">
-                    <div>
-                        <p class="profile-label">Name</p>
-                        <p>{{ selected_mentor.first_name }} {{ selected_mentor.last_name }}</p>
-                    </div>
-                    <div>
-                        <p class="profile-label">Email</p>
-                        <p>{{ selected_mentor.email }}</p>
-                    </div>
-                    <div>
-                        <p class="profile-label">Organization</p>
-                        <p>{{ selected_mentor.organization or 'N/A' }}</p>
-                    </div>
-                    <div>
-                        <p class="profile-label">Assigned Students</p>
-                        <p>
-                            {% if selected_mentor_students %}
-                                {% for student in selected_mentor_students %}
-                                    {{ student[1] }}{% if not loop.last %}, {% endif %}
-                                {% endfor %}
-                            {% else %}
-                                No students assigned.
-                            {% endif %}
-                        </p>
-                    </div>
+                <div>
+                    <p class="profile-label">Email</p>
+                    <p>{{ selected_mentor.email }}</p>
+                </div>
+                <div>
+                    <p class="profile-label">Organization</p>
+                    <p>{{ selected_mentor.organization or 'N/A' }}</p>
+                </div>
+                <div>
+                    <p class="profile-label">Assigned Students</p>
+                    <p>
+                        {% if selected_mentor_students %}
+                        {% for student in selected_mentor_students %}
+                        <a href="{{ url_for('admin', mentor_id=selected_mentor.id, student_id=student[0]) }}"
+                            class="student-link">{{ student[1] }}</a>{% if not loop.last %}, {% endif %}
+                        {% endfor %}
+                        {% else %}
+                        No students assigned.
+                        {% endif %}
+                    </p>
                 </div>
             </div>
-        {% else %}
-            <p>Select a mentor to view their profile and edit their information.</p>
-        {% endif %}
-    </details>
+        </div>
+    </dialog>
+    {% endif %}
 
-    <details class="admin-panel" open>
-        <summary>Admin Information</summary>
-        <form method="GET" action="{{ url_for('admin') }}" class="admin-student-select">
-            <label for="admin_id">Admin</label>
-            <div class="admin-select-row">
-                <select id="admin_id" name="admin_id" class="form-control" required>
-                    <option value="">Select an admin</option>
-                    {% for admin in admins %}
-                        <option value="{{ admin[0] }}" {% if selected_admin_id == admin[0]|string %}selected{% endif %}>
-                            {{ admin[1] }}
-                        </option>
+    {% if edit_mentor %}
+    <dialog id="edit-mentor" class="modal">
+        <form method="dialog" class="modal-x-form"><button class="modal-x" aria-label="Close">&times;</button></form>
+        <div class="edit-dialog-header">
+            <h2>Edit Mentor</h2>
+            <form method="post" action="{{ url_for('deleteMentor', id=edit_mentor.id) }}">
+                <button type="submit" class="btn-delete"
+                    onclick="return confirm('Delete this mentor? Their assigned students will be unassigned.')">Delete
+                    Mentor</button>
+            </form>
+        </div>
+        <form method="POST" action="{{ url_for('editMentor', id=edit_mentor.id) }}" class="admin-edit-form">
+            <div class="form-row">
+                <label for="mentor-email">Email</label>
+                <input type="email" id="mentor-email" name="email" value="{{ edit_mentor.email }}" required>
+            </div>
+            <div class="form-row">
+                <label for="mentor-first">First Name</label>
+                <input type="text" id="mentor-first" name="first_name" value="{{ edit_mentor.first_name }}" required>
+            </div>
+            <div class="form-row">
+                <label for="mentor-last">Last Name</label>
+                <input type="text" id="mentor-last" name="last_name" value="{{ edit_mentor.last_name }}" required>
+            </div>
+            <div class="form-row">
+                <label for="mentor-org">Organization</label>
+                <select id="mentor-org" name="organization_id">
+                    <option value="">No organization</option>
+                    {% for organization in organizations %}
+                    <option value="{{ organization[0] }}" {% if edit_mentor.organization_id==organization[0]
+                        %}selected{% endif %}>{{ organization[1] }}</option>
                     {% endfor %}
                 </select>
-                <button type="submit">View Admin</button>
+            </div>
+            <div class="form-actions">
+                <button type="submit">Save Changes</button>
             </div>
         </form>
+    </dialog>
+    {% endif %}
 
-        {% if selected_admin %}
-            <div class="profile-card">
-                <div class="profile-card-header">
-                    <h2>Admin Profile</h2>
-                    <div class="action-btns">
-                        <a href="{{ url_for('editAdmin', id=selected_admin.id) }}" class="btn-edit">Edit Admin</a>
-                        <form method="post" action="{{ url_for('deleteAdmin', id=selected_admin.id) }}">
-                            <button type="submit" class="btn-delete" onclick="return confirm('Delete this admin account?')">Delete Admin</button>
-                        </form>
-                    </div>
+    {% if selected_admin %}
+    <dialog id="view-admin" class="modal modal-wide">
+        <form method="dialog" class="modal-x-form"><button class="modal-x" aria-label="Close">&times;</button></form>
+        <div class="profile-card">
+            <div class="profile-card-header">
+                <h2>Admin Profile</h2>
+            </div>
+            <div class="profile-grid">
+                <div>
+                    <p class="profile-label">Name</p>
+                    <p>{{ selected_admin.first_name }} {{ selected_admin.last_name }}</p>
                 </div>
-                <div class="profile-grid">
-                    <div>
-                        <p class="profile-label">Name</p>
-                        <p>{{ selected_admin.first_name }} {{ selected_admin.last_name }}</p>
-                    </div>
-                    <div>
-                        <p class="profile-label">Email</p>
-                        <p>{{ selected_admin.email }}</p>
-                    </div>
+                <div>
+                    <p class="profile-label">Email</p>
+                    <p>{{ selected_admin.email }}</p>
                 </div>
             </div>
-        {% else %}
-            <p>Select an admin to view and edit their information.</p>
-        {% endif %}
-    </details>
+        </div>
+    </dialog>
+    {% endif %}
 
+    {% if edit_admin %}
+    <dialog id="edit-admin" class="modal">
+        <form method="dialog" class="modal-x-form"><button class="modal-x" aria-label="Close">&times;</button></form>
+        <div class="edit-dialog-header">
+            <h2>Edit Admin</h2>
+            <form method="post" action="{{ url_for('deleteAdmin', id=edit_admin.id) }}">
+                <button type="submit" class="btn-delete" onclick="return confirm('Delete this admin account?')">Delete
+                    Admin</button>
+            </form>
+        </div>
+        <form method="POST" action="{{ url_for('editAdmin', id=edit_admin.id) }}" class="admin-edit-form">
+            <div class="form-row">
+                <label for="admin-email">Email</label>
+                <input type="email" id="admin-email" name="email" value="{{ edit_admin.email }}" required>
+            </div>
+            <div class="form-row">
+                <label for="admin-first">First Name</label>
+                <input type="text" id="admin-first" name="first_name" value="{{ edit_admin.first_name }}" required>
+            </div>
+            <div class="form-row">
+                <label for="admin-last">Last Name</label>
+                <input type="text" id="admin-last" name="last_name" value="{{ edit_admin.last_name }}" required>
+            </div>
+            <div class="form-actions">
+                <button type="submit">Save Changes</button>
+            </div>
+        </form>
+    </dialog>
+    {% endif %}
+
+    <div id="page-data" data-open-dialog="{{ open_dialog }}" hidden></div>
 </div>
 {% endblock %}
