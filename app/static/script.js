@@ -148,3 +148,69 @@ function openHoursMessage(button) {
         });
     }
 });
+
+// Admin/mentor user tables: show the table matching the selected "view" radio
+const viewRadios = document.querySelectorAll("input[name='admin-view']");
+if (viewRadios.length) {
+    const showView = (value) => {
+        document.querySelectorAll(".admin-view-table").forEach((table) => {
+            table.style.display = table.dataset.view === value ? "" : "none";
+        });
+    };
+    viewRadios.forEach((radio) => radio.addEventListener("change", () => showView(radio.value)));
+    const checked = document.querySelector("input[name='admin-view']:checked");
+    if (checked) showView(checked.value);
+}
+
+// Filter the user table rows by name
+const tableSearch = document.getElementById("table-search");
+if (tableSearch) {
+    tableSearch.addEventListener("input", () => {
+        const query = tableSearch.value.trim().toLowerCase();
+        document.querySelectorAll(".admin-view-table table tr").forEach((row) => {
+            const nameCell = row.querySelector("td");
+            if (!nameCell) return;
+            row.style.display = nameCell.textContent.toLowerCase().includes(query) ? "" : "none";
+        });
+    });
+}
+
+// Build the approved-hours calendar (only present inside an open view popup)
+function initStudentCalendar() {
+    const calendarEl = document.getElementById("student-calendar");
+    if (!calendarEl || typeof FullCalendar === "undefined" || calendarEl.dataset.rendered) return;
+    const events = JSON.parse(calendarEl.dataset.events || "[]");
+    const calendar = new FullCalendar.Calendar(calendarEl, {
+        initialView: "dayGridMonth",
+        headerToolbar: { left: "prev,next today", center: "title", right: "" },
+        events: events,
+        dayMaxEvents: true,
+        height: "auto",
+        eventColor: "#6c63ff",
+        eventTextColor: "#ffffff",
+    });
+    calendar.render();
+    calendarEl.dataset.rendered = "1";
+}
+
+// A View/Edit link reloads with that record selected; auto-open its popup
+const pageData = document.getElementById("page-data");
+if (pageData && pageData.dataset.openDialog) {
+    const openId = pageData.dataset.openDialog;
+    if (openId === "view-student") {
+        const mentorDialog = document.getElementById("view-mentor");
+        if (mentorDialog) mentorDialog.showModal();
+    }
+    const dialog = document.getElementById(openId);
+    if (dialog) {
+        dialog.showModal();
+        initStudentCalendar();
+    }
+}
+
+// Close a wide popup by clicking outside it
+document.querySelectorAll("dialog.modal-wide").forEach((dialog) => {
+    dialog.addEventListener("click", (e) => {
+        if (e.target === dialog) dialog.close();
+    });
+});
