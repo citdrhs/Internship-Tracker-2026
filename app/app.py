@@ -1522,6 +1522,40 @@ def admin():
         organization_checkbox_fields=ORGANIZATION_CHECKBOX_FIELDS,
     )
 
+@app.route("/intr/admin/impersonate/<int:mentor_id>", methods=["POST"])
+def impersonate(mentor_id):
+    login_redirect = require_login()
+    if login_redirect:
+        return login_redirect
+
+    if not session.get("is_admin"):
+        return redirect(url_for("home"))
+
+    mentor = fetch_mentor_entry(mentor_id)
+    if mentor is None:
+        flash("Mentor not found.", "warning")
+        return redirect(url_for("admin"))
+
+    # Remember the real admin, then make this browser's session act as the mentor
+    session["impersonator_email"] = session["email"]
+    session["impersonating_name"] = f"{mentor['first_name']} {mentor['last_name']}"
+    session["email"] = mentor["email"]
+    session["is_admin"] = False
+    session["is_mentor"] = True
+    flash(f"You are now acting as {mentor['first_name']} {mentor['last_name']}.", "info")
+    return redirect(url_for("mentor_hours"))
+
+@app.route("/intr/admin/stop-impersonating", methods=["POST"])
+def stop_impersonating():
+    admin_email = session.pop("impersonator_email", None)
+    session.pop("impersonating_name", None)
+    if admin_email:
+        session["email"] = admin_email
+        session["is_admin"] = True
+        session["is_mentor"] = False
+        flash("Returned to your admin account.", "info")
+    return redirect(url_for("admin"))
+
 @app.route("/intr/admin/admins/<int:id>/edit", methods=["GET", "POST"])
 def editAdmin(id):
     login_redirect = require_login()

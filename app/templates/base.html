@@ -10,6 +10,15 @@
 
 <body>
 
+    {% if session.get('impersonator_email') %}
+    <div id="impersonation-banner">
+        <span>Acting as <strong>{{ session.get('impersonating_name') }}</strong></span>
+        <form method="post" action="{{ url_for('stop_impersonating') }}">
+            <button type="submit">Return to admin</button>
+        </form>
+    </div>
+    {% endif %}
+
     {% with messages = get_flashed_messages(with_categories=true) %}
         {% if messages %}
         <div id="toast-container">

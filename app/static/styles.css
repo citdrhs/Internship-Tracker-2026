@@ -1127,6 +1127,18 @@ td .action-btns {
     cursor: pointer;
 }
 
+/* Banner shown while an admin is acting as a mentor */
+#impersonation-banner {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 16px;
+    background-color: #ffcc00;
+    color: #000;
+    padding: 8px 16px;
+    font-weight: 600;
+}
+
 .student-calendar-section {
     margin-top: 24px;
 }

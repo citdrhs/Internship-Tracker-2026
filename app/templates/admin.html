@@ -92,6 +92,10 @@
                             <div class="action-btns">
                                 <a href="{{ url_for('admin', mentor_id=mentor[0]) }}" class="btn-view">View</a>
                                 <a href="{{ url_for('admin', edit_mentor_id=mentor[0]) }}" class="btn-edit">Edit</a>
+                                <form method="post" action="{{ url_for('impersonate', mentor_id=mentor[0]) }}">
+                                    <button type="submit" class="btn-edit"
+                                        onclick="return confirm('Log in as {{ mentor[1] }}? You will act as them until you click Return to admin.')">Log in as this mentor</button>
+                                </form>
                             </div>
                         </td>
                     </tr>
