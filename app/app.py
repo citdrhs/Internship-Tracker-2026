@@ -7,9 +7,10 @@ import psycopg2
 from better_profanity import profanity
 from dotenv import load_dotenv
 from datetime import datetime
-from flask import Flask, flash, redirect, render_template, request, session, url_for
+from flask import Flask, Response, flash, redirect, render_template, request, session, url_for
 from flask_bcrypt import Bcrypt
 from flask_mail import Mail, Message
+from werkzeug.utils import secure_filename
 from app.forms import ForgotPasswordForm, LoginForm, RegisterForm, ResetPasswordForm
 from itsdangerous import URLSafeTimedSerializer
 from app.models import Admin, Mentor, PendingUser, Student, MentorAssignment, db
@@ -24,6 +25,7 @@ profanity.load_censor_words()
 DB_CONNECT_TIMEOUT = int(os.environ.get("DB_CONNECT_TIMEOUT", "10"))
 DB_POOL_RECYCLE_SECONDS = int(os.environ.get("DB_POOL_RECYCLE_SECONDS", "300"))
 DB_POOL_TIMEOUT_SECONDS = int(os.environ.get("DB_POOL_TIMEOUT_SECONDS", "30"))
+ALLOWED_DOC_EXTENSIONS = {"pdf", "png", "jpg", "jpeg", "gif", "doc", "docx", "txt"}
 
 ORGANIZATION_TEXT_FIELDS = [
     {
@@ -207,6 +209,7 @@ app = Flask(
     static_url_path="/static",
 )
 app.config["SECRET_KEY"] = os.environ.get("SECRET_KEY", "Internship 2026-OD")
+app.config["MAX_CONTENT_LENGTH"] = 25 * 1024 * 1024
 app.config["SQLALCHEMY_DATABASE_URI"] = build_sqlalchemy_uri()
 app.config["SQLALCHEMY_ENGINE_OPTIONS"] = {
     "pool_pre_ping": True,
@@ -1320,6 +1323,152 @@ def respond_hours(progress_id):
     finally:
         conn.close()
 
+def fetch_student_documents(student_id):
+    conn = get_db_connection()
+    try:
+        with conn.cursor() as cur:
+            cur.execute(
+                "SELECT id, url, original_name, content_type "
+                "FROM student_documents WHERE student_id = %s ORDER BY created_at",
+                (student_id,),
+            )
+            documents = []
+            for document_id, url, original_name, content_type in cur.fetchall():
+                content_type = content_type or ""
+                is_link = url is not None
+                is_image = content_type.startswith("image/")
+                # previewable = can be shown on the page (image, PDF, or a link)
+                previewable = is_link or is_image or content_type == "application/pdf"
+                documents.append({
+                    "id": document_id,
+                    "url": url,
+                    "original_name": original_name,
+                    "is_link": is_link,
+                    "is_image": is_image,
+                    "previewable": previewable,
+                })
+            return documents
+    finally:
+        conn.close()
+
+def add_student_document_link(student_id, url):
+    conn = get_db_connection()
+    try:
+        with conn:
+            with conn.cursor() as cur:
+                cur.execute(
+                    "INSERT INTO student_documents (student_id, url) VALUES (%s, %s)",
+                    (student_id, url),
+                )
+    finally:
+        conn.close()
+
+def add_student_document_file(student_id, original_name, content_type, file_data):
+    conn = get_db_connection()
+    try:
+        with conn:
+            with conn.cursor() as cur:
+                cur.execute(
+                    "INSERT INTO student_documents (student_id, original_name, content_type, file_data) "
+                    "VALUES (%s, %s, %s, %s)",
+                    (student_id, original_name, content_type, psycopg2.Binary(file_data)),
+                )
+    finally:
+        conn.close()
+
+def fetch_document_file(document_id):
+    conn = get_db_connection()
+    try:
+        with conn.cursor() as cur:
+            cur.execute(
+                "SELECT original_name, content_type, file_data "
+                "FROM student_documents WHERE id = %s",
+                (document_id,),
+            )
+            row = cur.fetchone()
+            if not row or row[2] is None:
+                return None
+            original_name, content_type, file_data = row
+            return original_name, content_type, bytes(file_data)
+    finally:
+        conn.close()
+
+def delete_student_document_row(document_id):
+    conn = get_db_connection()
+    try:
+        with conn:
+            with conn.cursor() as cur:
+                cur.execute(
+                    "DELETE FROM student_documents WHERE id = %s RETURNING student_id",
+                    (document_id,),
+                )
+                row = cur.fetchone()
+                return row[0] if row else None
+    finally:
+        conn.close()
+
+@app.route("/intr/admin/students/<int:student_id>/documents/add", methods=["POST"])
+def add_student_document(student_id):
+    login_redirect = require_login()
+    if login_redirect:
+        return login_redirect
+    if not session.get("is_admin"):
+        return redirect(url_for("home"))
+
+    upload = request.files.get("file")
+    link = request.form.get("url", "").strip()
+
+    if upload and upload.filename:
+        filename = secure_filename(upload.filename)
+        extension = filename.rsplit(".", 1)[-1].lower() if "." in filename else ""
+        if extension not in ALLOWED_DOC_EXTENSIONS:
+            flash("That file type isn't allowed. Upload a PDF, image, or Word document.", "warning")
+        else:
+            file_data = upload.read()
+            content_type = upload.mimetype or "application/octet-stream"
+            add_student_document_file(student_id, filename, content_type, file_data)
+            flash("File added.", "success")
+    elif link:
+        add_student_document_link(student_id, link)
+        flash("Link added.", "success")
+    else:
+        flash("Choose a file or paste a link first.", "warning")
+
+    return redirect(url_for("admin", docs_student_id=student_id))
+
+@app.route("/intr/admin/student-docs/<int:document_id>/file")
+def serve_student_document(document_id):
+    login_redirect = require_login()
+    if login_redirect:
+        return login_redirect
+    if not session.get("is_admin"):
+        return redirect(url_for("home"))
+
+    document = fetch_document_file(document_id)
+    if not document:
+        return redirect(url_for("admin"))
+    original_name, content_type, file_data = document
+    return Response(
+        file_data,
+        mimetype=content_type or "application/octet-stream",
+        # "inline" so PDFs and images render in the popup; other types download.
+        headers={"Content-Disposition": 'inline; filename="%s"' % (original_name or "document")},
+    )
+
+@app.route("/intr/admin/student-docs/<int:document_id>/delete", methods=["POST"])
+def delete_student_document(document_id):
+    login_redirect = require_login()
+    if login_redirect:
+        return login_redirect
+    if not session.get("is_admin"):
+        return redirect(url_for("home"))
+
+    student_id = delete_student_document_row(document_id)
+    flash("Document removed.", "success")
+    if student_id:
+        return redirect(url_for("admin", docs_student_id=student_id))
+    return redirect(url_for("admin"))
+
 # Each admin stat is (flag_name, label). flag_name has to match a key returned by
 # compute_student_flags. These stats are meant to show students who need attention
 STAT_CATEGORIES = [
@@ -1524,7 +1673,9 @@ def admin():
     edit_admin_id = request.args.get("edit_admin_id", "").strip()
     edit_organization_id = request.args.get("edit_organization_id", "").strip()
     add_organization = request.args.get("add_organization", "").strip()
+    docs_student_id = request.args.get("docs_student_id", "").strip()
     selected_student = None
+    student_documents = []
     selected_feedback = []
     selected_progress_checks = []
     selected_progress_events = []
@@ -1612,11 +1763,17 @@ def admin():
         except ValueError:
             edit_organization = None
 
+    if docs_student_id:
+        try:
+            student_documents = fetch_student_documents(int(docs_student_id))
+        except ValueError:
+            docs_student_id = ""
+
     # Which table to show, and which popup (if any) to auto-open on load
     active_view = "organization"
     if selected_mentor or edit_mentor:
         active_view = "mentor"
-    elif selected_student or edit_student:
+    elif selected_student or edit_student or docs_student_id:
         active_view = "student"
     elif selected_admin or edit_admin:
         active_view = "admin"
@@ -1642,6 +1799,8 @@ def admin():
         open_dialog = "edit-organization"
     elif add_organization:
         open_dialog = "add-organization"
+    elif docs_student_id:
+        open_dialog = "student-docs"
 
     return render_template(
         "admin.html",
@@ -1666,6 +1825,8 @@ def admin():
         edit_mentor=edit_mentor,
         edit_admin=edit_admin,
         edit_organization=edit_organization,
+        docs_student_id=docs_student_id,
+        student_documents=student_documents,
         stat_categories=stat_categories,
         student_flags=student_flags,
         mentor_stats=mentor_stats,

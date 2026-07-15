@@ -1127,6 +1127,42 @@ td .action-btns {
     cursor: pointer;
 }
 
+/* Supplementary documents carousel */
+.doc-toolbar {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    align-items: center;
+    margin-bottom: 12px;
+}
+
+.doc-toolbar form {
+    margin: 0;
+}
+
+.doc-frame {
+    width: 100%;
+    height: 60vh;
+    border: 1px solid #ccc;
+}
+
+/* Images scale down to fit the popup instead of showing at full resolution */
+.doc-img {
+    display: block;
+    max-width: 100%;
+    max-height: 60vh;
+    margin: 0 auto;
+    object-fit: contain;
+    border: 1px solid #ccc;
+}
+
+.doc-nav {
+    display: flex;
+    gap: 12px;
+    align-items: center;
+    margin-top: 10px;
+}
+
 /* Green check / red X in the admin stat columns */
 .flag-yes {
     color: #1a7f37;
@@ -1378,6 +1414,8 @@ footer a {
     font-size: 0.85rem;
     cursor: pointer;
     white-space: nowrap;
+    text-decoration: none;
+    text-align: center;
 }
 
 .btn-view:hover {

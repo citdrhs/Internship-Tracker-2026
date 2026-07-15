@@ -182,6 +182,21 @@ CREATE TABLE IF NOT EXISTS feedback (
     submitted_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
+CREATE TABLE IF NOT EXISTS student_documents (
+    id BIGSERIAL PRIMARY KEY,
+    student_id BIGINT NOT NULL REFERENCES students(id) ON DELETE CASCADE,
+    url VARCHAR(1000),
+    file_data BYTEA,
+    original_name VARCHAR(500),
+    content_type VARCHAR(200),
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+ALTER TABLE student_documents ALTER COLUMN url DROP NOT NULL;
+ALTER TABLE student_documents ADD COLUMN IF NOT EXISTS file_data BYTEA;
+ALTER TABLE student_documents ADD COLUMN IF NOT EXISTS original_name VARCHAR(500);
+ALTER TABLE student_documents ADD COLUMN IF NOT EXISTS content_type VARCHAR(200);
+
 ALTER TABLE feedback ADD COLUMN IF NOT EXISTS mentor_id BIGINT;
 ALTER TABLE feedback ALTER COLUMN mentor_id DROP NOT NULL;
 ALTER TABLE feedback ADD COLUMN IF NOT EXISTS action_items TEXT;

@@ -214,3 +214,23 @@ document.querySelectorAll("dialog.modal-wide").forEach((dialog) => {
         if (e.target === dialog) dialog.close();
     });
 });
+
+// Supplementary documents: show one document at a time with Prev/Next
+function moveDocCarousel(step) {
+    const carousel = document.querySelector(".doc-carousel");
+    if (!carousel) return;
+    const slides = carousel.querySelectorAll(".doc-slide");
+    let index = Number(carousel.dataset.index || 0) + step;
+    if (index < 0) index = slides.length - 1;
+    if (index >= slides.length) index = 0;
+    carousel.dataset.index = index;
+    slides.forEach((slide, i) => {
+        slide.style.display = i === index ? "" : "none";
+    });
+    const counter = document.getElementById("doc-counter");
+    if (counter) counter.textContent = (index + 1) + " / " + slides.length;
+    const removeForm = document.getElementById("doc-remove-form");
+    if (removeForm && slides[index]) removeForm.action = slides[index].dataset.deleteUrl;
+}
+
+if (document.querySelector(".doc-carousel")) moveDocCarousel(0);

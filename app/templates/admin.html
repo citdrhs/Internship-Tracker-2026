@@ -98,6 +98,8 @@
                             <div class="action-btns">
                                 <a href="{{ url_for('admin', student_id=student[0]) }}" class="btn-view">View</a>
                                 <a href="{{ url_for('admin', edit_student_id=student[0]) }}" class="btn-edit">Edit</a>
+                                <a href="{{ url_for('admin', docs_student_id=student[0]) }}" class="btn-view">View Extra
+                                    Docs</a>
                             </div>
                         </td>
                     </tr>
@@ -501,6 +503,96 @@
             </div>
             <div class="form-actions">
                 <button type="submit">Save Changes</button>
+            </div>
+        </form>
+    </dialog>
+    {% endif %}
+
+    {% if docs_student_id %}
+    <dialog id="student-docs" class="modal modal-wide">
+        <form method="dialog" class="modal-x-form"><button class="modal-x" aria-label="Close">&times;</button></form>
+        <h2>Supplementary Documents</h2>
+
+        <div class="doc-toolbar">
+            <button type="button" class="btn-edit" onclick="document.getElementById('add-doc-file').showModal()">Add a
+                file</button>
+            <button type="button" class="btn-edit" onclick="document.getElementById('add-doc-link').showModal()">Add a
+                Google link</button>
+            {% if student_documents %}
+            <form id="doc-remove-form" method="post" onsubmit="return confirm('Remove this document?')">
+                <button type="submit" class="btn-delete">Remove</button>
+            </form>
+            {% endif %}
+        </div>
+
+        {% if student_documents %}
+        <div class="doc-carousel" data-index="0">
+            {% for doc in student_documents %}
+            <div class="doc-slide" data-delete-url="{{ url_for('delete_student_document', document_id=doc.id) }}">
+                {% if doc.is_link %}
+                <iframe class="doc-frame" src="{{ doc.url | replace('/edit', '/preview') }}"></iframe>
+                <p><a href="{{ doc.url }}" target="_blank">Open link in a new tab</a></p>
+                {% elif doc.is_image %}
+                <img class="doc-img" src="{{ url_for('serve_student_document', document_id=doc.id) }}"
+                    alt="{{ doc.original_name }}">
+                <p><a href="{{ url_for('serve_student_document', document_id=doc.id) }}" target="_blank">Open
+                        {{ doc.original_name }} in a new tab</a></p>
+                {% elif doc.previewable %}
+                <iframe class="doc-frame" src="{{ url_for('serve_student_document', document_id=doc.id) }}"></iframe>
+                <p><a href="{{ url_for('serve_student_document', document_id=doc.id) }}" target="_blank">Open
+                        {{ doc.original_name }} in a new tab</a></p>
+                {% else %}
+                <p>{{ doc.original_name }} - this file type can't be shown on the page.</p>
+                <p><a href="{{ url_for('serve_student_document', document_id=doc.id) }}">Download {{ doc.original_name
+                        }}</a></p>
+                {% endif %}
+            </div>
+            {% endfor %}
+        </div>
+        <div class="doc-nav">
+            <button type="button" onclick="moveDocCarousel(-1)">Prev</button>
+            <span id="doc-counter"></span>
+            <button type="button" onclick="moveDocCarousel(1)">Next</button>
+        </div>
+        {% else %}
+        <p>No documents yet. Use "Add a file" or "Add a link" above.</p>
+        {% endif %}
+    </dialog>
+
+    <dialog id="add-doc-file" class="modal">
+        <form method="dialog" class="modal-x-form"><button class="modal-x" aria-label="Close">&times;</button></form>
+        <h2>Add a File</h2>
+        <p>PDFs and images render right on the page. Word and other files can still be uploaded, but they
+            can only be downloaded, not previewed. So, PDF is the ideal format.</p>
+        <form method="POST" action="{{ url_for('add_student_document', student_id=docs_student_id) }}"
+            enctype="multipart/form-data" class="admin-edit-form">
+            <div class="form-row">
+                <label for="doc-file">Choose a file</label>
+                <input type="file" id="doc-file" name="file" accept=".pdf,.png,.jpg,.jpeg,.gif,.doc,.docx,.txt"
+                    required>
+                <small>Max size 25 MB. Allowed: PDF, images, Word documents, text.</small>
+            </div>
+            <div class="form-actions">
+                <button type="submit">Add</button>
+            </div>
+        </form>
+    </dialog>
+
+    <dialog id="add-doc-link" class="modal">
+        <form method="dialog" class="modal-x-form"><button class="modal-x" aria-label="Close">&times;</button></form>
+        <h2>Add a Document Link</h2>
+        <p>Paste a Google link. The document itself (a doc, sheet, PDF, image, or anything
+            else) can live in Google Drive</p>
+        <form method="POST" action="{{ url_for('add_student_document', student_id=docs_student_id) }}"
+            class="admin-edit-form">
+            <div class="form-row">
+                <label for="doc-url">Google Docs / Sheets link</label>
+                <input type="url" id="doc-url" name="url" placeholder="https://docs.google.com/..." required>
+                <small>IMPORTANT: Set the link's sharing to "Anyone with the link can view" so all admins can view
+                    it.</small>
+            </div>
+            <div class="form-actions">
+                <button type="submit">Add</button>
             </div>
         </form>
     </dialog>

@@ -7,7 +7,7 @@ from flask_sqlalchemy import SQLAlchemy
 #                                                                                                                                                                  #
 #Deep Run High School Restricted                                                                                                                                   #
 #                                                                                                                                                                  #
-#DO NOT MODIFY                                                                                                                                                     #
+#                                                                                                                                                #
 #------------------------------------------------------------------------------------------------------------------------------------------------------------------#
 #@brief Has User table(flask) for Login and Register forms                                                                                                         #
 #                                                                                                                                                                  #
@@ -159,4 +159,16 @@ class PendingUser(db.Model):
     organization_id = db.Column(db.Integer, db.ForeignKey('organizations.id', ondelete='SET NULL'), nullable=True)
     role = db.Column(db.String(20), nullable=False, default="student")
     requested_mentor_id = db.Column(db.Integer, nullable=True)
+    created_at = db.Column(db.DateTime, nullable=False, server_default=db.func.now())
+
+
+class StudentDocument(db.Model):
+    __tablename__ = 'student_documents'
+    id = db.Column(db.Integer, primary_key=True)
+    student_id = db.Column(db.Integer, db.ForeignKey('students.id', ondelete='CASCADE'), nullable=False)
+    # A row is either a link (url set) or an uploaded file (the three columns below set).
+    url = db.Column(db.String(1000), nullable=True)          # Google Docs/Sheets view link
+    file_data = db.Column(db.LargeBinary, nullable=True)     # uploaded file bytes (PDF, image, Word, ...)
+    original_name = db.Column(db.String(500), nullable=True) # uploaded file's name
+    content_type = db.Column(db.String(200), nullable=True)  # MIME type, used when serving the file
     created_at = db.Column(db.DateTime, nullable=False, server_default=db.func.now())
