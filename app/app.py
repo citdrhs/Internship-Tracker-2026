@@ -1379,6 +1379,7 @@ def admin():
     add_organization = request.args.get("add_organization", "").strip()
     selected_student = None
     selected_feedback = []
+    selected_progress_checks = []
     selected_progress_events = []
     weekly_totals = []
     monthly_totals = []
@@ -1404,9 +1405,9 @@ def admin():
             monthly_totals = []
 
             if selected_student is not None:
-                progress_checks = fetch_progress_checks(student_id_value)
+                selected_progress_checks = fetch_progress_checks(student_id_value)
                 selected_progress_events, weekly_totals, monthly_totals = summarize_progress_data(
-                    progress_checks
+                    selected_progress_checks
                 )
 
             if selected_student is None:
@@ -1501,6 +1502,7 @@ def admin():
         selected_student_id=selected_student_id,
         selected_student=selected_student,
         selected_feedback=selected_feedback,
+        selected_progress_checks=selected_progress_checks,
         selected_progress_events=selected_progress_events,
         selected_progress_events_json=json.dumps(selected_progress_events),
         weekly_totals=weekly_totals,
