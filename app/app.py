@@ -1320,6 +1320,153 @@ def respond_hours(progress_id):
     finally:
         conn.close()
 
+# Each admin stat is (flag_name, label). flag_name has to match a key returned by
+# compute_student_flags. These stats are meant to show students who need attention
+STAT_CATEGORIES = [
+    ("no_feedback_no_hours", "No feedback and no approved hours"),
+    ("no_feedback_some_hours", "No feedback, but hours approved at least once"),
+    ("feedback_no_hours", "Has feedback, but no approved hours"),
+    ("missing_one_or_two", "Missing 1-2 feedback entries"),
+    ("missing_three_plus", "Missing 3 or more feedback entries"),
+    ("out_of_sequence", "Feedback out of sequence (gap or late start)"),
+    ("no_worklogs", "No worklogs submitted at all"),
+    ("low_rating", "Low average rating (below 3)"),
+    ("under_160_hours", "Under 160 hours approved"),
+]
+
+def fetch_student_stats():
+    conn = get_db_connection()
+    try:
+        with conn:
+            ensure_progress_schema(conn)
+            ensure_feedback_schema(conn)
+        with conn.cursor() as cur:
+            cur.execute(
+                """
+                WITH hours_summary AS (
+                    SELECT student_id,
+                           count(*) AS worklog_count,
+                           count(*) FILTER (WHERE is_approved) AS approved_count,
+                           count(*) FILTER (WHERE NOT is_approved AND NOT is_rejected) AS pending_count,
+                           COALESCE(sum(hours_worked) FILTER (WHERE is_approved), 0) AS approved_hours
+                    FROM progress_checks
+                    GROUP BY student_id
+                ),
+                feedback_summary AS (
+                    SELECT student_id,
+                           count(*) AS feedback_count,
+                           count(DISTINCT week) AS weeks_with_feedback,
+                           COALESCE(max(week), 0) AS highest_feedback_week,
+                           COALESCE(round(avg(rating), 2), 0) AS average_rating
+                    FROM feedback
+                    GROUP BY student_id
+                )
+                SELECT s.id,
+                       s.first_name || ' ' || s.last_name AS student_name,
+                       ma.mentor_id,
+                       COALESCE(m.first_name || ' ' || m.last_name, '') AS mentor_name,
+                       COALESCE(mo.name, m.organization, '') AS organization,
+                       COALESCE(hours_summary.worklog_count, 0),
+                       COALESCE(hours_summary.approved_count, 0),
+                       COALESCE(hours_summary.pending_count, 0),
+                       COALESCE(hours_summary.approved_hours, 0),
+                       COALESCE(feedback_summary.feedback_count, 0),
+                       COALESCE(feedback_summary.weeks_with_feedback, 0),
+                       COALESCE(feedback_summary.highest_feedback_week, 0),
+                       COALESCE(feedback_summary.average_rating, 0)
+                FROM students s
+                LEFT JOIN mentor_assignments ma ON ma.student_id = s.id
+                LEFT JOIN mentors m ON m.id = ma.mentor_id
+                LEFT JOIN organizations mo ON mo.id = m.organization_id
+                LEFT JOIN hours_summary ON hours_summary.student_id = s.id
+                LEFT JOIN feedback_summary ON feedback_summary.student_id = s.id
+                ORDER BY s.first_name, s.last_name
+                """
+            )
+            column_names = [
+                "student_id", "student_name", "mentor_id", "mentor_name", "organization",
+                "worklog_count", "approved_count", "pending_count", "approved_hours",
+                "feedback_count", "weeks_with_feedback", "highest_feedback_week", "average_rating",
+            ]
+            return [dict(zip(column_names, row)) for row in cur.fetchall()]
+    finally:
+        conn.close()
+
+def compute_student_flags(student):
+    feedback_count = student["feedback_count"]
+    approved_count = student["approved_count"]
+    pending_count = student["pending_count"]
+    approved_hours = float(student["approved_hours"])
+    average_rating = float(student["average_rating"])
+    has_feedback = feedback_count > 0
+
+    return {
+        # Categories shown in the "needs attention" stats section
+        "no_feedback_no_hours": not has_feedback and approved_count == 0,
+        "no_feedback_some_hours": not has_feedback and approved_count > 0,
+        "feedback_no_hours": has_feedback and approved_count == 0,
+        "missing_one_or_two": 5 <= feedback_count <= 6,
+        "missing_three_plus": 1 <= feedback_count <= 4,
+        "out_of_sequence": has_feedback and student["weeks_with_feedback"] != student["highest_feedback_week"],
+        "no_worklogs": student["worklog_count"] == 0,
+        "low_rating": has_feedback and average_rating < 3,
+        "under_160_hours": approved_hours < 160,
+
+        # Extra values shown directly in the student table columns
+        "mentor_name": student["mentor_name"] or "(no mentor)",
+        "has_feedback": has_feedback,
+        "has_approved_hours": approved_count > 0,
+        "has_pending_hours": pending_count > 0,
+        "feedback_count": feedback_count,
+        "approved_hours": round(approved_hours, 1),
+        "over_ten_pending": pending_count > 10,
+    }
+
+def build_admin_stats(all_mentor_ids):
+    students = fetch_student_stats()
+
+    student_flags = {}
+    for student in students:
+        student_flags[student["student_id"]] = compute_student_flags(student)
+
+    categories = []
+    for flag_name, label in STAT_CATEGORIES:
+        groups = {}
+        for student in students:
+            if not student_flags[student["student_id"]][flag_name]:
+                continue
+            if student["mentor_name"]:
+                mentor_label = f"{student['mentor_name']} ({student['organization']})"
+            else:
+                mentor_label = "(No mentor assigned)"
+            if mentor_label not in groups:
+                groups[mentor_label] = []
+            groups[mentor_label].append(student["student_name"])
+
+        count = sum(len(names) for names in groups.values())
+        group_list = []
+        for mentor_label in sorted(groups):
+            group_list.append({"mentor": mentor_label, "students": groups[mentor_label]})
+        categories.append({"label": label, "count": count, "groups": group_list})
+
+    mentor_stats = {}
+    for mentor_id in all_mentor_ids:
+        mentor_students = [student for student in students if student["mentor_id"] == mentor_id]
+        approved = sum(student["approved_count"] for student in mentor_students)
+        feedback = sum(student["feedback_count"] for student in mentor_students)
+        pending = sum(student["pending_count"] for student in mentor_students)
+        worklogs = sum(student["worklog_count"] for student in mentor_students)
+        mentor_stats[mentor_id] = {
+            "student_count": len(mentor_students),
+            "not_used": approved == 0 and feedback == 0,
+            "only_hours": approved > 0 and feedback == 0,
+            "only_feedback": feedback > 0 and approved == 0,
+            "hours_and_feedback": approved > 0 and feedback > 0,
+            "approved_all": worklogs > 0 and pending == 0,
+            "all_weeks_every_student": len(mentor_students) > 0 and all(student["feedback_count"] >= 7 for student in mentor_students),
+        }
+    return categories, student_flags, mentor_stats
+
 @app.route("/intr/admin", methods=["GET", "POST"])
 def admin():
     login_redirect = require_login()
@@ -1474,6 +1621,8 @@ def admin():
     elif selected_admin or edit_admin:
         active_view = "admin"
 
+    stat_categories, student_flags, mentor_stats = build_admin_stats([m[0] for m in mentors])
+
     open_dialog = ""
     if selected_student:
         open_dialog = "view-student"
@@ -1517,6 +1666,9 @@ def admin():
         edit_mentor=edit_mentor,
         edit_admin=edit_admin,
         edit_organization=edit_organization,
+        stat_categories=stat_categories,
+        student_flags=student_flags,
+        mentor_stats=mentor_stats,
         active_view=active_view,
         open_dialog=open_dialog,
         organizations=organizations,

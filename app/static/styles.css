@@ -1127,6 +1127,15 @@ td .action-btns {
     cursor: pointer;
 }
 
+/* Green check / red X in the admin stat columns */
+.flag-yes {
+    color: #1a7f37;
+}
+
+.flag-no {
+    color: #cc3333;
+}
+
 /* Banner shown while an admin is acting as a mentor */
 #impersonation-banner {
     display: flex;

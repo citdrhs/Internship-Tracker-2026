@@ -61,11 +61,39 @@
                 <table class="admin-table">
                     <tr>
                         <th>Name</th>
+                        <th>Mentor</th>
+                        <th>Has Feedback</th>
+                        <th>Has Approved Hours</th>
+                        <th>Has Pending Hours</th>
+                        <th>Feedback Entries</th>
+                        <th>Feedback Out of Sequence</th>
+                        <th>Approved Hours</th>
+                        <th>No Worklogs</th>
+                        <th>Over 10 Pending Entries</th>
+                        <th>Low Average Rating</th>
                         <th>Actions</th>
                     </tr>
                     {% for student in students %}
+                    {% set sf = student_flags.get(student[0], {}) %}
                     <tr>
                         <td>{{ student[1] }}</td>
+                        <td>{{ sf.get('mentor_name', '(no mentor)') }}</td>
+                        <td>{% if sf.get('has_feedback') %}<span class="flag-yes">✓</span>{% else %}<span
+                                class="flag-no">✗</span>{% endif %}</td>
+                        <td>{% if sf.get('has_approved_hours') %}<span class="flag-yes">✓</span>{% else %}<span
+                                class="flag-no">✗</span>{% endif %}</td>
+                        <td>{% if sf.get('has_pending_hours') %}<span class="flag-yes">✓</span>{% else %}<span
+                                class="flag-no">✗</span>{% endif %}</td>
+                        <td>{{ sf.get('feedback_count', 0) }}</td>
+                        <td>{% if sf.get('out_of_sequence') %}<span class="flag-yes">✓</span>{% else %}<span
+                                class="flag-no">✗</span>{% endif %}</td>
+                        <td>{{ sf.get('approved_hours', 0) }}</td>
+                        <td>{% if sf.get('no_worklogs') %}<span class="flag-yes">✓</span>{% else %}<span
+                                class="flag-no">✗</span>{% endif %}</td>
+                        <td>{% if sf.get('over_ten_pending') %}<span class="flag-yes">✓</span>{% else %}<span
+                                class="flag-no">✗</span>{% endif %}</td>
+                        <td>{% if sf.get('low_rating') %}<span class="flag-yes">✓</span>{% else %}<span
+                                class="flag-no">✗</span>{% endif %}</td>
                         <td>
                             <div class="action-btns">
                                 <a href="{{ url_for('admin', student_id=student[0]) }}" class="btn-view">View</a>
@@ -83,18 +111,40 @@
                 <table class="admin-table">
                     <tr>
                         <th>Name</th>
+                        <th>Students Assigned</th>
+                        <th>Has Not Used App</th>
+                        <th>Only Submitted Hours</th>
+                        <th>Only Submitted Feedback</th>
+                        <th>Approved Hours & Feedback</th>
+                        <th>Approved All Hours</th>
+                        <th>All 7 Weeks for Every Student</th>
                         <th>Actions</th>
                     </tr>
                     {% for mentor in mentors %}
+                    {% set mf = mentor_stats.get(mentor[0], {}) %}
                     <tr>
                         <td>{{ mentor[1] }}</td>
+                        <td>{{ mf.get('student_count', 0) }}</td>
+                        <td>{% if mf.get('not_used') %}<span class="flag-yes">✓</span>{% else %}<span
+                                class="flag-no">✗</span>{% endif %}</td>
+                        <td>{% if mf.get('only_hours') %}<span class="flag-yes">✓</span>{% else %}<span
+                                class="flag-no">✗</span>{% endif %}</td>
+                        <td>{% if mf.get('only_feedback') %}<span class="flag-yes">✓</span>{% else %}<span
+                                class="flag-no">✗</span>{% endif %}</td>
+                        <td>{% if mf.get('hours_and_feedback') %}<span class="flag-yes">✓</span>{% else %}<span
+                                class="flag-no">✗</span>{% endif %}</td>
+                        <td>{% if mf.get('approved_all') %}<span class="flag-yes">✓</span>{% else %}<span
+                                class="flag-no">✗</span>{% endif %}</td>
+                        <td>{% if mf.get('all_weeks_every_student') %}<span class="flag-yes">✓</span>{% else %}<span
+                                class="flag-no">✗</span>{% endif %}</td>
                         <td>
                             <div class="action-btns">
                                 <a href="{{ url_for('admin', mentor_id=mentor[0]) }}" class="btn-view">View</a>
                                 <a href="{{ url_for('admin', edit_mentor_id=mentor[0]) }}" class="btn-edit">Edit</a>
                                 <form method="post" action="{{ url_for('impersonate', mentor_id=mentor[0]) }}">
                                     <button type="submit" class="btn-edit"
-                                        onclick="return confirm('Log in as {{ mentor[1] }}? You will act as them until you click Return to admin.')">Log in as this mentor</button>
+                                        onclick="return confirm('Log in as {{ mentor[1] }}? You will act as them until you click Return to admin.')">Log
+                                        in as this mentor</button>
                                 </form>
                             </div>
                         </td>
@@ -125,6 +175,23 @@
                 </table>
             </div>
         </div>
+    </section>
+
+    <section class="admin-panel">
+        <h2>Aggregate Stats</h2>
+        <p>Click a statistic to see which mentors and students it covers</p>
+        {% for cat in stat_categories %}
+        <details>
+            <summary>{{ cat.label }}: {{ cat.count }} students</summary>
+            {% if cat.groups %}
+            {% for g in cat.groups %}
+            <p><strong>{{ g.mentor }}</strong>: {{ g.students | join(', ') }}</p>
+            {% endfor %}
+            {% else %}
+            <p>None.</p>
+            {% endif %}
+        </details>
+        {% endfor %}
     </section>
 
     {% if not edit_organization %}
@@ -234,7 +301,8 @@
                 <button type="button" class="btn-view"
                     onclick="document.getElementById('view-student-worklogs').showModal()">View all worklogs</button>
                 <button type="button" class="btn-view"
-                    onclick="document.getElementById('view-student-feedbacks').showModal()">View all mentor feedbacks</button>
+                    onclick="document.getElementById('view-student-feedbacks').showModal()">View all mentor
+                    feedbacks</button>
             </div>
 
             <section class="student-calendar-section">
