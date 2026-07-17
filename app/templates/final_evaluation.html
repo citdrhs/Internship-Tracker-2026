@@ -56,39 +56,39 @@
                     <label for="takes_on_tasks">Willingly takes on the assigned tasks, duties, or
                         responsibilities</label>
                     <input type="range" name="takes_on_tasks" id="takes_on_tasks" min="1" max="5"
-                        value="{{ evaluation.takes_on_tasks if evaluation else 5 }}"
+                        value="{{ evaluation.takes_on_tasks if evaluation else 3}}"
                         oninput="document.getElementById('takes_on_tasks-out').textContent = this.value">
                     <div class="range-labels"><span>1</span><span>Selected Score: <span id="takes_on_tasks-out">{{
-                                evaluation.takes_on_tasks if evaluation else 5 }}</span></span><span>5</span></div>
+                                evaluation.takes_on_tasks if evaluation else 3}}</span></span><span>5</span></div>
                 </div>
 
                 <div class="form-group form-span-2">
                     <label for="seeks_opportunities">Is active in seeking out opportunities to learn more about his/her
                         role and duties</label>
                     <input type="range" name="seeks_opportunities" id="seeks_opportunities" min="1" max="5"
-                        value="{{ evaluation.seeks_opportunities if evaluation else 5 }}"
+                        value="{{ evaluation.seeks_opportunities if evaluation else 3}}"
                         oninput="document.getElementById('seeks_opportunities-out').textContent = this.value">
                     <div class="range-labels"><span>1</span><span>Selected Score: <span id="seeks_opportunities-out">{{
-                                evaluation.seeks_opportunities if evaluation else 5 }}</span></span><span>5</span></div>
+                                evaluation.seeks_opportunities if evaluation else 3}}</span></span><span>5</span></div>
                 </div>
 
                 <div class="form-group form-span-2">
                     <label for="maintains_contact">Attempts to maintain contact and rapport with the
                         mentor/supervisor</label>
                     <input type="range" name="maintains_contact" id="maintains_contact" min="1" max="5"
-                        value="{{ evaluation.maintains_contact if evaluation else 5 }}"
+                        value="{{ evaluation.maintains_contact if evaluation else 3}}"
                         oninput="document.getElementById('maintains_contact-out').textContent = this.value">
                     <div class="range-labels"><span>1</span><span>Selected Score: <span id="maintains_contact-out">{{
-                                evaluation.maintains_contact if evaluation else 5 }}</span></span><span>5</span></div>
+                                evaluation.maintains_contact if evaluation else 3}}</span></span><span>5</span></div>
                 </div>
 
                 <div class="form-group form-span-2">
                     <label for="accomplished_tasks">Accomplished assigned tasks</label>
                     <input type="range" name="accomplished_tasks" id="accomplished_tasks" min="1" max="5"
-                        value="{{ evaluation.accomplished_tasks if evaluation else 5 }}"
+                        value="{{ evaluation.accomplished_tasks if evaluation else 3}}"
                         oninput="document.getElementById('accomplished_tasks-out').textContent = this.value">
                     <div class="range-labels"><span>1</span><span>Selected Score: <span id="accomplished_tasks-out">{{
-                                evaluation.accomplished_tasks if evaluation else 5 }}</span></span><span>5</span></div>
+                                evaluation.accomplished_tasks if evaluation else 3}}</span></span><span>5</span></div>
                 </div>
 
                 <div class="form-group form-span-2">
@@ -103,74 +103,74 @@
                 <div class="form-group form-span-2">
                     <label for="team_member">Participates as a team member to accomplish goals</label>
                     <input type="range" name="team_member" id="team_member" min="1" max="5"
-                        value="{{ evaluation.team_member if evaluation else 5 }}"
+                        value="{{ evaluation.team_member if evaluation else 3}}"
                         oninput="document.getElementById('team_member-out').textContent = this.value">
                     <div class="range-labels"><span>1</span><span>Selected Score: <span id="team_member-out">{{
-                                evaluation.team_member if evaluation else 5 }}</span></span><span>5</span></div>
+                                evaluation.team_member if evaluation else 3}}</span></span><span>5</span></div>
                 </div>
 
                 <div class="form-group form-span-2">
                     <label for="enthusiasm">Demonstrates enthusiasm for the internship</label>
                     <input type="range" name="enthusiasm" id="enthusiasm" min="1" max="5"
-                        value="{{ evaluation.enthusiasm if evaluation else 5 }}"
+                        value="{{ evaluation.enthusiasm if evaluation else 3}}"
                         oninput="document.getElementById('enthusiasm-out').textContent = this.value">
                     <div class="range-labels"><span>1</span><span>Selected Score: <span id="enthusiasm-out">{{
-                                evaluation.enthusiasm if evaluation else 5 }}</span></span><span>5</span></div>
+                                evaluation.enthusiasm if evaluation else 3}}</span></span><span>5</span></div>
                 </div>
 
                 <div class="form-group form-span-2">
                     <label for="communication">Demonstrates appropriate communication skills</label>
                     <input type="range" name="communication" id="communication" min="1" max="5"
-                        value="{{ evaluation.communication if evaluation else 5 }}"
+                        value="{{ evaluation.communication if evaluation else 3}}"
                         oninput="document.getElementById('communication-out').textContent = this.value">
                     <div class="range-labels"><span>1</span><span>Selected Score: <span id="communication-out">{{
-                                evaluation.communication if evaluation else 5 }}</span></span><span>5</span></div>
+                                evaluation.communication if evaluation else 3}}</span></span><span>5</span></div>
                 </div>
 
                 <div class="form-group form-span-2">
                     <label for="problem_solving">Demonstrates reasoning, problem-solving and decision-making
                         skills</label>
                     <input type="range" name="problem_solving" id="problem_solving" min="1" max="5"
-                        value="{{ evaluation.problem_solving if evaluation else 5 }}"
+                        value="{{ evaluation.problem_solving if evaluation else 3}}"
                         oninput="document.getElementById('problem_solving-out').textContent = this.value">
                     <div class="range-labels"><span>1</span><span>Selected Score: <span id="problem_solving-out">{{
-                                evaluation.problem_solving if evaluation else 5 }}</span></span><span>5</span></div>
+                                evaluation.problem_solving if evaluation else 3}}</span></span><span>5</span></div>
                 </div>
 
                 <div class="form-group form-span-2">
                     <label for="work_ethic">Demonstrates a strong work ethic</label>
                     <input type="range" name="work_ethic" id="work_ethic" min="1" max="5"
-                        value="{{ evaluation.work_ethic if evaluation else 5 }}"
+                        value="{{ evaluation.work_ethic if evaluation else 3}}"
                         oninput="document.getElementById('work_ethic-out').textContent = this.value">
                     <div class="range-labels"><span>1</span><span>Selected Score: <span id="work_ethic-out">{{
-                                evaluation.work_ethic if evaluation else 5 }}</span></span><span>5</span></div>
+                                evaluation.work_ethic if evaluation else 3}}</span></span><span>5</span></div>
                 </div>
 
                 <div class="form-group form-span-2">
                     <label for="positive_attitude">Demonstrates a positive attitude</label>
                     <input type="range" name="positive_attitude" id="positive_attitude" min="1" max="5"
-                        value="{{ evaluation.positive_attitude if evaluation else 5 }}"
+                        value="{{ evaluation.positive_attitude if evaluation else 3}}"
                         oninput="document.getElementById('positive_attitude-out').textContent = this.value">
                     <div class="range-labels"><span>1</span><span>Selected Score: <span id="positive_attitude-out">{{
-                                evaluation.positive_attitude if evaluation else 5 }}</span></span><span>5</span></div>
+                                evaluation.positive_attitude if evaluation else 3}}</span></span><span>5</span></div>
                 </div>
 
                 <div class="form-group form-span-2">
                     <label for="initiative">Demonstrates independence and initiative</label>
                     <input type="range" name="initiative" id="initiative" min="1" max="5"
-                        value="{{ evaluation.initiative if evaluation else 5 }}"
+                        value="{{ evaluation.initiative if evaluation else 3}}"
                         oninput="document.getElementById('initiative-out').textContent = this.value">
                     <div class="range-labels"><span>1</span><span>Selected Score: <span id="initiative-out">{{
-                                evaluation.initiative if evaluation else 5 }}</span></span><span>5</span></div>
+                                evaluation.initiative if evaluation else 3}}</span></span><span>5</span></div>
                 </div>
 
                 <div class="form-group form-span-2">
                     <label for="attendance">Maintains satisfactory attendance</label>
                     <input type="range" name="attendance" id="attendance" min="1" max="5"
-                        value="{{ evaluation.attendance if evaluation else 5 }}"
+                        value="{{ evaluation.attendance if evaluation else 3}}"
                         oninput="document.getElementById('attendance-out').textContent = this.value">
                     <div class="range-labels"><span>1</span><span>Selected Score: <span id="attendance-out">{{
-                                evaluation.attendance if evaluation else 5 }}</span></span><span>5</span></div>
+                                evaluation.attendance if evaluation else 3}}</span></span><span>5</span></div>
                 </div>
 
                 <div class="form-group form-span-2">
@@ -184,10 +184,10 @@
                 <div class="form-group form-span-2">
                     <label for="overall_rating">Overall assessment of this intern</label>
                     <input type="range" name="overall_rating" id="overall_rating" min="1" max="5"
-                        value="{{ evaluation.overall_rating if evaluation else 5 }}"
+                        value="{{ evaluation.overall_rating if evaluation else 3}}"
                         oninput="document.getElementById('overall_rating-out').textContent = this.value">
                     <div class="range-labels"><span>1</span><span>Selected Score: <span id="overall_rating-out">{{
-                                evaluation.overall_rating if evaluation else 5 }}</span></span><span>5</span></div>
+                                evaluation.overall_rating if evaluation else 3}}</span></span><span>5</span></div>
                 </div>
 
                 <div class="form-group form-span-2">
