@@ -197,6 +197,31 @@ ALTER TABLE student_documents ADD COLUMN IF NOT EXISTS file_data BYTEA;
 ALTER TABLE student_documents ADD COLUMN IF NOT EXISTS original_name VARCHAR(500);
 ALTER TABLE student_documents ADD COLUMN IF NOT EXISTS content_type VARCHAR(200);
 
+-- One final evaluation per student, filled out by that student's mentor.
+CREATE TABLE IF NOT EXISTS final_evaluations (
+    id BIGSERIAL PRIMARY KEY,
+    student_id BIGINT NOT NULL UNIQUE REFERENCES students(id) ON DELETE CASCADE,
+    mentor_id BIGINT REFERENCES mentors(id) ON DELETE SET NULL,
+    takes_on_tasks SMALLINT NOT NULL CHECK (takes_on_tasks BETWEEN 1 AND 5),
+    seeks_opportunities SMALLINT NOT NULL CHECK (seeks_opportunities BETWEEN 1 AND 5),
+    maintains_contact SMALLINT NOT NULL CHECK (maintains_contact BETWEEN 1 AND 5),
+    accomplished_tasks SMALLINT NOT NULL CHECK (accomplished_tasks BETWEEN 1 AND 5),
+    responsibilities_comments TEXT,
+    team_member SMALLINT NOT NULL CHECK (team_member BETWEEN 1 AND 5),
+    enthusiasm SMALLINT NOT NULL CHECK (enthusiasm BETWEEN 1 AND 5),
+    communication SMALLINT NOT NULL CHECK (communication BETWEEN 1 AND 5),
+    problem_solving SMALLINT NOT NULL CHECK (problem_solving BETWEEN 1 AND 5),
+    work_ethic SMALLINT NOT NULL CHECK (work_ethic BETWEEN 1 AND 5),
+    positive_attitude SMALLINT NOT NULL CHECK (positive_attitude BETWEEN 1 AND 5),
+    initiative SMALLINT NOT NULL CHECK (initiative BETWEEN 1 AND 5),
+    attendance SMALLINT NOT NULL CHECK (attendance BETWEEN 1 AND 5),
+    characteristics_comments TEXT,
+    overall_rating SMALLINT NOT NULL CHECK (overall_rating BETWEEN 1 AND 5),
+    is_reviewed BOOLEAN NOT NULL DEFAULT FALSE,
+    submitted_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
 ALTER TABLE feedback ADD COLUMN IF NOT EXISTS mentor_id BIGINT;
 ALTER TABLE feedback ALTER COLUMN mentor_id DROP NOT NULL;
 ALTER TABLE feedback ADD COLUMN IF NOT EXISTS action_items TEXT;

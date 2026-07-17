@@ -71,6 +71,7 @@
                         <th>No Worklogs</th>
                         <th>Over 10 Pending Entries</th>
                         <th>Low Average Rating</th>
+                        <th>Final Eval Submitted</th>
                         <th>Actions</th>
                     </tr>
                     {% for student in students %}
@@ -94,12 +95,23 @@
                                 class="flag-no">✗</span>{% endif %}</td>
                         <td>{% if sf.get('low_rating') %}<span class="flag-yes">✓</span>{% else %}<span
                                 class="flag-no">✗</span>{% endif %}</td>
+                        <td>{% if student[0] in final_eval_submitted %}<span class="flag-yes">✓</span>{% else %}<span
+                                class="flag-no">✗</span>{% endif %}</td>
                         <td>
                             <div class="action-btns">
                                 <a href="{{ url_for('admin', student_id=student[0]) }}" class="btn-view">View</a>
                                 <a href="{{ url_for('admin', edit_student_id=student[0]) }}" class="btn-edit">Edit</a>
                                 <a href="{{ url_for('admin', docs_student_id=student[0]) }}" class="btn-view">View Extra
+                                    <br>
                                     Docs</a>
+                                {% if student[0] in final_eval_submitted %}
+                                <a href="{{ url_for('admin', final_eval_student_id=student[0]) }}" class="btn-view">
+                                    {% if final_eval_submitted[student[0]] %}Final Eval <br> Reviewed{% else %}Review
+                                    Final
+                                    Eval{%
+                                    endif
+                                    %}</a>
+                                {% endif %}
                             </div>
                         </td>
                     </tr>
@@ -595,6 +607,27 @@
                 <button type="submit">Add</button>
             </div>
         </form>
+    </dialog>
+    {% endif %}
+
+    {% if final_eval_student_id %}
+    <dialog id="final-eval" class="modal modal-wide">
+        <form method="dialog" class="modal-x-form"><button class="modal-x" aria-label="Close">&times;</button></form>
+        <h2>Final Internship Evaluation</h2>
+        {% if final_evaluation_entry %}
+        {% set evaluation = final_evaluation_entry %}
+        <form method="post" action="{{ url_for('review_final_evaluation', student_id=final_eval_student_id) }}">
+            <label>
+                <input type="checkbox" name="is_reviewed" onchange="this.form.submit()" {% if evaluation.is_reviewed
+                    %}checked{% endif %}>
+                CHECK TO MARK AS REVIEWED
+            </label>
+        </form>
+        <br>
+        {% include '_final_evaluation_summary.html' %}
+        {% else %}
+        <p>This student's mentor has not submitted the final evaluation yet.</p>
+        {% endif %}
     </dialog>
     {% endif %}
 

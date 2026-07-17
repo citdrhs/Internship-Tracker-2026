@@ -20,13 +20,13 @@
     {% endif %}
 
     {% with messages = get_flashed_messages(with_categories=true) %}
-        {% if messages %}
-        <div id="toast-container">
-            {% for category, message in messages %}
-            <div class="toast toast-{{ category }}">{{ message }}</div>
-            {% endfor %}
-        </div>
-        {% endif %}
+    {% if messages %}
+    <div id="toast-container">
+        {% for category, message in messages %}
+        <div class="toast toast-{{ category }}">{{ message }}</div>
+        {% endfor %}
+    </div>
+    {% endif %}
     {% endwith %}
 
     <div class="wrapper" id="navbar">
@@ -46,7 +46,8 @@
                 {% elif session.get('is_mentor') %}
                 <li><a href="{{ url_for('feedbackPage') }}">Feedback</a></li>
                 <li><a href="{{ url_for('submitFeedback') }}">Submit Feedback</a></li>
-                <li><a href="{{ url_for('mentor_hours') }}">Hours Approval</a></li>
+                <li><a href="{{ url_for('mentor_hours') }}">Approve Hours</a></li>
+                <li><a href="{{ url_for('final_evaluation') }}">Final Evaluation</a></li>
 
                 {% else %}
                 <li><a href="{{ url_for('progressCheck') }}">Daily Worklog</a></li>

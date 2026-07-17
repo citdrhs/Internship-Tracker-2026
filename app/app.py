@@ -1469,6 +1469,220 @@ def delete_student_document(document_id):
         return redirect(url_for("admin", docs_student_id=student_id))
     return redirect(url_for("admin"))
 
+def read_final_eval_rating(field):
+    value = request.form.get(field, "")
+    if value not in ("1", "2", "3", "4", "5"):
+        raise ValueError("Please give every question a rating from 1 to 5.")
+    return int(value)
+
+def validate_final_evaluation_form():
+    return {
+        "takes_on_tasks": read_final_eval_rating("takes_on_tasks"),
+        "seeks_opportunities": read_final_eval_rating("seeks_opportunities"),
+        "maintains_contact": read_final_eval_rating("maintains_contact"),
+        "accomplished_tasks": read_final_eval_rating("accomplished_tasks"),
+        "responsibilities_comments": request.form.get("responsibilities_comments", "").strip(),
+        "team_member": read_final_eval_rating("team_member"),
+        "enthusiasm": read_final_eval_rating("enthusiasm"),
+        "communication": read_final_eval_rating("communication"),
+        "problem_solving": read_final_eval_rating("problem_solving"),
+        "work_ethic": read_final_eval_rating("work_ethic"),
+        "positive_attitude": read_final_eval_rating("positive_attitude"),
+        "initiative": read_final_eval_rating("initiative"),
+        "attendance": read_final_eval_rating("attendance"),
+        "characteristics_comments": request.form.get("characteristics_comments", "").strip(),
+        "overall_rating": read_final_eval_rating("overall_rating"),
+    }
+
+def fetch_final_evaluation(student_id):
+    conn = get_db_connection()
+    try:
+        with conn.cursor() as cur:
+            cur.execute(
+                """
+                SELECT takes_on_tasks, seeks_opportunities, maintains_contact, accomplished_tasks,
+                       responsibilities_comments,
+                       team_member, enthusiasm, communication, problem_solving,
+                       work_ethic, positive_attitude, initiative, attendance,
+                       characteristics_comments,
+                       overall_rating, is_reviewed
+                FROM final_evaluations
+                WHERE student_id = %s
+                """,
+                (student_id,),
+            )
+            row = cur.fetchone()
+            if not row:
+                return None
+            return {
+                "takes_on_tasks": row[0],
+                "seeks_opportunities": row[1],
+                "maintains_contact": row[2],
+                "accomplished_tasks": row[3],
+                "responsibilities_comments": row[4],
+                "team_member": row[5],
+                "enthusiasm": row[6],
+                "communication": row[7],
+                "problem_solving": row[8],
+                "work_ethic": row[9],
+                "positive_attitude": row[10],
+                "initiative": row[11],
+                "attendance": row[12],
+                "characteristics_comments": row[13],
+                "overall_rating": row[14],
+                "is_reviewed": row[15],
+            }
+    finally:
+        conn.close()
+
+def fetch_submitted_final_evaluations():
+    conn = get_db_connection()
+    try:
+        with conn.cursor() as cur:
+            cur.execute("SELECT student_id, is_reviewed FROM final_evaluations")
+            return {row[0]: row[1] for row in cur.fetchall()}
+    finally:
+        conn.close()
+
+def save_final_evaluation(student_id, mentor_id, values):
+    conn = get_db_connection()
+    try:
+        with conn:
+            with conn.cursor() as cur:
+                cur.execute(
+                    """
+                    INSERT INTO final_evaluations (
+                        student_id, mentor_id,
+                        takes_on_tasks, seeks_opportunities, maintains_contact, accomplished_tasks,
+                        responsibilities_comments,
+                        team_member, enthusiasm, communication, problem_solving,
+                        work_ethic, positive_attitude, initiative, attendance,
+                        characteristics_comments,
+                        overall_rating
+                    )
+                    VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+                    ON CONFLICT (student_id) DO UPDATE SET
+                        mentor_id = EXCLUDED.mentor_id,
+                        takes_on_tasks = EXCLUDED.takes_on_tasks,
+                        seeks_opportunities = EXCLUDED.seeks_opportunities,
+                        maintains_contact = EXCLUDED.maintains_contact,
+                        accomplished_tasks = EXCLUDED.accomplished_tasks,
+                        responsibilities_comments = EXCLUDED.responsibilities_comments,
+                        team_member = EXCLUDED.team_member,
+                        enthusiasm = EXCLUDED.enthusiasm,
+                        communication = EXCLUDED.communication,
+                        problem_solving = EXCLUDED.problem_solving,
+                        work_ethic = EXCLUDED.work_ethic,
+                        positive_attitude = EXCLUDED.positive_attitude,
+                        initiative = EXCLUDED.initiative,
+                        attendance = EXCLUDED.attendance,
+                        characteristics_comments = EXCLUDED.characteristics_comments,
+                        overall_rating = EXCLUDED.overall_rating,
+                        updated_at = NOW()
+                    """,
+                    (
+                        student_id, mentor_id,
+                        values["takes_on_tasks"], values["seeks_opportunities"],
+                        values["maintains_contact"], values["accomplished_tasks"],
+                        values["responsibilities_comments"],
+                        values["team_member"], values["enthusiasm"],
+                        values["communication"], values["problem_solving"],
+                        values["work_ethic"], values["positive_attitude"],
+                        values["initiative"], values["attendance"],
+                        values["characteristics_comments"],
+                        values["overall_rating"],
+                    ),
+                )
+    finally:
+        conn.close()
+
+def set_final_evaluation_reviewed(student_id, is_reviewed):
+    conn = get_db_connection()
+    try:
+        with conn:
+            with conn.cursor() as cur:
+                cur.execute(
+                    "UPDATE final_evaluations SET is_reviewed = %s WHERE student_id = %s",
+                    (is_reviewed, student_id),
+                )
+    finally:
+        conn.close()
+
+@app.route("/intr/mentor/final-evaluation", methods=["GET", "POST"])
+def final_evaluation():
+    login_redirect = require_login()
+    if login_redirect:
+        return login_redirect
+
+    if not session.get("is_mentor"):
+        flash("This page is only available to mentors.", "warning")
+        return redirect(url_for("home"))
+
+    mentor_id = get_current_user_id()
+    if mentor_id is None:
+        flash("Unable to identify current mentor.", "danger")
+        return redirect(url_for("home"))
+
+    if request.method == "POST":
+        try:
+            student_id = int(request.form.get("student_id", ""))
+        except ValueError:
+            flash("Please select a student.", "danger")
+            return redirect(url_for("final_evaluation"))
+
+        if not can_access_student(student_id):
+            flash("You can only evaluate your assigned students.", "danger")
+            return redirect(url_for("final_evaluation"))
+
+        try:
+            values = validate_final_evaluation_form()
+        except ValueError as exc:
+            flash(str(exc), "danger")
+            return redirect(url_for("final_evaluation", student_id=student_id, edit=1))
+
+        save_final_evaluation(student_id, mentor_id, values)
+        flash("Final evaluation saved.", "success")
+        return redirect(url_for("final_evaluation", student_id=student_id))
+
+    selected_student_id = request.args.get("student_id", "").strip()
+    selected_student = None
+    evaluation = None
+
+    if selected_student_id:
+        try:
+            student_id = int(selected_student_id)
+        except ValueError:
+            flash("Please select a valid student.", "danger")
+        else:
+            if not can_access_student(student_id):
+                flash("You don't have access to that student.", "danger")
+            else:
+                selected_student = fetch_student_entry(student_id)
+                evaluation = fetch_final_evaluation(student_id)
+
+    # Show the summary once submitted, unless the mentor clicked "Edit".
+    editing = evaluation is None or request.args.get("edit")
+
+    return render_template(
+        "final_evaluation.html",
+        students=fetch_students(mentor_id=mentor_id),
+        submitted_ids=fetch_submitted_final_evaluations(),
+        selected_student=selected_student,
+        evaluation=evaluation,
+        editing=editing,
+    )
+
+@app.route("/intr/admin/final-evaluation/<int:student_id>/review", methods=["POST"])
+def review_final_evaluation(student_id):
+    login_redirect = require_login()
+    if login_redirect:
+        return login_redirect
+    if not session.get("is_admin"):
+        return redirect(url_for("home"))
+
+    set_final_evaluation_reviewed(student_id, request.form.get("is_reviewed") == "on")
+    return redirect(url_for("admin", final_eval_student_id=student_id))
+
 # Each admin stat is (flag_name, label). flag_name has to match a key returned by
 # compute_student_flags. These stats are meant to show students who need attention
 STAT_CATEGORIES = [
@@ -1674,6 +1888,8 @@ def admin():
     edit_organization_id = request.args.get("edit_organization_id", "").strip()
     add_organization = request.args.get("add_organization", "").strip()
     docs_student_id = request.args.get("docs_student_id", "").strip()
+    final_eval_student_id = request.args.get("final_eval_student_id", "").strip()
+    final_evaluation_entry = None
     selected_student = None
     student_documents = []
     selected_feedback = []
@@ -1769,11 +1985,17 @@ def admin():
         except ValueError:
             docs_student_id = ""
 
+    if final_eval_student_id:
+        try:
+            final_evaluation_entry = fetch_final_evaluation(int(final_eval_student_id))
+        except ValueError:
+            final_eval_student_id = ""
+
     # Which table to show, and which popup (if any) to auto-open on load
     active_view = "organization"
     if selected_mentor or edit_mentor:
         active_view = "mentor"
-    elif selected_student or edit_student or docs_student_id:
+    elif selected_student or edit_student or docs_student_id or final_eval_student_id:
         active_view = "student"
     elif selected_admin or edit_admin:
         active_view = "admin"
@@ -1801,6 +2023,8 @@ def admin():
         open_dialog = "add-organization"
     elif docs_student_id:
         open_dialog = "student-docs"
+    elif final_eval_student_id:
+        open_dialog = "final-eval"
 
     return render_template(
         "admin.html",
@@ -1827,6 +2051,9 @@ def admin():
         edit_organization=edit_organization,
         docs_student_id=docs_student_id,
         student_documents=student_documents,
+        final_eval_student_id=final_eval_student_id,
+        final_evaluation_entry=final_evaluation_entry,
+        final_eval_submitted=fetch_submitted_final_evaluations(),
         stat_categories=stat_categories,
         student_flags=student_flags,
         mentor_stats=mentor_stats,
@@ -2465,7 +2692,11 @@ def studentFeedback():
         return redirect(url_for("home"))
 
     feedback = fetch_feedback_for_student(user_id)
-    return render_template("student_feedback.html", feedback=feedback)
+    return render_template(
+        "student_feedback.html",
+        feedback=feedback,
+        evaluation=fetch_final_evaluation(user_id),
+    )
 
 @app.route("/intr/feedback/submit", methods=["GET", "POST"])
 def submitFeedback():

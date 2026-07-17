@@ -328,6 +328,19 @@ table {
     border-collapse: collapse;
 }
 
+/* Final evaluation read-only summary */
+.eval-summary td:last-child {
+    width: 70px;
+    text-align: right;
+    font-weight: 600;
+    white-space: nowrap;
+}
+
+/* Keep the mentor's line breaks, tabs, and spacing instead of collapsing them */
+.eval-comment {
+    white-space: pre-wrap;
+}
+
 .table-scroll {
     width: 100%;
     max-height: 60vh;

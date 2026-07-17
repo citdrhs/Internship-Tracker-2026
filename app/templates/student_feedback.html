@@ -2,6 +2,20 @@
 {% block title %}My Feedback{% endblock %}
 {% block content %}
 <h1>My Feedback</h1>
+{% if evaluation %}
+<div class="action-btns" style="justify-content: center">
+    <button type="button" class="btn-view" onclick="document.getElementById('final-eval').showModal()">Click to view
+        final evaluation</button>
+</div>
+
+<br>
+
+<dialog id="final-eval" class="modal modal-wide">
+    <form method="dialog" class="modal-x-form"><button class="modal-x" aria-label="Close">&times;</button></form>
+    <h2>My Final Internship Evaluation</h2>
+    {% include '_final_evaluation_summary.html' %}
+</dialog>
+{% endif %}
 <div class="action-btns" style="justify-content: center">
     <a href="{{ url_for('home') }}" class="btn-secondary">Return home</a>
 </div>
@@ -9,38 +23,44 @@
 
     {% if feedback %}
     <div class="table-scroll">
-    <table>
-        <tr>
-            <th>Week</th>
-            <th>Feedback</th>
-            <th>Action Items</th>
-            <th>Focus Areas</th>
-            <th>Quality</th>
-            <th>Professionalism</th>
-            <th>Timeliness</th>
-            <th>Initiative</th>
-            <th>Soft Skills</th>
-            <th>Overall Rating</th>
-            <th>View</th>
-        </tr>
-        {% for f in feedback %}
-        <tr>
-            <td>{{ f[2] }}</td>
-            <td><div class="cell-scroll">{{ f[3] }}</div></td>
-            <td><div class="cell-scroll">{{ f[4] or '' }}</div></td>
-            <td><div class="cell-scroll">{{ f[5] or '' }}</div></td>
-            <td>{{ f[7] }}</td>
-            <td>{{ f[8] }}</td>
-            <td>{{ f[9] }}</td>
-            <td>{{ f[10] }}</td>
-            <td>{{ f[11] }}</td>
-            <td>
-                <div class="rating-badge">{{ f[6] }}<span>/5</span></div>
-            </td>
-            <td><button type="button" class="btn-view" onclick="openRowModal(this)">View</button></td>
-        </tr>
-        {% endfor %}
-    </table>
+        <table>
+            <tr>
+                <th>Week</th>
+                <th>Feedback</th>
+                <th>Action Items</th>
+                <th>Focus Areas</th>
+                <th>Quality</th>
+                <th>Professionalism</th>
+                <th>Timeliness</th>
+                <th>Initiative</th>
+                <th>Soft Skills</th>
+                <th>Overall Rating</th>
+                <th>View</th>
+            </tr>
+            {% for f in feedback %}
+            <tr>
+                <td>{{ f[2] }}</td>
+                <td>
+                    <div class="cell-scroll">{{ f[3] }}</div>
+                </td>
+                <td>
+                    <div class="cell-scroll">{{ f[4] or '' }}</div>
+                </td>
+                <td>
+                    <div class="cell-scroll">{{ f[5] or '' }}</div>
+                </td>
+                <td>{{ f[7] }}</td>
+                <td>{{ f[8] }}</td>
+                <td>{{ f[9] }}</td>
+                <td>{{ f[10] }}</td>
+                <td>{{ f[11] }}</td>
+                <td>
+                    <div class="rating-badge">{{ f[6] }}<span>/5</span></div>
+                </td>
+                <td><button type="button" class="btn-view" onclick="openRowModal(this)">View</button></td>
+            </tr>
+            {% endfor %}
+        </table>
     </div>
     {% else %}
     <div class="empty-state">

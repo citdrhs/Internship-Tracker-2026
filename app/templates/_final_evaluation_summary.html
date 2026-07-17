@@ -1,0 +1,71 @@
+<div class="ratings-legend">
+    <strong>Ratings</strong>
+    <span><strong>5</strong> &ndash; Excellent</span>
+    <span><strong>4</strong> &ndash; Good</span>
+    <span><strong>3</strong> &ndash; Average</span>
+    <span><strong>2</strong> &ndash; Below Average</span>
+    <span><strong>1</strong> &ndash; Unacceptable</span>
+</div>
+
+<h3>I. Specific Internship Responsibilities</h3>
+<table class="eval-summary">
+    <tr>
+        <td>Willingly takes on the assigned tasks, duties, or responsibilities</td>
+        <td>{{ evaluation.takes_on_tasks }} / 5</td>
+    </tr>
+    <tr>
+        <td>Is active in seeking out opportunities to learn more about his/her role and duties</td>
+        <td>{{ evaluation.seeks_opportunities }} / 5</td>
+    </tr>
+    <tr>
+        <td>Attempts to maintain contact and rapport with the mentor/supervisor</td>
+        <td>{{ evaluation.maintains_contact }} / 5</td>
+    </tr>
+    <tr>
+        <td>Accomplished assigned tasks</td>
+        <td>{{ evaluation.accomplished_tasks }} / 5</td>
+    </tr>
+</table>
+<p><strong>Mentor's Comments Regarding Intern's Performance of Specific Responsibilities</strong></p>
+<p class="eval-comment">{{ evaluation.responsibilities_comments or '(none)' }}</p>
+
+<h3>II. General Intern Characteristics</h3>
+<table class="eval-summary">
+    <tr>
+        <td>Participates as a team member to accomplish goals</td>
+        <td>{{ evaluation.team_member }} / 5</td>
+    </tr>
+    <tr>
+        <td>Demonstrates enthusiasm for the internship</td>
+        <td>{{ evaluation.enthusiasm }} / 5</td>
+    </tr>
+    <tr>
+        <td>Demonstrates appropriate communication skills</td>
+        <td>{{ evaluation.communication }} / 5</td>
+    </tr>
+    <tr>
+        <td>Demonstrates reasoning, problem-solving and decision-making skills</td>
+        <td>{{ evaluation.problem_solving }} / 5</td>
+    </tr>
+    <tr>
+        <td>Demonstrates a strong work ethic</td>
+        <td>{{ evaluation.work_ethic }} / 5</td>
+    </tr>
+    <tr>
+        <td>Demonstrates a positive attitude</td>
+        <td>{{ evaluation.positive_attitude }} / 5</td>
+    </tr>
+    <tr>
+        <td>Demonstrates independence and initiative</td>
+        <td>{{ evaluation.initiative }} / 5</td>
+    </tr>
+    <tr>
+        <td>Maintains satisfactory attendance</td>
+        <td>{{ evaluation.attendance }} / 5</td>
+    </tr>
+</table>
+<p><strong>Mentor's Comments on Intern's General Characteristics</strong></p>
+<p class="eval-comment">{{ evaluation.characteristics_comments or '(none)' }}</p>
+
+<h3>III. Overall Assessment</h3>
+<p><strong>Overall rating: {{ evaluation.overall_rating }} / 5</strong></p>

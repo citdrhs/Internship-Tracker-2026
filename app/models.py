@@ -148,6 +148,42 @@ class Feedback(db.Model):
     )
 
 
+class FinalEvaluation(db.Model):
+    __tablename__ = 'final_evaluations'
+    id = db.Column(db.Integer, primary_key=True)
+    student_id = db.Column(db.Integer, db.ForeignKey('students.id', ondelete='CASCADE'), nullable=False, unique=True)
+    mentor_id = db.Column(db.Integer, db.ForeignKey('mentors.id', ondelete='SET NULL'), nullable=True)
+    # I. Specific internship responsibilities
+    takes_on_tasks = db.Column(db.SmallInteger, nullable=False)
+    seeks_opportunities = db.Column(db.SmallInteger, nullable=False)
+    maintains_contact = db.Column(db.SmallInteger, nullable=False)
+    accomplished_tasks = db.Column(db.SmallInteger, nullable=False)
+    responsibilities_comments = db.Column(db.Text, nullable=True)
+    # II. General intern characteristics
+    team_member = db.Column(db.SmallInteger, nullable=False)
+    enthusiasm = db.Column(db.SmallInteger, nullable=False)
+    communication = db.Column(db.SmallInteger, nullable=False)
+    problem_solving = db.Column(db.SmallInteger, nullable=False)
+    work_ethic = db.Column(db.SmallInteger, nullable=False)
+    positive_attitude = db.Column(db.SmallInteger, nullable=False)
+    initiative = db.Column(db.SmallInteger, nullable=False)
+    attendance = db.Column(db.SmallInteger, nullable=False)
+    characteristics_comments = db.Column(db.Text, nullable=True)
+    # III. Overall assessment
+    overall_rating = db.Column(db.SmallInteger, nullable=False)
+    is_reviewed = db.Column(db.Boolean, nullable=False, default=False)
+    submitted_at = db.Column(db.DateTime, nullable=False, server_default=db.func.now())
+    updated_at = db.Column(db.DateTime, nullable=False, server_default=db.func.now())
+    __table_args__ = tuple(
+        db.CheckConstraint(f"{column} BETWEEN 1 AND 5", name=f"final_evaluations_{column}_range")
+        for column in (
+            "takes_on_tasks", "seeks_opportunities", "maintains_contact", "accomplished_tasks",
+            "team_member", "enthusiasm", "communication", "problem_solving",
+            "work_ethic", "positive_attitude", "initiative", "attendance", "overall_rating",
+        )
+    )
+
+
 class PendingUser(db.Model):
     __tablename__ = 'pending_users'
     id = db.Column(db.Integer, primary_key=True)
@@ -166,9 +202,8 @@ class StudentDocument(db.Model):
     __tablename__ = 'student_documents'
     id = db.Column(db.Integer, primary_key=True)
     student_id = db.Column(db.Integer, db.ForeignKey('students.id', ondelete='CASCADE'), nullable=False)
-    # A row is either a link (url set) or an uploaded file (the three columns below set).
-    url = db.Column(db.String(1000), nullable=True)          # Google Docs/Sheets view link
-    file_data = db.Column(db.LargeBinary, nullable=True)     # uploaded file bytes (PDF, image, Word, ...)
-    original_name = db.Column(db.String(500), nullable=True) # uploaded file's name
-    content_type = db.Column(db.String(200), nullable=True)  # MIME type, used when serving the file
+    url = db.Column(db.String(1000), nullable=True)
+    file_data = db.Column(db.LargeBinary, nullable=True)
+    original_name = db.Column(db.String(500), nullable=True)
+    content_type = db.Column(db.String(200), nullable=True)
     created_at = db.Column(db.DateTime, nullable=False, server_default=db.func.now())
