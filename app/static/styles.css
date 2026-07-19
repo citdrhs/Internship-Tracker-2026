@@ -366,7 +366,7 @@ td {
     padding: 10px 16px;
     border-bottom: 2px solid #ffffff;
     vertical-align: top;
-    overflow-wrap: anywhere;
+    overflow-wrap: break-word;
 }
 
 td form {

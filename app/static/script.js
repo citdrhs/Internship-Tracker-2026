@@ -234,3 +234,15 @@ function moveDocCarousel(step) {
 }
 
 if (document.querySelector(".doc-carousel")) moveDocCarousel(0);
+
+// Admin: keeps the user's scroll spot upon page reload
+if (document.getElementById("admin-container")) {
+    const boxes = document.querySelectorAll(".admin-view-table .table-scroll");
+    const visibleBox = [...boxes].find((box) => box.offsetParent);
+
+    window.scrollTo(0, Number(sessionStorage.getItem("adminPageScroll")) || 0);
+    if (visibleBox) visibleBox.scrollTop = Number(sessionStorage.getItem("adminBoxScroll")) || 0;
+
+    window.addEventListener("scroll", () => sessionStorage.setItem("adminPageScroll", window.scrollY));
+    boxes.forEach((box) => box.addEventListener("scroll", () => sessionStorage.setItem("adminBoxScroll", box.scrollTop)));
+}
