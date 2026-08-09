@@ -68,9 +68,7 @@
                         <th>Feedback Entries</th>
                         <th>Feedback Out of Sequence</th>
                         <th>Approved Hours</th>
-                        <th>No Worklogs</th>
-                        <th>Over 10 Pending Entries</th>
-                        <th>Low Average Rating</th>
+                        <th>Over 10 Pending Hr. Approvals</th>
                         <th>Final Eval Submitted</th>
                         <th>Actions</th>
                     </tr>
@@ -89,11 +87,7 @@
                         <td>{% if sf.get('out_of_sequence') %}<span class="flag-yes">✓</span>{% else %}<span
                                 class="flag-no">✗</span>{% endif %}</td>
                         <td>{{ sf.get('approved_hours', 0) }}</td>
-                        <td>{% if sf.get('no_worklogs') %}<span class="flag-yes">✓</span>{% else %}<span
-                                class="flag-no">✗</span>{% endif %}</td>
                         <td>{% if sf.get('over_ten_pending') %}<span class="flag-yes">✓</span>{% else %}<span
-                                class="flag-no">✗</span>{% endif %}</td>
-                        <td>{% if sf.get('low_rating') %}<span class="flag-yes">✓</span>{% else %}<span
                                 class="flag-no">✗</span>{% endif %}</td>
                         <td>{% if student[0] in final_eval_submitted %}<span class="flag-yes">✓</span>{% else %}<span
                                 class="flag-no">✗</span>{% endif %}</td>

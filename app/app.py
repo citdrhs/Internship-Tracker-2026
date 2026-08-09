@@ -1692,8 +1692,6 @@ STAT_CATEGORIES = [
     ("missing_one_or_two", "Missing 1-2 feedback entries"),
     ("missing_three_plus", "Missing 3 or more feedback entries"),
     ("out_of_sequence", "Feedback out of sequence (gap or late start)"),
-    ("no_worklogs", "No worklogs submitted at all"),
-    ("low_rating", "Low average rating (below 3)"),
     ("under_160_hours", "Under 160 hours approved"),
 ]
 
@@ -1719,8 +1717,7 @@ def fetch_student_stats():
                     SELECT student_id,
                            count(*) AS feedback_count,
                            count(DISTINCT week) AS weeks_with_feedback,
-                           COALESCE(max(week), 0) AS highest_feedback_week,
-                           COALESCE(round(avg(rating), 2), 0) AS average_rating
+                           COALESCE(max(week), 0) AS highest_feedback_week
                     FROM feedback
                     GROUP BY student_id
                 )
@@ -1735,8 +1732,7 @@ def fetch_student_stats():
                        COALESCE(hours_summary.approved_hours, 0),
                        COALESCE(feedback_summary.feedback_count, 0),
                        COALESCE(feedback_summary.weeks_with_feedback, 0),
-                       COALESCE(feedback_summary.highest_feedback_week, 0),
-                       COALESCE(feedback_summary.average_rating, 0)
+                       COALESCE(feedback_summary.highest_feedback_week, 0)
                 FROM students s
                 LEFT JOIN mentor_assignments ma ON ma.student_id = s.id
                 LEFT JOIN mentors m ON m.id = ma.mentor_id
@@ -1749,7 +1745,7 @@ def fetch_student_stats():
             column_names = [
                 "student_id", "student_name", "mentor_id", "mentor_name", "organization",
                 "worklog_count", "approved_count", "pending_count", "approved_hours",
-                "feedback_count", "weeks_with_feedback", "highest_feedback_week", "average_rating",
+                "feedback_count", "weeks_with_feedback", "highest_feedback_week",
             ]
             return [dict(zip(column_names, row)) for row in cur.fetchall()]
     finally:
@@ -1760,7 +1756,6 @@ def compute_student_flags(student):
     approved_count = student["approved_count"]
     pending_count = student["pending_count"]
     approved_hours = float(student["approved_hours"])
-    average_rating = float(student["average_rating"])
     has_feedback = feedback_count > 0
 
     return {
@@ -1771,8 +1766,6 @@ def compute_student_flags(student):
         "missing_one_or_two": 5 <= feedback_count <= 6,
         "missing_three_plus": 1 <= feedback_count <= 4,
         "out_of_sequence": has_feedback and student["weeks_with_feedback"] != student["highest_feedback_week"],
-        "no_worklogs": student["worklog_count"] == 0,
-        "low_rating": has_feedback and average_rating < 3,
         "under_160_hours": approved_hours < 160,
 
         # Extra values shown directly in the student table columns
