@@ -62,10 +62,11 @@
                     <tr>
                         <th>Name</th>
                         <th>Mentor</th>
+                        <th>Organization</th>
                         <th>Has Feedback</th>
                         <th>Has Approved Hours</th>
                         <th>Has Pending Hours</th>
-                        <th>Feedback Entries</th>
+                        <th>Mentor Feedback Entries</th>
                         <th>Feedback Out of Sequence</th>
                         <th>Approved Hours</th>
                         <th>Over 10 Pending Hr. Approvals</th>
@@ -77,6 +78,7 @@
                     <tr>
                         <td>{{ student[1] }}</td>
                         <td>{{ sf.get('mentor_name', '(no mentor)') }}</td>
+                        <td>{{ sf.get('organization', '') }}</td>
                         <td>{% if sf.get('has_feedback') %}<span class="flag-yes">✓</span>{% else %}<span
                                 class="flag-no">✗</span>{% endif %}</td>
                         <td>{% if sf.get('has_approved_hours') %}<span class="flag-yes">✓</span>{% else %}<span
@@ -119,6 +121,7 @@
                 <table class="admin-table">
                     <tr>
                         <th>Name</th>
+                        <th>Organization</th>
                         <th>Students Assigned</th>
                         <th>Has Not Used App</th>
                         <th>Only Submitted Hours</th>
@@ -132,6 +135,7 @@
                     {% set mf = mentor_stats.get(mentor[0], {}) %}
                     <tr>
                         <td>{{ mentor[1] }}</td>
+                        <td>{{ mentor[2] }}</td>
                         <td>{{ mf.get('student_count', 0) }}</td>
                         <td>{% if mf.get('not_used') %}<span class="flag-yes">✓</span>{% else %}<span
                                 class="flag-no">✗</span>{% endif %}</td>

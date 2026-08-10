@@ -644,9 +644,12 @@ def fetch_mentors():
         with conn.cursor() as cur:
             cur.execute(
                 """
-                SELECT id, CONCAT(first_name, ' ', last_name) AS full_name
-                FROM mentors
-                ORDER BY first_name, last_name
+                SELECT m.id,
+                       CONCAT(m.first_name, ' ', m.last_name) AS full_name,
+                       COALESCE(o.name, m.organization, '') AS organization
+                FROM mentors m
+                LEFT JOIN organizations o ON o.id = m.organization_id
+                ORDER BY m.first_name, m.last_name
                 """
             )
             return cur.fetchall()
@@ -1770,6 +1773,7 @@ def compute_student_flags(student):
 
         # Extra values shown directly in the student table columns
         "mentor_name": student["mentor_name"] or "(no mentor)",
+        "organization": student["organization"],
         "has_feedback": has_feedback,
         "has_approved_hours": approved_count > 0,
         "has_pending_hours": pending_count > 0,
