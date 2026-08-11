@@ -1,0 +1,6 @@
+{{ student_name }} asked a question on their worklog for {{ day_worked }}:
+
+{{ question }}
+
+Log in to the Internship Tracker to view the full worklog and respond:
+{{ url_for('login', _external=True) }}

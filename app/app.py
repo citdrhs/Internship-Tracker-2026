@@ -1,5 +1,8 @@
 import json
 import os
+import smtplib
+import ssl
+from email.message import EmailMessage
 from pathlib import Path
 from urllib.parse import quote_plus
 
@@ -9,7 +12,6 @@ from dotenv import load_dotenv
 from datetime import datetime
 from flask import Flask, Response, flash, redirect, render_template, request, session, url_for
 from flask_bcrypt import Bcrypt
-from flask_mail import Mail, Message
 from werkzeug.utils import secure_filename
 from app.forms import ForgotPasswordForm, LoginForm, RegisterForm, ResetPasswordForm
 from itsdangerous import URLSafeTimedSerializer
@@ -224,15 +226,15 @@ app.config["SQLALCHEMY_ENGINE_OPTIONS"] = {
     },
 }
 app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
-app.config["MAIL_SERVER"] = "smtp.gmail.com"
-app.config["MAIL_PORT"] = 587
-app.config["MAIL_USE_TLS"] = True
-app.config["MAIL_USERNAME"] = os.environ.get("EMAIL_USERNAME")
-app.config["MAIL_PASSWORD"] = os.environ.get("EMAIL_PASSWORD")
+SMTP_HOST = os.environ.get("SMTP_HOST", "smtppro.zoho.com")
+SMTP_PORT = int(os.environ.get("SMTP_PORT", "465"))
+SMTP_USERNAME = os.environ.get("SMTP_USERNAME")
+SMTP_PASSWORD = os.environ.get("SMTP_PASSWORD")
+MAIL_FROM_NAME = os.environ.get("MAIL_FROM_NAME", "CIT Internship Program")
+MAIL_FROM_ADDRESS = os.environ.get("MAIL_FROM_ADDRESS", "noreply@drhscit.org")
 
 db.init_app(app)
 bcrypt = Bcrypt(app)
-mail = Mail(app)
 
 def require_login():
     if "email" not in session:
@@ -946,17 +948,22 @@ def confirm_token(token, expiration=3600):
     except Exception:
         return False
 
+def send_email(recipient, subject, body):
+    message = EmailMessage()
+    message["Subject"] = subject
+    message["From"] = f"{MAIL_FROM_NAME} <{MAIL_FROM_ADDRESS}>"
+    message["To"] = recipient
+    message.set_content(body)
+    context = ssl.create_default_context()
+    with smtplib.SMTP_SSL(SMTP_HOST, SMTP_PORT, context=context, timeout=30) as server:
+        server.login(SMTP_USERNAME, SMTP_PASSWORD)
+        server.send_message(message)
+
 def send_confirmation_email(user_email):
     token = generate_confirmation_token(user_email)
     confirm_url = url_for("confirm_email", token=token, _external=True)
-    html = render_template("confirm_email.html", confirm_url=confirm_url)
-    msg = Message(
-        "Confirm Your Registration",
-        sender=app.config["MAIL_USERNAME"],
-        recipients=[user_email],
-    )
-    msg.html = html
-    mail.send(msg)
+    body = render_template("emails/confirm.txt", confirm_url=confirm_url)
+    send_email(user_email, "Confirm Your Registration", body)
 
 def generate_reset_token(email):
     serializer = URLSafeTimedSerializer(app.config["SECRET_KEY"])
@@ -972,14 +979,8 @@ def confirm_reset_token(token, expiration=3600):
 def send_password_reset_email(user_email):
     token = generate_reset_token(user_email)
     reset_url = url_for("reset_password", token=token, _external=True)
-    html = render_template("reset_email.html", reset_url=reset_url)
-    msg = Message(
-        "Reset Your Password",
-        sender=app.config["MAIL_USERNAME"],
-        recipients=[user_email],
-    )
-    msg.html = html
-    mail.send(msg)
+    body = render_template("emails/reset.txt", reset_url=reset_url)
+    send_email(user_email, "Reset Your Password", body)
 
 def notify_mentor_of_question(student_id, day_worked, question):
     conn = get_db_connection()
@@ -1004,18 +1005,13 @@ def notify_mentor_of_question(student_id, day_worked, question):
 
     mentor_email, student_name = row
     try:
-        msg = Message(
-            "A student left you a question",
-            sender=app.config["MAIL_USERNAME"],
-            recipients=[mentor_email],
-        )
-        msg.html = render_template(
-            "question_email.html",
+        body = render_template(
+            "emails/question.txt",
             student_name=student_name,
             day_worked=day_worked,
             question=question,
         )
-        mail.send(msg)
+        send_email(mentor_email, "A student left you a question", body)
     except Exception:
         pass
 
@@ -1023,18 +1019,13 @@ def notify_student_of_response(student_email, student_name, day_worked, response
     if not student_email:
         return
     try:
-        msg = Message(
-            "Your mentor responded to your worklog",
-            sender=app.config["MAIL_USERNAME"],
-            recipients=[student_email],
-        )
-        msg.html = render_template(
-            "response_email.html",
+        body = render_template(
+            "emails/response.txt",
             student_name=student_name,
             day_worked=day_worked,
             response=response,
         )
-        mail.send(msg)
+        send_email(student_email, "Your mentor responded to your worklog", body)
     except Exception:
         pass
 

@@ -1,0 +1,6 @@
+Hi {{ student_name }}, your mentor left a response on your worklog for {{ day_worked }}:
+
+{{ response }}
+
+Log in to the Internship Tracker to see it on your worklog:
+{{ url_for('login', _external=True) }}

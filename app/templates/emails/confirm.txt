@@ -1,0 +1,7 @@
+Thanks for registering for the CIT Internship Tracker.
+
+Confirm your email and activate your account by opening this link:
+
+{{ confirm_url }}
+
+This link expires in 1 hour. If you didn't register, you can ignore this email.
