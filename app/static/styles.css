@@ -728,6 +728,25 @@ td .action-btns {
     margin: 14px 0 24px;
 }
 
+.org-type-option {
+    display: flex;
+    gap: 8px;
+    align-items: flex-start;
+    margin: 12px 0;
+}
+
+.mentor-email-row {
+    display: flex;
+    gap: 8px;
+    margin-top: 6px;
+}
+
+.exclusions-note {
+    color: #555;
+    font-size: 0.9rem;
+    margin-top: 20px;
+}
+
 .admin-organizations {
     margin-top: 34px;
 }

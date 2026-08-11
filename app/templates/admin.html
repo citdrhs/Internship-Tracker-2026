@@ -16,7 +16,10 @@
         <div class="action-btns" style="justify-content: flex-start; margin-bottom: 16px;">
             <a href="{{ url_for('admin', add_organization=1) }}" class="btn-edit">Add Organization</a>
         </div>
-        <p>To create a new Admin account Register with the code: 1805</p>
+        <p>To register a new admin account, use the code <strong>{{ admin_code }}</strong>. To register a new mentor
+            account, use the code
+            <strong>{{ mentor_code }}</strong>.
+        </p>
 
         <h2>Select a View</h2>
         <div class="view-select">
@@ -39,7 +42,7 @@
                         <th>Organization</th>
                         <th>Actions</th>
                     </tr>
-                    {% for organization in organizations %}
+                    {% for organization in organizations_active %}
                     <tr>
                         <td>{{ organization[1] }}</td>
                         <td>
@@ -54,6 +57,30 @@
                     {% endfor %}
                 </table>
             </div>
+            {% if organizations_excluded %}
+            <h3>Exclusions*</h3>
+            <div class="table-scroll">
+                <table class="admin-table">
+                    <tr>
+                        <th>Organization</th>
+                        <th>Actions</th>
+                    </tr>
+                    {% for organization in organizations_excluded %}
+                    <tr>
+                        <td>{{ organization[1] }}</td>
+                        <td>
+                            <div class="action-btns">
+                                <a href="{{ url_for('admin', organization_id=organization[0]) }}"
+                                    class="btn-view">View</a>
+                                <a href="{{ url_for('admin', edit_organization_id=organization[0]) }}"
+                                    class="btn-edit">Edit</a>
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </table>
+            </div>
+            {% endif %}
         </div>
 
         <div class="admin-view-table" data-view="student">
@@ -73,47 +100,37 @@
                         <th>Final Eval Submitted</th>
                         <th>Actions</th>
                     </tr>
-                    {% for student in students %}
+                    {% for student in students_active %}
                     {% set sf = student_flags.get(student[0], {}) %}
-                    <tr>
-                        <td>{{ student[1] }}</td>
-                        <td>{{ sf.get('mentor_name', '(no mentor)') }}</td>
-                        <td>{{ sf.get('organization', '') }}</td>
-                        <td>{% if sf.get('has_feedback') %}<span class="flag-yes">✓</span>{% else %}<span
-                                class="flag-no">✗</span>{% endif %}</td>
-                        <td>{% if sf.get('has_approved_hours') %}<span class="flag-yes">✓</span>{% else %}<span
-                                class="flag-no">✗</span>{% endif %}</td>
-                        <td>{% if sf.get('has_pending_hours') %}<span class="flag-yes">✓</span>{% else %}<span
-                                class="flag-no">✗</span>{% endif %}</td>
-                        <td>{{ sf.get('feedback_count', 0) }}</td>
-                        <td>{% if sf.get('out_of_sequence') %}<span class="flag-yes">✓</span>{% else %}<span
-                                class="flag-no">✗</span>{% endif %}</td>
-                        <td>{{ sf.get('approved_hours', 0) }}</td>
-                        <td>{% if sf.get('over_ten_pending') %}<span class="flag-yes">✓</span>{% else %}<span
-                                class="flag-no">✗</span>{% endif %}</td>
-                        <td>{% if student[0] in final_eval_submitted %}<span class="flag-yes">✓</span>{% else %}<span
-                                class="flag-no">✗</span>{% endif %}</td>
-                        <td>
-                            <div class="action-btns">
-                                <a href="{{ url_for('admin', student_id=student[0]) }}" class="btn-view">View</a>
-                                <a href="{{ url_for('admin', edit_student_id=student[0]) }}" class="btn-edit">Edit</a>
-                                <a href="{{ url_for('admin', docs_student_id=student[0]) }}" class="btn-view">Additional
-                                    <br>
-                                    Docs</a>
-                                {% if student[0] in final_eval_submitted %}
-                                <a href="{{ url_for('admin', final_eval_student_id=student[0]) }}" class="btn-view">
-                                    {% if final_eval_submitted[student[0]] %}Final Eval <br> Reviewed{% else %}Review
-                                    Final <br>
-                                    Eval{%
-                                    endif
-                                    %}</a>
-                                {% endif %}
-                            </div>
-                        </td>
-                    </tr>
+                    {% include '_admin_student_row.html' %}
                     {% endfor %}
                 </table>
             </div>
+            {% if students_excluded %}
+            <h3>Exclusions*</h3>
+            <div class="table-scroll">
+                <table class="admin-table">
+                    <tr>
+                        <th>Name</th>
+                        <th>Mentor</th>
+                        <th>Organization</th>
+                        <th>Has Feedback</th>
+                        <th>Has Approved Hours</th>
+                        <th>Has Pending Hours</th>
+                        <th>Mentor Feedback Entries</th>
+                        <th>Feedback Out of Sequence</th>
+                        <th>Approved Hours</th>
+                        <th>Over 10 Pending Hr. Approvals</th>
+                        <th>Final Eval Submitted</th>
+                        <th>Actions</th>
+                    </tr>
+                    {% for student in students_excluded %}
+                    {% set sf = student_flags.get(student[0], {}) %}
+                    {% include '_admin_student_row.html' %}
+                    {% endfor %}
+                </table>
+            </div>
+            {% endif %}
         </div>
 
         <div class="admin-view-table" data-view="mentor">
@@ -131,39 +148,35 @@
                         <th>All 7 Weeks for Every Student</th>
                         <th>Actions</th>
                     </tr>
-                    {% for mentor in mentors %}
+                    {% for mentor in mentors_active %}
                     {% set mf = mentor_stats.get(mentor[0], {}) %}
-                    <tr>
-                        <td>{{ mentor[1] }}</td>
-                        <td>{{ mentor[2] }}</td>
-                        <td>{{ mf.get('student_count', 0) }}</td>
-                        <td>{% if mf.get('not_used') %}<span class="flag-yes">✓</span>{% else %}<span
-                                class="flag-no">✗</span>{% endif %}</td>
-                        <td>{% if mf.get('only_hours') %}<span class="flag-yes">✓</span>{% else %}<span
-                                class="flag-no">✗</span>{% endif %}</td>
-                        <td>{% if mf.get('only_feedback') %}<span class="flag-yes">✓</span>{% else %}<span
-                                class="flag-no">✗</span>{% endif %}</td>
-                        <td>{% if mf.get('hours_and_feedback') %}<span class="flag-yes">✓</span>{% else %}<span
-                                class="flag-no">✗</span>{% endif %}</td>
-                        <td>{% if mf.get('approved_all') %}<span class="flag-yes">✓</span>{% else %}<span
-                                class="flag-no">✗</span>{% endif %}</td>
-                        <td>{% if mf.get('all_weeks_every_student') %}<span class="flag-yes">✓</span>{% else %}<span
-                                class="flag-no">✗</span>{% endif %}</td>
-                        <td>
-                            <div class="action-btns">
-                                <a href="{{ url_for('admin', mentor_id=mentor[0]) }}" class="btn-view">View</a>
-                                <a href="{{ url_for('admin', edit_mentor_id=mentor[0]) }}" class="btn-edit">Edit</a>
-                                <form method="post" action="{{ url_for('impersonate', mentor_id=mentor[0]) }}">
-                                    <button type="submit" class="btn-edit"
-                                        onclick="return confirm('Log in as {{ mentor[1] }}? You will act as them until you click Return to admin.')">Log
-                                        in as this mentor</button>
-                                </form>
-                            </div>
-                        </td>
-                    </tr>
+                    {% include '_admin_mentor_row.html' %}
                     {% endfor %}
                 </table>
             </div>
+            {% if mentors_excluded %}
+            <h3>Exclusions*</h3>
+            <div class="table-scroll">
+                <table class="admin-table">
+                    <tr>
+                        <th>Name</th>
+                        <th>Organization</th>
+                        <th>Students Assigned</th>
+                        <th>Has Not Used App</th>
+                        <th>Only Submitted Hours</th>
+                        <th>Only Submitted Feedback</th>
+                        <th>Approved Hours & Feedback</th>
+                        <th>Approved All Hours</th>
+                        <th>All 7 Weeks for Every Student</th>
+                        <th>Actions</th>
+                    </tr>
+                    {% for mentor in mentors_excluded %}
+                    {% set mf = mentor_stats.get(mentor[0], {}) %}
+                    {% include '_admin_mentor_row.html' %}
+                    {% endfor %}
+                </table>
+            </div>
+            {% endif %}
         </div>
 
         <div class="admin-view-table" data-view="admin">
@@ -212,12 +225,48 @@
         <div class="edit-dialog-header">
             <h2>Add Organization</h2>
         </div>
-        <form method="POST" action="{{ url_for('admin') }}" class="admin-org-form">
+        <form method="POST" action="{{ url_for('admin') }}" class="admin-org-form" id="add-org-form">
             {% set organization_name = '' %}
             {% set organization_details = {} %}
             {% include '_organization_form_fields.html' %}
-            <button type="submit">Submit</button>
+
+            <div class="form-group">
+                <label>Mentor emails</label>
+                <div id="mentor-emails">
+                    <input type="email" name="mentor_email" placeholder="mentor@example.com">
+                </div>
+                <button type="button" onclick="addMentorEmail()">+ Add another mentor email</button>
+                <small>Each address gets an onboarding email when you create an active organization.</small>
+            </div>
+
+            <input type="hidden" name="excluded" id="org-excluded" value="">
+            <button type="button" onclick="openOrgConfirm()">Create Organization</button>
         </form>
+    </dialog>
+
+    <dialog id="org-confirm" class="modal">
+        <h2>Will this be an active organization?</h2>
+        <p>Choose one. This decides whether onboarding emails are sent to the mentors and whether the organization's
+            students are counted in the statistics.</p>
+        <label class="org-type-option">
+            <input type="radio" name="org-type" value="0" onchange="chooseOrgType('0')">
+            <span><strong>Active</strong>: the standard choice for organizations whose mentors will use this app to
+                approve hours and give feedback. When you create the organization, every mentor email you entered above
+                is sent an onboarding email inviting them to register and make their account, and this organization's
+                students are counted in the aggregate statistics.</span>
+        </label>
+        <label class="org-type-option">
+            <input type="radio" name="org-type" value="1" onchange="chooseOrgType('1')">
+            <span><strong>Excluded</strong>: for organizations that already track student progress in their own separate
+                system. You are only adding them here so their students can create accounts and link to the organization
+                for our records. No onboarding email is sent to their mentors, and this organization's students are left
+                out of the aggregate statistics. After creating it, use the "Add a generic mentor" button on the admin
+                homepage to make a placeholder mentor profile that these students can select when they register.</span>
+        </label>
+        <div class="form-actions">
+            <button type="button" id="org-confirm-create" disabled
+                onclick="document.getElementById('add-org-form').submit()">Create</button>
+        </div>
     </dialog>
     {% endif %}
 
@@ -758,6 +807,9 @@
         </form>
     </dialog>
     {% endif %}
+
+    <p class="exclusions-note">* Excluded organizations run their own tracking systems, so their mentors are not sent
+        onboarding emails and their students are not counted in the aggregate statistics.</p>
 
     <div id="page-data" data-open-dialog="{{ open_dialog }}" hidden></div>
 </div>

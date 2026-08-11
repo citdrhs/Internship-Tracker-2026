@@ -627,13 +627,13 @@ def fetch_organizations():
             detail_columns = ", ".join(ORGANIZATION_DETAIL_COLUMN_TYPES)
             cur.execute(
                 f"""
-                SELECT id, name, {detail_columns}
+                SELECT id, name, {detail_columns}, COALESCE(excluded, FALSE)
                 FROM organizations
                 ORDER BY name
                 """
             )
             return [
-                (organization[0], organization[1], organization_details_from_row(organization))
+                (organization[0], organization[1], organization_details_from_row(organization), organization[-1])
                 for organization in cur.fetchall()
             ]
     finally:
@@ -648,7 +648,8 @@ def fetch_mentors():
                 """
                 SELECT m.id,
                        CONCAT(m.first_name, ' ', m.last_name) AS full_name,
-                       COALESCE(o.name, m.organization, '') AS organization
+                       COALESCE(o.name, m.organization, '') AS organization,
+                       COALESCE(o.excluded, FALSE) AS excluded
                 FROM mentors m
                 LEFT JOIN organizations o ON o.id = m.organization_id
                 ORDER BY m.first_name, m.last_name
@@ -1028,6 +1029,23 @@ def notify_student_of_response(student_email, student_name, day_worked, response
         send_email(student_email, "Your mentor responded to your worklog", body)
     except Exception:
         pass
+
+def send_mentor_invite(email):
+    body = render_template("emails/mentor_invite.txt")
+    send_email(email, "ACTION REQUIRED: Register for the CIT Internship App", body)
+
+def mark_mentor_email_invited(organization_id, email):
+    conn = get_db_connection()
+    try:
+        with conn:
+            with conn.cursor() as cur:
+                cur.execute(
+                    "UPDATE organization_mentor_emails SET invited_at = NOW() "
+                    "WHERE organization_id = %s AND email = %s",
+                    (organization_id, email),
+                )
+    finally:
+        conn.close()
 
 @app.route("/")
 def index():
@@ -1726,7 +1744,8 @@ def fetch_student_stats():
                        COALESCE(hours_summary.approved_hours, 0),
                        COALESCE(feedback_summary.feedback_count, 0),
                        COALESCE(feedback_summary.weeks_with_feedback, 0),
-                       COALESCE(feedback_summary.highest_feedback_week, 0)
+                       COALESCE(feedback_summary.highest_feedback_week, 0),
+                       COALESCE(mo.excluded, FALSE)
                 FROM students s
                 LEFT JOIN mentor_assignments ma ON ma.student_id = s.id
                 LEFT JOIN mentors m ON m.id = ma.mentor_id
@@ -1739,7 +1758,7 @@ def fetch_student_stats():
             column_names = [
                 "student_id", "student_name", "mentor_id", "mentor_name", "organization",
                 "worklog_count", "approved_count", "pending_count", "approved_hours",
-                "feedback_count", "weeks_with_feedback", "highest_feedback_week",
+                "feedback_count", "weeks_with_feedback", "highest_feedback_week", "excluded",
             ]
             return [dict(zip(column_names, row)) for row in cur.fetchall()]
     finally:
@@ -1765,6 +1784,7 @@ def compute_student_flags(student):
         # Extra values shown directly in the student table columns
         "mentor_name": student["mentor_name"] or "(no mentor)",
         "organization": student["organization"],
+        "excluded": student["excluded"],
         "has_feedback": has_feedback,
         "has_approved_hours": approved_count > 0,
         "has_pending_hours": pending_count > 0,
@@ -1784,6 +1804,8 @@ def build_admin_stats(all_mentor_ids):
     for flag_name, label in STAT_CATEGORIES:
         groups = {}
         for student in students:
+            if student["excluded"]:
+                continue
             if not student_flags[student["student_id"]][flag_name]:
                 continue
             if student["mentor_name"]:
@@ -1830,32 +1852,54 @@ def admin():
     if request.method == "POST":
         organization_name = request.form.get("organization_name", "").strip()
         organization_details = parse_organization_details()
+        excluded = request.form.get("excluded") == "1"
+
+        mentor_emails = []
+        for raw_email in request.form.getlist("mentor_email"):
+            email = raw_email.strip()
+            if email and email not in mentor_emails:
+                mentor_emails.append(email)
 
         if not organization_name:
             flash("Organization name is required.", "danger")
             return redirect(url_for("admin"))
 
+        organization_id = None
         conn = get_db_connection()
         try:
             with conn:
                 ensure_organization_detail_columns(conn)
                 with conn.cursor() as cur:
                     detail_columns = list(ORGANIZATION_DETAIL_COLUMN_TYPES)
-                    columns = ", ".join(["name", *detail_columns])
-                    placeholders = ", ".join(["%s"] * (len(detail_columns) + 1))
+                    columns = ", ".join(["name", "excluded", *detail_columns])
+                    placeholders = ", ".join(["%s"] * (len(detail_columns) + 2))
                     cur.execute("SELECT 1 FROM organizations WHERE name = %s", (organization_name,))
                     inserted = cur.fetchone() is None
                     if inserted:
                         cur.execute(
-                            f"INSERT INTO organizations ({columns}) VALUES ({placeholders})",
-                            (organization_name, *[organization_details[column] for column in detail_columns]),
+                            f"INSERT INTO organizations ({columns}) VALUES ({placeholders}) RETURNING id",
+                            (organization_name, excluded, *[organization_details[column] for column in detail_columns]),
                         )
-            if inserted:
-                flash("Organization added.", "success")
-            else:
-                flash("Organization already exists.", "warning")
+                        organization_id = cur.fetchone()[0]
+                        for email in mentor_emails:
+                            cur.execute(
+                                "INSERT INTO organization_mentor_emails (organization_id, email) VALUES (%s, %s)",
+                                (organization_id, email),
+                            )
         finally:
             conn.close()
+
+        if inserted:
+            if not excluded:
+                for email in mentor_emails:
+                    try:
+                        send_mentor_invite(email)
+                        mark_mentor_email_invited(organization_id, email)
+                    except Exception:
+                        pass
+            flash("Organization added.", "success")
+        else:
+            flash("Organization already exists.", "warning")
 
         return redirect(url_for("admin"))
 
@@ -1990,6 +2034,13 @@ def admin():
 
     stat_categories, student_flags, mentor_stats = build_admin_stats([m[0] for m in mentors])
 
+    students_active = [s for s in students if not student_flags.get(s[0], {}).get("excluded")]
+    students_excluded = [s for s in students if student_flags.get(s[0], {}).get("excluded")]
+    mentors_active = [m for m in mentors if not m[3]]
+    mentors_excluded = [m for m in mentors if m[3]]
+    organizations_active = [o for o in organizations if not o[3]]
+    organizations_excluded = [o for o in organizations if o[3]]
+
     open_dialog = ""
     if selected_student:
         open_dialog = "view-student"
@@ -2047,7 +2098,15 @@ def admin():
         mentor_stats=mentor_stats,
         active_view=active_view,
         open_dialog=open_dialog,
+        admin_code=os.environ.get("ADMIN_CODE", ""),
+        mentor_code=os.environ.get("MENTOR_CODE", ""),
         organizations=organizations,
+        students_active=students_active,
+        students_excluded=students_excluded,
+        mentors_active=mentors_active,
+        mentors_excluded=mentors_excluded,
+        organizations_active=organizations_active,
+        organizations_excluded=organizations_excluded,
         organization_text_fields=ORGANIZATION_TEXT_FIELDS,
         organization_checkbox_fields=ORGANIZATION_CHECKBOX_FIELDS,
     )

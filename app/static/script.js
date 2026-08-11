@@ -235,6 +235,32 @@ function moveDocCarousel(step) {
 
 if (document.querySelector(".doc-carousel")) moveDocCarousel(0);
 
+function addMentorEmail() {
+    const row = document.createElement("div");
+    row.className = "mentor-email-row";
+    const input = document.createElement("input");
+    input.type = "email";
+    input.name = "mentor_email";
+    input.placeholder = "mentor@example.com";
+    const remove = document.createElement("button");
+    remove.type = "button";
+    remove.textContent = "Remove";
+    remove.onclick = () => row.remove();
+    row.append(input, remove);
+    document.getElementById("mentor-emails").appendChild(row);
+}
+
+function openOrgConfirm() {
+    const form = document.getElementById("add-org-form");
+    if (!form.reportValidity()) return;
+    document.getElementById("org-confirm").showModal();
+}
+
+function chooseOrgType(value) {
+    document.getElementById("org-excluded").value = value;
+    document.getElementById("org-confirm-create").disabled = false;
+}
+
 // Admin: keeps the user's scroll spot upon page reload
 if (document.getElementById("admin-container")) {
     const boxes = document.querySelectorAll(".admin-view-table .table-scroll");

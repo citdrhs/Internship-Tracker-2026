@@ -52,6 +52,17 @@ class Organization(db.Model):
     virginia_5cs = db.Column(db.Boolean, nullable=False, default=False)
     hours = db.Column(db.Boolean, nullable=False, default=False)
     signature = db.Column(db.String(200), nullable=True)
+    excluded = db.Column(db.Boolean, nullable=False, default=False)
+    created_at = db.Column(db.DateTime, nullable=False, server_default=db.func.now())
+
+
+class OrganizationMentorEmail(db.Model):
+    __tablename__ = 'organization_mentor_emails'
+    id = db.Column(db.Integer, primary_key=True)
+    organization_id = db.Column(db.Integer, db.ForeignKey('organizations.id', ondelete='CASCADE'), nullable=False)
+    email = db.Column(db.String(200), nullable=False)
+    invited_at = db.Column(db.DateTime, nullable=True)
+    reminder_sent_at = db.Column(db.DateTime, nullable=True)
     created_at = db.Column(db.DateTime, nullable=False, server_default=db.func.now())
 
 

@@ -1,0 +1,29 @@
+{# This table row element is separated out so the main student table AND the Exclusions table can share it #}
+<tr>
+        <td>{{ mentor[1] }}</td>
+        <td>{{ mentor[2] }}</td>
+        <td>{{ mf.get('student_count', 0) }}</td>
+        <td>{% if mf.get('not_used') %}<span class="flag-yes">✓</span>{% else %}<span class="flag-no">✗</span>{% endif
+                %}</td>
+        <td>{% if mf.get('only_hours') %}<span class="flag-yes">✓</span>{% else %}<span class="flag-no">✗</span>{% endif
+                %}</td>
+        <td>{% if mf.get('only_feedback') %}<span class="flag-yes">✓</span>{% else %}<span class="flag-no">✗</span>{%
+                endif %}</td>
+        <td>{% if mf.get('hours_and_feedback') %}<span class="flag-yes">✓</span>{% else %}<span
+                        class="flag-no">✗</span>{% endif %}</td>
+        <td>{% if mf.get('approved_all') %}<span class="flag-yes">✓</span>{% else %}<span class="flag-no">✗</span>{%
+                endif %}</td>
+        <td>{% if mf.get('all_weeks_every_student') %}<span class="flag-yes">✓</span>{% else %}<span
+                        class="flag-no">✗</span>{% endif %}</td>
+        <td>
+                <div class="action-btns">
+                        <a href="{{ url_for('admin', mentor_id=mentor[0]) }}" class="btn-view">View</a>
+                        <a href="{{ url_for('admin', edit_mentor_id=mentor[0]) }}" class="btn-edit">Edit</a>
+                        <form method="post" action="{{ url_for('impersonate', mentor_id=mentor[0]) }}">
+                                <button type="submit" class="btn-edit"
+                                        onclick="return confirm('Log in as {{ mentor[1] }}? You will act as them until you click Return to admin.')">Log
+                                        in as this mentor</button>
+                        </form>
+                </div>
+        </td>
+</tr>
