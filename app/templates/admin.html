@@ -317,6 +317,40 @@
             {% include '_organization_form_fields.html' %}
             <button type="submit">Save Changes</button>
         </form>
+
+        <div class="org-mentor-emails">
+            <h3>Mentor emails</h3>
+            {% if edit_organization_emails %}
+            <ul class="mentor-email-list">
+                {% for me in edit_organization_emails %}
+                <li>
+                    <span>{{ me.email }}</span>
+                    <form method="post" action="{{ url_for('remove_org_mentor_email', email_id=me.id) }}">
+                        <button type="submit" class="btn-delete">Remove</button>
+                    </form>
+                </li>
+                {% endfor %}
+            </ul>
+            {% else %}
+            <p>No mentor emails yet.</p>
+            {% endif %}
+            <div class="mentor-email-row">
+                <input type="email" id="new-mentor-email" placeholder="mentor@example.com">
+                <button type="button" class="btn-edit" onclick="openOrgEmailConfirm()">Add email</button>
+            </div>
+        </div>
+    </dialog>
+
+    <dialog id="org-email-confirm" class="modal">
+        <h2>Send onboarding email?</h2>
+        <p>Do you want to send the onboarding email to this new address now?</p>
+        <form method="post" action="{{ url_for('add_org_mentor_email', organization_id=edit_organization[0]) }}">
+            <input type="hidden" name="email" id="org-email-confirm-value">
+            <div class="form-actions">
+                <button type="submit" name="send" value="1" class="btn-edit">Add and send onboarding email</button>
+                <button type="submit" name="send" value="0" class="btn-secondary">Add without sending</button>
+            </div>
+        </form>
     </dialog>
     {% endif %}
 

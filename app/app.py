@@ -1047,6 +1047,89 @@ def mark_mentor_email_invited(organization_id, email):
     finally:
         conn.close()
 
+def fetch_organization_mentor_emails(organization_id):
+    conn = get_db_connection()
+    try:
+        with conn.cursor() as cur:
+            cur.execute(
+                "SELECT id, email, invited_at FROM organization_mentor_emails "
+                "WHERE organization_id = %s ORDER BY email",
+                (organization_id,),
+            )
+            return [{"id": row[0], "email": row[1], "invited": row[2] is not None} for row in cur.fetchall()]
+    finally:
+        conn.close()
+
+def add_organization_mentor_email_row(organization_id, email):
+    conn = get_db_connection()
+    try:
+        with conn:
+            with conn.cursor() as cur:
+                cur.execute(
+                    "SELECT 1 FROM organization_mentor_emails WHERE organization_id = %s AND email = %s",
+                    (organization_id, email),
+                )
+                if cur.fetchone():
+                    return False
+                cur.execute(
+                    "INSERT INTO organization_mentor_emails (organization_id, email) VALUES (%s, %s)",
+                    (organization_id, email),
+                )
+                return True
+    finally:
+        conn.close()
+
+def delete_organization_mentor_email(email_id):
+    conn = get_db_connection()
+    try:
+        with conn:
+            with conn.cursor() as cur:
+                cur.execute(
+                    "DELETE FROM organization_mentor_emails WHERE id = %s RETURNING organization_id",
+                    (email_id,),
+                )
+                row = cur.fetchone()
+                return row[0] if row else None
+    finally:
+        conn.close()
+
+@app.route("/intr/admin/organizations/<int:organization_id>/mentor-emails/add", methods=["POST"])
+def add_org_mentor_email(organization_id):
+    login_redirect = require_login()
+    if login_redirect:
+        return login_redirect
+    if not session.get("is_admin"):
+        return redirect(url_for("home"))
+
+    email = request.form.get("email", "").strip()
+    if not email:
+        flash("Enter an email first.", "warning")
+        return redirect(url_for("admin", edit_organization_id=organization_id))
+
+    added = add_organization_mentor_email_row(organization_id, email)
+    if added and request.form.get("send") == "1":
+        try:
+            send_mentor_invite(email)
+            mark_mentor_email_invited(organization_id, email)
+        except Exception:
+            pass
+    flash("Mentor email added." if added else "That email is already listed.", "success" if added else "warning")
+    return redirect(url_for("admin", edit_organization_id=organization_id))
+
+@app.route("/intr/admin/mentor-emails/<int:email_id>/remove", methods=["POST"])
+def remove_org_mentor_email(email_id):
+    login_redirect = require_login()
+    if login_redirect:
+        return login_redirect
+    if not session.get("is_admin"):
+        return redirect(url_for("home"))
+
+    organization_id = delete_organization_mentor_email(email_id)
+    flash("Mentor email removed.", "success")
+    if organization_id:
+        return redirect(url_for("admin", edit_organization_id=organization_id))
+    return redirect(url_for("admin"))
+
 @app.route("/")
 def index():
     return redirect(url_for("login"))
@@ -2005,11 +2088,14 @@ def admin():
             edit_admin = Admin.query.get(int(edit_admin_id))
         except ValueError:
             edit_admin = None
+    edit_organization_emails = []
     if edit_organization_id:
         try:
             edit_organization = fetch_organization_entry(int(edit_organization_id))
         except ValueError:
             edit_organization = None
+        if edit_organization:
+            edit_organization_emails = fetch_organization_mentor_emails(edit_organization[0])
 
     if docs_student_id:
         try:
@@ -2088,6 +2174,7 @@ def admin():
         edit_mentor=edit_mentor,
         edit_admin=edit_admin,
         edit_organization=edit_organization,
+        edit_organization_emails=edit_organization_emails,
         docs_student_id=docs_student_id,
         student_documents=student_documents,
         final_eval_student_id=final_eval_student_id,

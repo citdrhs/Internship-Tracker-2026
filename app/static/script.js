@@ -261,6 +261,16 @@ function chooseOrgType(value) {
     document.getElementById("org-confirm-create").disabled = false;
 }
 
+function openOrgEmailConfirm() {
+    const input = document.getElementById("new-mentor-email");
+    if (!input.value.trim() || !input.checkValidity()) {
+        input.reportValidity();
+        return;
+    }
+    document.getElementById("org-email-confirm-value").value = input.value.trim();
+    document.getElementById("org-email-confirm").showModal();
+}
+
 // Admin: keeps the user's scroll spot upon page reload
 if (document.getElementById("admin-container")) {
     const boxes = document.querySelectorAll(".admin-view-table .table-scroll");

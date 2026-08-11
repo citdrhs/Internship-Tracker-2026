@@ -268,37 +268,32 @@ select {
 }
 
 button,
-.btn {
-    border-radius: 15px;
-    background-color: rgb(22, 4, 77);
-    color: white;
-    padding: 8px;
-}
-
-/* .btn {
-    background-color: #333333;
-    color: white;
+.btn,
+.btn-view,
+.btn-edit,
+.btn-secondary,
+.btn-delete,
+.btn-submit,
+.btn-approve,
+.btn-reject {
+    display: inline-block;
     border: none;
-    border-radius: 10px;
-    padding: 0.6em 1.4em;
-    font-weight: bold;
-    font-size: 0.95rem;
+    border-radius: 8px;
+    background-color: #333;
+    color: white;
+    padding: 6px 14px;
+    font-weight: 600;
+    font-size: 0.85rem;
     cursor: pointer;
+    text-decoration: none;
     transition: background-color 0.2s;
-} */
+}
 
 button:hover,
-.btn:hover {
-    cursor: pointer;
-    background-color: #555555;
-}
-
-button.danger {
-    background-color: #cc3333;
-}
-
-button.danger:hover {
-    background-color: #aa2222;
+.btn:hover,
+.btn-edit:hover,
+.btn-submit:hover {
+    background-color: #555;
 }
 
 a.cancel-link {
@@ -433,39 +428,19 @@ td .action-btns {
     align-items: flex-start;
 }
 
-.btn-edit {
-    background-color: #333;
-    color: white;
-    border: none;
-    border-radius: 8px;
-    padding: 6px 14px;
-    font-weight: 600;
-    font-size: 0.85rem;
-    text-decoration: none;
-    white-space: nowrap;
-    transition: background-color 0.2s;
-}
-
-.btn-edit:hover {
-    background-color: #555;
-}
-
 .btn-secondary {
-    color: rgb(22, 4, 77);
-    font-weight: 600;
+    background-color: #e0e0e0;
+    color: #333;
+}
+
+.btn-secondary:hover {
+    background-color: #cccccc;
 }
 
 .btn-delete {
     background-color: transparent;
     color: #cc3333;
     border: 2px solid #cc3333;
-    border-radius: 8px;
-    padding: 4px 12px;
-    font-weight: 600;
-    font-size: 0.85rem;
-    cursor: pointer;
-    white-space: nowrap;
-    transition: all 0.2s;
 }
 
 .btn-delete:hover {
@@ -473,22 +448,10 @@ td .action-btns {
     color: white;
 }
 
-/* Submit button */
 .btn-submit {
     width: 100%;
     padding: 0.75em;
-    background-color: #333;
-    color: white;
-    border: none;
-    border-radius: 10px;
-    font-weight: 700;
     font-size: 1rem;
-    cursor: pointer;
-    transition: background-color 0.2s;
-}
-
-.btn-submit:hover {
-    background-color: #555;
 }
 
 /* Ratings legend on the feedback form */
@@ -739,6 +702,19 @@ td .action-btns {
     display: flex;
     gap: 8px;
     margin-top: 6px;
+}
+
+.mentor-email-list {
+    list-style: none;
+    padding: 0;
+}
+
+.mentor-email-list li {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 8px;
+    margin: 6px 0;
 }
 
 .exclusions-note {
@@ -1343,13 +1319,6 @@ footer a {
 
 .btn-approve {
     background-color: #28a745;
-    color: white;
-    border: none;
-    border-radius: 6px;
-    padding: 6px 12px;
-    font-weight: 600;
-    cursor: pointer;
-    transition: background-color 0.2s;
     font-size: 1.2rem;
 }
 
@@ -1359,13 +1328,6 @@ footer a {
 
 .btn-reject {
     background-color: #dc3545;
-    color: white;
-    border: none;
-    border-radius: 6px;
-    padding: 6px 12px;
-    font-weight: 600;
-    cursor: pointer;
-    transition: background-color 0.2s;
     font-size: 1.2rem;
 }
 
@@ -1438,16 +1400,6 @@ footer a {
 /* View button on table */
 .btn-view {
     background-color: #6c63ff;
-    color: white;
-    border: none;
-    border-radius: 8px;
-    padding: 6px 14px;
-    font-weight: 600;
-    font-size: 0.85rem;
-    cursor: pointer;
-    white-space: nowrap;
-    text-decoration: none;
-    text-align: center;
 }
 
 .btn-view:hover {
