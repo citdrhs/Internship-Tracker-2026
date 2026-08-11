@@ -1969,6 +1969,18 @@ def admin():
                                 "INSERT INTO organization_mentor_emails (organization_id, email) VALUES (%s, %s)",
                                 (organization_id, email),
                             )
+                        if excluded:
+                            cur.execute(
+                                "INSERT INTO mentors (email, first_name, last_name, password, organization_id) "
+                                "VALUES (%s, %s, %s, %s, %s)",
+                                (
+                                    f"default-mentor-org{organization_id}@drhscit.invalid",
+                                    "Default",
+                                    "Mentor",
+                                    bcrypt.generate_password_hash(os.urandom(16).hex()).decode("utf-8"),
+                                    organization_id,
+                                ),
+                            )
         finally:
             conn.close()
 
