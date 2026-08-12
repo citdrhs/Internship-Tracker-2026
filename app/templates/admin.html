@@ -364,6 +364,65 @@
                 <button type="button" class="btn-edit" onclick="openOrgEmailConfirm()">Add email</button>
             </div>
         </div>
+
+        <div class="org-status">
+            <h3>Status</h3>
+            {% if edit_organization_excluded %}
+            <p>This organization is currently <strong>Excluded</strong>. Its students are left out of the aggregate
+                statistics.</p>
+            <button type="button" class="btn-edit"
+                onclick="document.getElementById('activate-confirm').showModal()">Mark as Active</button>
+            {% else %}
+            <p>This organization is currently <strong>Active</strong>. Its students are counted in the aggregate
+                statistics.</p>
+            <button type="button" class="btn-edit" onclick="document.getElementById('exclude-confirm').showModal()">Mark
+                as Excluded</button>
+            {% endif %}
+        </div>
+    </dialog>
+
+    <dialog id="exclude-confirm" class="modal">
+        <h2>Mark organization as excluded?</h2>
+        <p>Its students will be left out of the aggregate statistics, and a "Default Mentor" profile will be created (if
+            one does not already exist) so its students still have a mentor to select. No emails are sent.</p>
+        <form method="post" action="{{ url_for('set_organization_exclusion', id=edit_organization[0]) }}">
+            <input type="hidden" name="excluded" value="1">
+            <div class="form-actions">
+                <button type="submit" class="btn-edit">Mark excluded</button>
+                <button type="button" class="btn-secondary"
+                    onclick="document.getElementById('exclude-confirm').close()">Cancel</button>
+            </div>
+        </form>
+    </dialog>
+
+    <dialog id="activate-confirm" class="modal">
+        <h2>Mark organization as active?</h2>
+        <p>Its students will be counted in the aggregate statistics again. Note that the default mentor account for this
+            organization will remain; If you would like to delete it you must do so manually via the "edit" button for
+            the mentor profile.
+        </p>
+        {% if edit_organization_emails %}
+        <p>This organization has {{ edit_organization_emails|length }} mentor email(s) on file. Send them the onboarding
+            email now?</p>
+        <form method="post" action="{{ url_for('set_organization_exclusion', id=edit_organization[0]) }}">
+            <input type="hidden" name="excluded" value="0">
+            <div class="form-actions">
+                <button type="submit" name="send" value="1" class="btn-edit">Mark active and send onboarding
+                    emails</button>
+                <button type="submit" name="send" value="0" class="btn-secondary">Mark active without sending</button>
+            </div>
+        </form>
+        {% else %}
+        <form method="post" action="{{ url_for('set_organization_exclusion', id=edit_organization[0]) }}">
+            <input type="hidden" name="excluded" value="0">
+            <input type="hidden" name="send" value="0">
+            <div class="form-actions">
+                <button type="submit" class="btn-edit">Mark active</button>
+                <button type="button" class="btn-secondary"
+                    onclick="document.getElementById('activate-confirm').close()">Cancel</button>
+            </div>
+        </form>
+        {% endif %}
     </dialog>
 
     <dialog id="org-email-confirm" class="modal">

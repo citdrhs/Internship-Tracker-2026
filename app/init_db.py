@@ -262,52 +262,6 @@ CREATE UNIQUE INDEX IF NOT EXISTS pending_users_email_idx ON pending_users (emai
 
 DO $$
 BEGIN
-    IF to_regclass('public.users') IS NOT NULL THEN
-        INSERT INTO students (id, email, first_name, last_name, password, organization, organization_id)
-        SELECT id, email, first_name, last_name, password, organization, organization_id
-        FROM users
-        WHERE COALESCE(is_admin, FALSE) = FALSE
-          AND COALESCE(is_teacher, FALSE) = FALSE
-          AND COALESCE(is_mentor, FALSE) = FALSE
-        ON CONFLICT (id) DO UPDATE SET
-            email = EXCLUDED.email,
-            first_name = EXCLUDED.first_name,
-            last_name = EXCLUDED.last_name,
-            password = EXCLUDED.password,
-            organization = EXCLUDED.organization,
-            organization_id = EXCLUDED.organization_id;
-
-        INSERT INTO mentors (id, email, first_name, last_name, password, organization, organization_id)
-        SELECT id, email, first_name, last_name, password, organization, organization_id
-        FROM users
-        WHERE COALESCE(is_mentor, FALSE) = TRUE
-        ON CONFLICT (id) DO UPDATE SET
-            email = EXCLUDED.email,
-            first_name = EXCLUDED.first_name,
-            last_name = EXCLUDED.last_name,
-            password = EXCLUDED.password,
-            organization = EXCLUDED.organization,
-            organization_id = EXCLUDED.organization_id;
-
-        INSERT INTO admins (id, email, first_name, last_name, password, organization, organization_id)
-        SELECT id, email, first_name, last_name, password, organization, organization_id
-        FROM users
-        WHERE COALESCE(is_admin, FALSE) = TRUE
-           OR COALESCE(is_teacher, FALSE) = TRUE
-        ON CONFLICT (id) DO UPDATE SET
-            email = EXCLUDED.email,
-            first_name = EXCLUDED.first_name,
-            last_name = EXCLUDED.last_name,
-            password = EXCLUDED.password,
-            organization = EXCLUDED.organization,
-            organization_id = EXCLUDED.organization_id;
-    END IF;
-END $$;
-
-DROP TABLE IF EXISTS users CASCADE;
-
-DO $$
-BEGIN
     IF NOT EXISTS (
         SELECT 1 FROM pg_constraint
         WHERE conname = 'mentor_assignments_student_fk'
@@ -386,46 +340,6 @@ END $$;
 """
 
 
-ONBOARDING_EMAIL_DEFAULT = """Dear CIT Student Internship Mentor,
-
-This summer, the Center for Information Technology is using a custom-built site to manage student work logs, hour approvals, and feedback submissions as part of the CIT internship process.
-
-To register, students must select a mentor profile to link their account to. Therefore, it would be great if you could create an account for the website as soon as possible.
-
-The documentation linked below covers all mentor-related features on the Internship Tracker website, including account creation, bug reporting, submitting feedback, and approving hours. Please review it thoroughly.
-Documentation: https://docs.google.com/document/d/1_ER0zeRv4XzvdkAsa-ip4l5V_5oEuR7km37FDV9K7J0/edit?usp=sharing
-If you'd prefer to watch an explanatory video instead: https://drive.google.com/file/d/1oY3Zct0-IHeb13sQohE_FRHCt5ZcwoBL/view?usp=sharing
-
-*** The mentor code for registration is: 2892
-
-The internship tracker website can be found here: https://drhscit.org/internships/intr/
-
-We appreciate the opportunity you will be providing for your student(s)!  If you have any questions, please reach out to kblogan@henrico.k12.va.us
-
-Best,
-Center for Information Technology
-Deep Run High School, Glen Allen, VA, USA
-"""
-
-FOLLOWUP_EMAIL_DEFAULT = """Dear CIT Student Internship Mentor,
-
-We would like to follow up on our previous email about registering for the Center for Information Technology Internship Tracker website. Your student intern(s) cannot register for their accounts until your mentor profile is set up, so we'd be grateful if you could create your account when you have a moment.
-
-Register here: https://drhscit.org/internships/intr/
-Mentor code for Registration: 2892
-Documentation/Instructions: https://docs.google.com/document/d/1_ER0zeRv4XzvdkAsa-ip4l5V_5oEuR7km37FDV9K7J0/edit?usp=sharing
-If you'd prefer to watch an explanatory video instead: https://drive.google.com/file/d/1oY3Zct0-IHeb13sQohE_FRHCt5ZcwoBL/view?usp=sharing
-
-If you've already signed up, please disregard this.
-
-If you have any questions, please reach out to kblogan@henrico.k12.va.us.
-
-Thank you,
-Center for Information Technology
-Deep Run High School, Glen Allen, VA, USA
-"""
-
-
 def get_connection():
     load_dotenv(ENV_FILE)
 
@@ -433,7 +347,7 @@ def get_connection():
     db_user = os.getenv("DB_UN")
     db_password = os.getenv("DB_PW")
     db_host = os.getenv("DB_HOST", "127.0.0.1")
-    db_port = int(os.getenv("DB_PORT", "5434"))
+    db_port = int(os.getenv("DB_PORT", "5433"))
     if db_host == "drhscit.org" and db_port == 5432:
         db_port = 5434
 
@@ -468,11 +382,6 @@ def initialize_database() -> None:
     with get_connection() as conn:
         with conn.cursor() as cur:
             cur.execute(SCHEMA_SQL)
-            cur.execute(
-                "INSERT INTO email_templates (name, body) VALUES (%s, %s), (%s, %s) "
-                "ON CONFLICT (name) DO NOTHING",
-                ("onboarding", ONBOARDING_EMAIL_DEFAULT, "followup", FOLLOWUP_EMAIL_DEFAULT),
-            )
 
 
 def main() -> None:

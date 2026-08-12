@@ -1058,6 +1058,27 @@ def set_email_body(name, body):
 def send_mentor_invite(email):
     send_email(email, "ACTION REQUIRED: Register for the CIT Internship App", get_email_body("onboarding"))
 
+def send_org_invites(organization_id, emails):
+    for email in emails:
+        try:
+            send_mentor_invite(email)
+            mark_mentor_email_invited(organization_id, email)
+        except Exception:
+            pass
+
+def create_default_mentor(cur, organization_id):
+    cur.execute(
+        "INSERT INTO mentors (email, first_name, last_name, password, organization_id) "
+        "VALUES (%s, %s, %s, %s, %s) ON CONFLICT (email) DO NOTHING",
+        (
+            f"default-mentor-org{organization_id}@drhscit.invalid",
+            "Default",
+            "Mentor",
+            bcrypt.generate_password_hash(os.urandom(16).hex()).decode("utf-8"),
+            organization_id,
+        ),
+    )
+
 def mark_mentor_email_invited(organization_id, email):
     conn = get_db_connection()
     try:
@@ -1153,6 +1174,39 @@ def remove_org_mentor_email(email_id):
     if organization_id:
         return redirect(url_for("admin", edit_organization_id=organization_id))
     return redirect(url_for("admin"))
+
+@app.route("/intr/admin/organizations/<int:id>/set-exclusion", methods=["POST"])
+def set_organization_exclusion(id):
+    login_redirect = require_login()
+    if login_redirect:
+        return login_redirect
+    if not session.get("is_admin"):
+        return redirect(url_for("home"))
+
+    excluded = request.form.get("excluded") == "1"
+    send = request.form.get("send") == "1"
+
+    conn = get_db_connection()
+    try:
+        with conn:
+            with conn.cursor() as cur:
+                cur.execute("UPDATE organizations SET excluded = %s WHERE id = %s", (excluded, id))
+                if excluded:
+                    create_default_mentor(cur, id)
+    finally:
+        conn.close()
+
+    if not excluded and send:
+        send_org_invites(id, [row["email"] for row in fetch_organization_mentor_emails(id)])
+
+    if excluded:
+        flash("Organization marked as excluded.", "success")
+    elif send:
+        flash("Organization marked as active and onboarding emails sent.", "success")
+    else:
+        flash("Organization marked as active.", "success")
+
+    return redirect(url_for("admin", edit_organization_id=id))
 
 @app.route("/intr/admin/emails/<name>/save", methods=["POST"])
 def save_email(name):
@@ -2008,28 +2062,13 @@ def admin():
                                 (organization_id, email),
                             )
                         if excluded:
-                            cur.execute(
-                                "INSERT INTO mentors (email, first_name, last_name, password, organization_id) "
-                                "VALUES (%s, %s, %s, %s, %s)",
-                                (
-                                    f"default-mentor-org{organization_id}@drhscit.invalid",
-                                    "Default",
-                                    "Mentor",
-                                    bcrypt.generate_password_hash(os.urandom(16).hex()).decode("utf-8"),
-                                    organization_id,
-                                ),
-                            )
+                            create_default_mentor(cur, organization_id)
         finally:
             conn.close()
 
         if inserted:
             if not excluded:
-                for email in mentor_emails:
-                    try:
-                        send_mentor_invite(email)
-                        mark_mentor_email_invited(organization_id, email)
-                    except Exception:
-                        pass
+                send_org_invites(organization_id, mentor_emails)
             flash("Organization added.", "success")
         else:
             flash("Organization already exists.", "warning")
@@ -2139,6 +2178,7 @@ def admin():
         except ValueError:
             edit_admin = None
     edit_organization_emails = []
+    edit_organization_excluded = False
     if edit_organization_id:
         try:
             edit_organization = fetch_organization_entry(int(edit_organization_id))
@@ -2146,6 +2186,7 @@ def admin():
             edit_organization = None
         if edit_organization:
             edit_organization_emails = fetch_organization_mentor_emails(edit_organization[0])
+            edit_organization_excluded = next((o[3] for o in organizations if o[0] == edit_organization[0]), False)
 
     if docs_student_id:
         try:
@@ -2225,6 +2266,7 @@ def admin():
         edit_admin=edit_admin,
         edit_organization=edit_organization,
         edit_organization_emails=edit_organization_emails,
+        edit_organization_excluded=edit_organization_excluded,
         docs_student_id=docs_student_id,
         student_documents=student_documents,
         final_eval_student_id=final_eval_student_id,
