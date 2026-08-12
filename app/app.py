@@ -1278,6 +1278,17 @@ def home():
 def about():
     return render_template("about.html")
 
+@app.route("/intr/mentors", methods=["GET", "POST"])
+def mentor_list():
+    code = os.environ.get("MENTOR_LIST_CODE", "")
+    mentors = None
+    if request.method == "POST":
+        if code and request.form.get("code", "").strip() == code:
+            mentors = fetch_mentors()
+        else:
+            flash("That code is not correct.", "danger")
+    return render_template("mentor_list.html", mentors=mentors)
+
 @app.route("/intr/mentor/hours", methods=["GET"])
 def mentor_hours():
     login_redirect = require_login()
@@ -2279,6 +2290,7 @@ def admin():
         open_dialog=open_dialog,
         admin_code=os.environ.get("ADMIN_CODE", ""),
         mentor_code=os.environ.get("MENTOR_CODE", ""),
+        mentor_list_code=os.environ.get("MENTOR_LIST_CODE", ""),
         onboarding_email_body=get_email_body("onboarding"),
         followup_email_body=get_email_body("followup"),
         organizations=organizations,

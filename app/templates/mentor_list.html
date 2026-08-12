@@ -1,0 +1,46 @@
+{% extends 'base.html' %}
+
+{% block title %}Registered Mentors{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="login_card">
+        <h2>Registered Mentors</h2>
+        {% if mentors is none %}
+        <p>Students, be sure to refer to this page
+            frequently to check if your mentor has signed up for the app. You cannot create an account yourself
+            without linking it to an existing mentor account.
+        </p>
+        <form method="POST" action="{{ url_for('mentor_list') }}">
+            <div class="form-group">
+                <label for="code">Class code</label>
+                <input type="text" id="code" name="code" class="form-control" autofocus>
+            </div>
+            <button type="submit" class="btn">View mentors</button>
+        </form>
+        {% elif mentors %}
+        <table class="admin-table">
+            <tr>
+                <th>Mentor</th>
+                <th>Organization</th>
+            </tr>
+            {% for mentor in mentors %}
+            <tr>
+                <td>{{ mentor[1] }}</td>
+                <td>{{ mentor[2] or 'N/A' }}</td>
+            </tr>
+            {% endfor %}
+        </table>
+        <p>
+            Please Note: Some rows above show "Default Mentor" instead of a person's name. A few organizations track
+            their interns in their own system, so their mentors don't sign up here individually. For those, a
+            single "Default Mentor" account is created so their students can still register here. If your organization
+            lists a "Default Mentor," choose it as your mentor when you sign up. If your organization has both a
+            "Default Mentor" and a person, contact your teacher about the discrepancy.
+        </p>
+        {% else %}
+        <p>No mentors have registered yet.</p>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
