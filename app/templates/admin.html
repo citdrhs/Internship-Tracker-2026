@@ -15,6 +15,10 @@
         <h2>Actions</h2>
         <div class="action-btns" style="justify-content: flex-start; margin-bottom: 16px;">
             <a href="{{ url_for('admin', add_organization=1) }}" class="btn-edit">Add Organization</a>
+            <button type="button" class="btn-edit"
+                onclick="document.getElementById('edit-onboarding-email').showModal()">Edit Onboarding Email</button>
+            <button type="button" class="btn-edit"
+                onclick="document.getElementById('edit-followup-email').showModal()">Edit Follow-up Email</button>
         </div>
         <p>To register a new admin account, use the code <strong>{{ admin_code }}</strong>. To register a new mentor
             account, use the code
@@ -269,6 +273,28 @@
         </div>
     </dialog>
     {% endif %}
+
+    <dialog id="edit-onboarding-email" class="modal modal-wide">
+        <form method="dialog" class="modal-x-form"><button class="modal-x" aria-label="Close">&times;</button></form>
+        <h2>Edit Onboarding Email</h2>
+        <p>Sent to mentors when an active organization is created. Plain text only &mdash; write everything out
+            (the registration code and contact address are not filled in automatically).</p>
+        <form method="POST" action="{{ url_for('save_email', name='onboarding') }}">
+            <textarea class="textarea-lg" name="body">{{ onboarding_email_body }}</textarea>
+            <button type="submit">Save</button>
+        </form>
+    </dialog>
+
+    <dialog id="edit-followup-email" class="modal modal-wide">
+        <form method="dialog" class="modal-x-form"><button class="modal-x" aria-label="Close">&times;</button></form>
+        <h2>Edit Follow-up Email</h2>
+        <p>Sent to mentors who still have not registered a week after the onboarding email. Plain text only &mdash;
+            write everything out (the registration code and contact address are not filled in automatically).</p>
+        <form method="POST" action="{{ url_for('save_email', name='followup') }}">
+            <textarea class="textarea-lg" name="body">{{ followup_email_body }}</textarea>
+            <button type="submit">Save</button>
+        </form>
+    </dialog>
 
     {% if selected_organization %}
     <dialog id="view-organization" class="modal modal-wide">

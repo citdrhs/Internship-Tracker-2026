@@ -1030,9 +1030,33 @@ def notify_student_of_response(student_email, student_name, day_worked, response
     except Exception:
         pass
 
+EMAIL_TEMPLATE_NAMES = ("onboarding", "followup")
+
+def get_email_body(name):
+    conn = get_db_connection()
+    try:
+        with conn.cursor() as cur:
+            cur.execute("SELECT body FROM email_templates WHERE name = %s", (name,))
+            row = cur.fetchone()
+            return row[0] if row else ""
+    finally:
+        conn.close()
+
+def set_email_body(name, body):
+    conn = get_db_connection()
+    try:
+        with conn:
+            with conn.cursor() as cur:
+                cur.execute(
+                    "INSERT INTO email_templates (name, body) VALUES (%s, %s) "
+                    "ON CONFLICT (name) DO UPDATE SET body = EXCLUDED.body",
+                    (name, body),
+                )
+    finally:
+        conn.close()
+
 def send_mentor_invite(email):
-    body = render_template("emails/mentor_invite.txt")
-    send_email(email, "ACTION REQUIRED: Register for the CIT Internship App", body)
+    send_email(email, "ACTION REQUIRED: Register for the CIT Internship App", get_email_body("onboarding"))
 
 def mark_mentor_email_invited(organization_id, email):
     conn = get_db_connection()
@@ -1128,6 +1152,20 @@ def remove_org_mentor_email(email_id):
     flash("Mentor email removed.", "success")
     if organization_id:
         return redirect(url_for("admin", edit_organization_id=organization_id))
+    return redirect(url_for("admin"))
+
+@app.route("/intr/admin/emails/<name>/save", methods=["POST"])
+def save_email(name):
+    login_redirect = require_login()
+    if login_redirect:
+        return login_redirect
+    if not session.get("is_admin"):
+        return redirect(url_for("home"))
+    if name not in EMAIL_TEMPLATE_NAMES:
+        return redirect(url_for("admin"))
+
+    set_email_body(name, request.form.get("body", "").strip())
+    flash("Email updated.", "success")
     return redirect(url_for("admin"))
 
 @app.route("/")
@@ -2199,6 +2237,8 @@ def admin():
         open_dialog=open_dialog,
         admin_code=os.environ.get("ADMIN_CODE", ""),
         mentor_code=os.environ.get("MENTOR_CODE", ""),
+        onboarding_email_body=get_email_body("onboarding"),
+        followup_email_body=get_email_body("followup"),
         organizations=organizations,
         students_active=students_active,
         students_excluded=students_excluded,

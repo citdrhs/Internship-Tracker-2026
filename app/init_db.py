@@ -45,6 +45,11 @@ CREATE TABLE IF NOT EXISTS organization_mentor_emails (
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
+CREATE TABLE IF NOT EXISTS email_templates (
+    name VARCHAR(50) PRIMARY KEY,
+    body TEXT NOT NULL
+);
+
 DO $$
 BEGIN
     IF NOT EXISTS (
@@ -381,6 +386,46 @@ END $$;
 """
 
 
+ONBOARDING_EMAIL_DEFAULT = """Dear CIT Student Internship Mentor,
+
+This summer, the Center for Information Technology is using a custom-built site to manage student work logs, hour approvals, and feedback submissions as part of the CIT internship process.
+
+To register, students must select a mentor profile to link their account to. Therefore, it would be great if you could create an account for the website as soon as possible.
+
+The documentation linked below covers all mentor-related features on the Internship Tracker website, including account creation, bug reporting, submitting feedback, and approving hours. Please review it thoroughly.
+Documentation: https://docs.google.com/document/d/1_ER0zeRv4XzvdkAsa-ip4l5V_5oEuR7km37FDV9K7J0/edit?usp=sharing
+If you'd prefer to watch an explanatory video instead: https://drive.google.com/file/d/1oY3Zct0-IHeb13sQohE_FRHCt5ZcwoBL/view?usp=sharing
+
+*** The mentor code for registration is: 2892
+
+The internship tracker website can be found here: https://drhscit.org/internships/intr/
+
+We appreciate the opportunity you will be providing for your student(s)!  If you have any questions, please reach out to kblogan@henrico.k12.va.us
+
+Best,
+Center for Information Technology
+Deep Run High School, Glen Allen, VA, USA
+"""
+
+FOLLOWUP_EMAIL_DEFAULT = """Dear CIT Student Internship Mentor,
+
+We would like to follow up on our previous email about registering for the Center for Information Technology Internship Tracker website. Your student intern(s) cannot register for their accounts until your mentor profile is set up, so we'd be grateful if you could create your account when you have a moment.
+
+Register here: https://drhscit.org/internships/intr/
+Mentor code for Registration: 2892
+Documentation/Instructions: https://docs.google.com/document/d/1_ER0zeRv4XzvdkAsa-ip4l5V_5oEuR7km37FDV9K7J0/edit?usp=sharing
+If you'd prefer to watch an explanatory video instead: https://drive.google.com/file/d/1oY3Zct0-IHeb13sQohE_FRHCt5ZcwoBL/view?usp=sharing
+
+If you've already signed up, please disregard this.
+
+If you have any questions, please reach out to kblogan@henrico.k12.va.us.
+
+Thank you,
+Center for Information Technology
+Deep Run High School, Glen Allen, VA, USA
+"""
+
+
 def get_connection():
     load_dotenv(ENV_FILE)
 
@@ -423,6 +468,11 @@ def initialize_database() -> None:
     with get_connection() as conn:
         with conn.cursor() as cur:
             cur.execute(SCHEMA_SQL)
+            cur.execute(
+                "INSERT INTO email_templates (name, body) VALUES (%s, %s), (%s, %s) "
+                "ON CONFLICT (name) DO NOTHING",
+                ("onboarding", ONBOARDING_EMAIL_DEFAULT, "followup", FOLLOWUP_EMAIL_DEFAULT),
+            )
 
 
 def main() -> None:
