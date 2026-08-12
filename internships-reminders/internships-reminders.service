@@ -1,0 +1,9 @@
+[Unit]
+Description=CIT Internship Tracker mentor follow-up reminders
+After=network-online.target
+
+[Service]
+Type=oneshot
+User=internships
+WorkingDirectory=/opt/internships-reminders
+ExecStart=/opt/internships-reminders/venv/bin/python /opt/internships-reminders/send_reminders.py
