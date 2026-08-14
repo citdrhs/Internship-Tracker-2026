@@ -9,7 +9,7 @@ from urllib.parse import quote_plus
 import psycopg2
 from better_profanity import profanity
 from dotenv import load_dotenv
-from datetime import datetime
+from datetime import datetime, timedelta, timezone
 from flask import Flask, Response, flash, redirect, render_template, request, session, url_for
 from flask_bcrypt import Bcrypt
 from werkzeug.utils import secure_filename
@@ -2821,6 +2821,9 @@ def register():
     mentors = fetch_all_mentors()
 
     if request.method == "POST" and form.validate_on_submit():
+        PendingUser.query.filter(PendingUser.created_at < datetime.now(timezone.utc) - timedelta(days=1)).delete()
+        db.session.commit()
+
         selected_role = request.form.get("role", "").strip()
         selected_organization_id = request.form.get("organization", "").strip()
         selected_mentor_id = request.form.get("mentor_id", "").strip()
