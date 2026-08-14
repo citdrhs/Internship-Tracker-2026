@@ -991,6 +991,35 @@
     <p class="exclusions-note">* Excluded organizations run their own tracking systems, so their mentors are not sent
         onboarding emails and their students are not counted in the aggregate statistics.</p>
 
+    <dialog id="mail-check" class="modal">
+        <h2>Onboarding email(s) were sent to the emails you listed! Please check Zoho Mail to verify delivery.
+        </h2>
+        <p>Unfortunately, this app cannot confirm these emails actually reached each mentor.</p>
+        <p>Please log into the <strong>noreply@drhscit.org</strong> mailbox in Zoho Mail and check for three common
+            things:</p>
+        <ul>
+            <li>The <strong>Sent</strong> folder, to confirm each message actually went out.</li>
+            <li>The <strong>Inbox</strong> for a <strong>bounce-back</strong> ("Undelivered Mail Returned to Sender"),
+                which usually means the address was mistyped (you can add a new email to the organization later)</li>
+            <li>The <strong>Inbox</strong> for an <strong>auto-reply / vacation message</strong>. Take note of these so
+                you know the mentor is away and can follow up when they return.</li>
+        </ul>
+        <form method="dialog" class="form-actions">
+            <button class="btn-edit">Got it</button>
+        </form>
+    </dialog>
+
+    <dialog id="mail-error" class="modal">
+        <h2>Onboarding email could not be sent</h2>
+        <p>The email account <strong>noreply@drhscit.org</strong> rejected login, so the onboarding email(s)
+            were <strong>not sent</strong>. This is almost always a wrong or expired email password, or the mail server
+            being temporarily unavailable.</p>
+        <p>Please contact a CIT system administrator to resolve this issue, then try again.</p>
+        <form method="dialog" class="form-actions">
+            <button class="btn-edit">OK</button>
+        </form>
+    </dialog>
+
     <div id="page-data" data-open-dialog="{{ open_dialog }}" hidden></div>
 </div>
 {% endblock %}

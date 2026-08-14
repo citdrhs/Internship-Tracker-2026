@@ -960,6 +960,15 @@ def send_email(recipient, subject, body):
         server.login(SMTP_USERNAME, SMTP_PASSWORD)
         server.send_message(message)
 
+def smtp_login_ok():
+    try:
+        context = ssl.create_default_context()
+        with smtplib.SMTP_SSL(SMTP_HOST, SMTP_PORT, context=context, timeout=15) as server:
+            server.login(SMTP_USERNAME, SMTP_PASSWORD)
+        return True
+    except Exception:
+        return False
+
 def send_confirmation_email(user_email):
     token = generate_confirmation_token(user_email)
     confirm_url = url_for("confirm_email", token=token, _external=True)
@@ -1059,12 +1068,14 @@ def send_mentor_invite(email):
     send_email(email, "ACTION REQUIRED: Register for the CIT Internship App", get_email_body("onboarding"))
 
 def send_org_invites(organization_id, emails):
+    failed = 0
     for email in emails:
         try:
             send_mentor_invite(email)
             mark_mentor_email_invited(organization_id, email)
         except Exception:
-            pass
+            failed += 1
+    return len(emails), failed
 
 def create_default_mentor(cur, organization_id):
     cur.execute(
@@ -1152,13 +1163,19 @@ def add_org_mentor_email(organization_id):
         return redirect(url_for("admin", edit_organization_id=organization_id))
 
     added = add_organization_mentor_email_row(organization_id, email)
+    mail_sent = False
+    mail_failed = False
     if added and request.form.get("send") == "1":
-        try:
-            send_mentor_invite(email)
-            mark_mentor_email_invited(organization_id, email)
-        except Exception:
-            pass
+        attempted, failed = send_org_invites(organization_id, [email])
+        mail_sent = (attempted - failed) > 0
+        mail_failed = failed > 0
+        if failed:
+            flash("The onboarding email failed to send. Check the email settings.", "danger")
     flash("Mentor email added." if added else "That email is already listed.", "success" if added else "warning")
+    if mail_failed:
+        return redirect(url_for("admin", edit_organization_id=organization_id, mail_error=1))
+    if mail_sent:
+        return redirect(url_for("admin", edit_organization_id=organization_id, mail_sent=1))
     return redirect(url_for("admin", edit_organization_id=organization_id))
 
 @app.route("/intr/admin/mentor-emails/<int:email_id>/remove", methods=["POST"])
@@ -1196,8 +1213,14 @@ def set_organization_exclusion(id):
     finally:
         conn.close()
 
+    mail_sent = False
+    mail_failed = False
     if not excluded and send:
-        send_org_invites(id, [row["email"] for row in fetch_organization_mentor_emails(id)])
+        attempted, failed = send_org_invites(id, [row["email"] for row in fetch_organization_mentor_emails(id)])
+        mail_sent = (attempted - failed) > 0
+        mail_failed = failed > 0
+        if failed:
+            flash(f"{failed} of {attempted} onboarding emails failed to send. Check the email settings.", "danger")
 
     if excluded:
         flash("Organization marked as excluded.", "success")
@@ -1206,6 +1229,10 @@ def set_organization_exclusion(id):
     else:
         flash("Organization marked as active.", "success")
 
+    if mail_failed:
+        return redirect(url_for("admin", edit_organization_id=id, mail_error=1))
+    if mail_sent:
+        return redirect(url_for("admin", edit_organization_id=id, mail_sent=1))
     return redirect(url_for("admin", edit_organization_id=id))
 
 @app.route("/intr/admin/emails/<name>/save", methods=["POST"])
@@ -2050,6 +2077,10 @@ def admin():
             flash("Organization name is required.", "danger")
             return redirect(url_for("admin"))
 
+        if not excluded and mentor_emails and not smtp_login_ok():
+            flash("The organization was NOT created - onboarding emails could not be sent (the email account did not accept our login). Check the email password/settings and try again.", "danger")
+            return redirect(url_for("admin", mail_error=1))
+
         organization_id = None
         conn = get_db_connection()
         try:
@@ -2077,13 +2108,23 @@ def admin():
         finally:
             conn.close()
 
+        mail_sent = False
+        mail_failed = False
         if inserted:
-            if not excluded:
-                send_org_invites(organization_id, mentor_emails)
+            if not excluded and mentor_emails:
+                attempted, failed = send_org_invites(organization_id, mentor_emails)
+                mail_sent = (attempted - failed) > 0
+                mail_failed = failed > 0
+                if failed:
+                    flash(f"{failed} of {attempted} onboarding emails failed to send. Check the email settings.", "danger")
             flash("Organization added.", "success")
         else:
             flash("Organization already exists.", "warning")
 
+        if mail_failed:
+            return redirect(url_for("admin", mail_error=1))
+        if mail_sent:
+            return redirect(url_for("admin", mail_sent=1))
         return redirect(url_for("admin"))
 
     students = fetch_students()
@@ -2252,6 +2293,11 @@ def admin():
         open_dialog = "student-docs"
     elif final_eval_student_id:
         open_dialog = "final-eval"
+
+    if request.args.get("mail_sent"):
+        open_dialog = "mail-check"
+    if request.args.get("mail_error"):
+        open_dialog = "mail-error"
 
     return render_template(
         "admin.html",
