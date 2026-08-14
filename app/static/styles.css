@@ -1,5 +1,7 @@
 @import url('https://fonts.googleapis.com/css2?family=Inter+Tight:ital,wght@0,100..900;1,100..900&family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&display=swap');
 
+/* ####################  GLOBAL / RESET  #################### */
+
 * {
     font-family: 'Inter Tight', sans-serif;
     box-sizing: border-box;
@@ -22,6 +24,11 @@ li {
 section {
     margin-block: 5px;
 }
+
+
+/* ##################  END GLOBAL / RESET  ################## */
+
+/* ########################  NAVBAR  ######################## */
 
 #navbar {
     display: flex;
@@ -112,6 +119,11 @@ section {
     }
 }
 
+
+/* ######################  END NAVBAR  ###################### */
+
+/* ####################  FLASH MESSAGES  #################### */
+
 .msgs {
     display: flex;
     justify-content: center;
@@ -124,6 +136,11 @@ section {
     padding: 0.6em 1.2em;
     font-weight: 600;
 }
+
+
+/* ##################  END FLASH MESSAGES  ################## */
+
+/* ##############  LAYOUT: CONTAINERS & CARDS  ############## */
 
 .container {
     width: 100%;
@@ -177,6 +194,11 @@ section {
     border-bottom: 2px #ececec solid;
 }
 
+
+
+/* ############  END LAYOUT: CONTAINERS & CARDS  ############ */
+
+/* ####################  FORMS & INPUTS  #################### */
 
 .form-group {
     width: 100%;
@@ -267,6 +289,11 @@ select {
     font-size: 1.15em;
 }
 
+
+/* ##################  END FORMS & INPUTS  ################## */
+
+/* #######################  BUTTONS  ######################## */
+
 button,
 .btn,
 .btn-view,
@@ -306,6 +333,11 @@ a.cancel-link {
 a.cancel-link:hover {
     color: #333;
 }
+
+
+/* #####################  END BUTTONS  ###################### */
+
+/* ########################  TABLES  ######################## */
 
 /* Table */
 .tableBox {
@@ -386,6 +418,11 @@ td form {
     background: #b0b0b0;
     border-radius: 3px;
 }
+
+
+/* ######################  END TABLES  ###################### */
+
+/* ###  MISC: HEADINGS, BADGES, ACTION BUTTONS & WIDGETS  ### */
 
 h1 {
     text-align: center;
@@ -499,6 +536,11 @@ td .action-btns {
     align-items: center;
     gap: 15px;
 }
+
+
+/* #  END MISC: HEADINGS, BADGES, ACTION BUTTONS & WIDGETS  # */
+
+/* ###################  ADMIN DASHBOARD  #################### */
 
 /* Admin dashboard */
 #admin-container {
@@ -731,6 +773,11 @@ td .action-btns {
     margin-bottom: 0;
 }
 
+
+/* #################  END ADMIN DASHBOARD  ################## */
+
+/* ######################  HOME PAGE  ####################### */
+
 /* Home page*/
 
 .landing-main {
@@ -837,6 +884,11 @@ td .action-btns {
     color: #333;
     line-height: 1.4;
 }
+
+
+/* ####################  END HOME PAGE  ##################### */
+
+/* ######################  ABOUT PAGE  ###################### */
 
 /* About page */
 .page {
@@ -948,6 +1000,11 @@ td .action-btns {
     cursor: not-allowed;
 }
 
+
+/* ####################  END ABOUT PAGE  #################### */
+
+/* #################  FEEDBACK FORM LAYOUT  ################# */
+
 /* Feedback forms */
 .form-grid {
     display: grid;
@@ -963,6 +1020,11 @@ td .action-btns {
 .form-span-2 {
     grid-column: span 2;
 }
+
+
+/* ###############  END FEEDBACK FORM LAYOUT  ############### */
+
+/* #############  RESPONSIVE (MAX-WIDTH 900PX)  ############# */
 
 @media (max-width: 900px) {
     .home-about-grid {
@@ -998,6 +1060,11 @@ td .action-btns {
         flex-direction: column;
     }
 }
+
+
+/* ###########  END RESPONSIVE (MAX-WIDTH 900PX)  ########### */
+
+/* ######  ADMIN: WEEKLY FEEDBACK, EDIT FORMS & VIEWS  ###### */
 
 /* Admin weekly feedback section */
 .admin-student-select {
@@ -1136,6 +1203,11 @@ td .action-btns {
     cursor: pointer;
 }
 
+
+/* ####  END ADMIN: WEEKLY FEEDBACK, EDIT FORMS & VIEWS  #### */
+
+/* ##################  DOCUMENTS CAROUSEL  ################## */
+
 /* Supplementary documents carousel */
 .doc-toolbar {
     display: flex;
@@ -1172,6 +1244,11 @@ td .action-btns {
     margin-top: 10px;
 }
 
+
+/* ################  END DOCUMENTS CAROUSEL  ################ */
+
+/* ######################  STAT FLAGS  ###################### */
+
 /* Green check / red X in the admin stat columns */
 .flag-yes {
     color: #1a7f37;
@@ -1180,6 +1257,11 @@ td .action-btns {
 .flag-no {
     color: #cc3333;
 }
+
+
+/* ####################  END STAT FLAGS  #################### */
+
+/* #################  IMPERSONATION BANNER  ################# */
 
 /* Banner shown while an admin is acting as a mentor */
 #impersonation-banner {
@@ -1192,6 +1274,11 @@ td .action-btns {
     padding: 8px 16px;
     font-weight: 600;
 }
+
+
+/* ###############  END IMPERSONATION BANNER  ############### */
+
+/* ###################  STUDENT CALENDAR  ################### */
 
 .student-calendar-section {
     margin-top: 24px;
@@ -1248,6 +1335,11 @@ td .action-btns {
     }
 }
 
+
+/* #################  END STUDENT CALENDAR  ################# */
+
+/* ###################  WEEKLY AVERAGES  #################### */
+
 .weekly-averages {
     margin-top: 22px;
     padding: 18px;
@@ -1269,6 +1361,11 @@ td .action-btns {
     }
 }
 
+
+/* #################  END WEEKLY AVERAGES  ################## */
+
+/* ########################  FOOTER  ######################## */
+
 footer {
     width: 100%;
     position: fixed;
@@ -1283,6 +1380,11 @@ footer a {
     color: rgb(22, 4, 77);
     margin: 0 25px;
 }
+
+
+/* ######################  END FOOTER  ###################### */
+
+/* ###################  MENTOR APPROVAL  #################### */
 
 /* Mentor approval styles */
 .mentor-approval-section {
@@ -1352,6 +1454,11 @@ footer a {
     text-align: left;
 }
 
+
+/* #################  END MENTOR APPROVAL  ################## */
+
+/* ################  STUDENT HOURS SUMMARY  ################# */
+
 /* Student hours summary */
 .student-summary {
     width: min(1000px, 100%);
@@ -1407,6 +1514,11 @@ footer a {
     background-color: #574fd6;
 }
 
+
+/* ##############  END STUDENT HOURS SUMMARY  ############### */
+
+/* ###################  MODALS / POPUPS  #################### */
+
 /* Popups */
 .modal {
     border: none;
@@ -1461,6 +1573,11 @@ footer a {
     white-space: pre-wrap;
 }
 
+
+/* #################  END MODALS / POPUPS  ################## */
+
+/* #####################  FLASH TOASTS  ##################### */
+
 /* Flash toasts */
 #toast-container {
     position: fixed;
@@ -1495,9 +1612,16 @@ footer a {
     background-color: #1565c0;
 }
 
+
+/* ###################  END FLASH TOASTS  ################### */
+
+/* ##################  MISC / DANGER ZONE  ################## */
+
 .danger-zone {
     margin-top: 2rem;
     padding-top: 1rem;
     border-top: 1px solid #eee;
     text-align: right;
 }
+
+/* ################  END MISC / DANGER ZONE  ################ */

@@ -1,32 +1,5 @@
 from flask_sqlalchemy import SQLAlchemy
 
-#==================================================================================================================================================================#
-#                                                                                                                                                                  #
-#Project: CIT Signups                                                                                                                                              #
-#Contact: Lynne Norris (lmnorris@henrico.k12.va.us)                                                                                                                #
-#                                                                                                                                                                  #
-#Deep Run High School Restricted                                                                                                                                   #
-#                                                                                                                                                                  #
-#                                                                                                                                                #
-#------------------------------------------------------------------------------------------------------------------------------------------------------------------#
-#@brief Has User table(flask) for Login and Register forms                                                                                                         #
-#                                                                                                                                                                  #
-#@author Omkar Deshmukh | (hcps-deshmukop@henricostudents.org)                                                                                                      #
-#                                                                                                                                                                  #
-#@version 1.0                                                                                                                                                      #
-#                                                                                                                                                                  #
-#@date Date_Of_Creation 2/17/25                                                                                                                                    #
-#                                                                                                                                                                  #
-#@date Last_Modification 2/17/25                                                                                                                                   #
-#
-# @editor Shlok Joshi | (hcps-joshis@henricostudents.org)
-#
-# date Last_Modification 5/16/26 
-# 5/16/26 -- # 5/16/26 -- Split users into students, mentors, and admins; make DB init non-destructive                                                                                                                               #
-#==================================================================================================================================================================#
-
-
-
 db = SQLAlchemy()
 
 class Organization(db.Model):
