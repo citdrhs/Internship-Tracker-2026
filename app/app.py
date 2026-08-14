@@ -2765,6 +2765,48 @@ def deleteOrganization(id):
     return redirect(url_for("admin"))
 
 
+BULK_DELETE_PHRASES = {
+    "students": "i wish to delete all students",
+    "mentors": "i wish to delete all mentors",
+    "orgs": "i wish to delete all orgs",
+}
+
+@app.route("/intr/admin/delete-all/<entity>", methods=["POST"])
+def delete_all(entity):
+    login_redirect = require_login()
+    if login_redirect:
+        return login_redirect
+    if not session.get("is_admin"):
+        return redirect(url_for("home"))
+
+    expected = BULK_DELETE_PHRASES.get(entity)
+    if not expected or request.form.get("confirm", "").strip().lower() != expected:
+        flash("Confirmation text did not match. Nothing was deleted.", "danger")
+        return redirect(url_for("admin"))
+
+    conn = get_db_connection()
+    try:
+        with conn:
+            with conn.cursor() as cur:
+                if entity == "students":
+                    cur.execute("DELETE FROM students")
+                elif entity == "mentors":
+                    cur.execute("UPDATE feedback SET mentor_id = NULL")
+                    cur.execute("DELETE FROM mentors")
+                elif entity == "orgs":
+                    cur.execute("UPDATE students SET organization = NULL, organization_id = NULL")
+                    cur.execute("UPDATE mentors SET organization = NULL, organization_id = NULL")
+                    cur.execute("UPDATE admins SET organization = NULL, organization_id = NULL")
+                    cur.execute("UPDATE pending_users SET organization = NULL, organization_id = NULL")
+                    cur.execute("DELETE FROM organizations")
+                deleted = cur.rowcount
+    finally:
+        conn.close()
+
+    flash(f"Deleted all {entity} ({deleted} removed).", "success")
+    return redirect(url_for("admin"))
+
+
 @app.route("/intr/registration-pending")
 def registration_pending():
     return render_template("registration_pending.html")

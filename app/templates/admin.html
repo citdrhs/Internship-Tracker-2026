@@ -91,6 +91,10 @@
                 </table>
             </div>
             {% endif %}
+            <div class="danger-zone">
+                <button type="button" class="btn-delete"
+                    onclick="document.getElementById('delete-all-orgs').showModal()">Delete all organizations</button>
+            </div>
         </div>
 
         <div class="admin-view-table" data-view="student">
@@ -141,6 +145,10 @@
                 </table>
             </div>
             {% endif %}
+            <div class="danger-zone">
+                <button type="button" class="btn-delete"
+                    onclick="document.getElementById('delete-all-students').showModal()">Delete all students</button>
+            </div>
         </div>
 
         <div class="admin-view-table" data-view="mentor">
@@ -187,6 +195,10 @@
                 </table>
             </div>
             {% endif %}
+            <div class="danger-zone">
+                <button type="button" class="btn-delete"
+                    onclick="document.getElementById('delete-all-mentors').showModal()">Delete all mentors</button>
+            </div>
         </div>
 
         <div class="admin-view-table" data-view="admin">
@@ -228,6 +240,51 @@
         </details>
         {% endfor %}
     </section>
+
+    <dialog id="delete-all-students" class="modal">
+        <h2>Delete ALL students?</h2>
+        <p>This permanently deletes <strong>every student</strong> along with all of their worklogs, feedback,
+            evaluations, and uploaded documents. This cannot be undone unless a CIT server administrator
+            manually restores a recent database backup.</p>
+        <form method="post" action="{{ url_for('delete_all', entity='students') }}">
+            <p>Type <strong>I wish to delete all students</strong> to confirm:</p>
+            <input type="text" class="form-control" name="confirm" autocomplete="off">
+            <div class="form-actions">
+                <button type="submit" class="btn-delete">Delete all students</button>
+                <button type="button" class="btn-secondary" onclick="this.closest('dialog').close()">Cancel</button>
+            </div>
+        </form>
+    </dialog>
+
+    <dialog id="delete-all-mentors" class="modal">
+        <h2>Delete ALL mentors?</h2>
+        <p>This permanently deletes <strong>every mentor</strong> account (including the auto-created "Default Mentor"
+            accounts). Their submitted feedback is kept for students to view but unlinked. This cannot be undone unless
+            a CIT server administrator manually restores a recent database backup.</p>
+        <form method="post" action="{{ url_for('delete_all', entity='mentors') }}">
+            <p>Type <strong>I wish to delete all mentors</strong> to confirm:</p>
+            <input type="text" class="form-control" name="confirm" autocomplete="off">
+            <div class="form-actions">
+                <button type="submit" class="btn-delete">Delete all mentors</button>
+                <button type="button" class="btn-secondary" onclick="this.closest('dialog').close()">Cancel</button>
+            </div>
+        </form>
+    </dialog>
+
+    <dialog id="delete-all-orgs" class="modal">
+        <h2>Delete ALL organizations?</h2>
+        <p>This permanently deletes <strong>every organization</strong> and clears each one's mentor-invite list.
+            Students and mentors are not deleted, but they will be unlinked from their organization. This cannot be
+            undone unless a CIT server administrator manually restores a recent database backup.</p>
+        <form method="post" action="{{ url_for('delete_all', entity='orgs') }}">
+            <p>Type <strong>I wish to delete all orgs</strong> to confirm:</p>
+            <input type="text" class="form-control" name="confirm" autocomplete="off">
+            <div class="form-actions">
+                <button type="submit" class="btn-delete">Delete all organizations</button>
+                <button type="button" class="btn-secondary" onclick="this.closest('dialog').close()">Cancel</button>
+            </div>
+        </form>
+    </dialog>
 
     {% if not edit_organization %}
     <dialog id="add-organization" class="modal">

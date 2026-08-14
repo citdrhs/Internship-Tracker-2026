@@ -1103,6 +1103,7 @@ td .action-btns {
     align-items: center;
     display: flex;
     gap: 12px;
+    margin-top: 16px;
 }
 
 /* Admin "Select a View" radios + searchable user tables */
@@ -1492,4 +1493,11 @@ footer a {
 
 .toast-info {
     background-color: #1565c0;
+}
+
+.danger-zone {
+    margin-top: 2rem;
+    padding-top: 1rem;
+    border-top: 1px solid #eee;
+    text-align: right;
 }
